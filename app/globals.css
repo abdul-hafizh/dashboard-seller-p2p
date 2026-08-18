@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --color-brand-orange: #ff7a18;
+  --color-brand-orange-deep: #ff4e00;
+  --color-brand-purple: #9b2fce;
+  --color-brand-purple-deep: #6423a6;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: #faf8fc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f1f8;
+
+  --color-ink: #241a2e;
+  --color-ink-soft: #8d8798;
+  --color-ink-faint: #b7b2c2;
+
+  --color-success: #2fb380;
+  --color-info: #3b82f6;
+  --color-border: #efeaf4;
+  --color-error: #e0453a;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.brand-gradient {
+  background-image: linear-gradient(135deg, var(--color-brand-orange), var(--color-brand-purple));
+}
+
+.brand-gradient-soft {
+  background-image: linear-gradient(135deg, #ffedd9, #f3e3fa);
+}
+
+.brand-gradient-text {
+  background-image: linear-gradient(135deg, var(--color-brand-orange), var(--color-brand-purple));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+::selection {
+  background: var(--color-brand-purple);
+  color: white;
 }
