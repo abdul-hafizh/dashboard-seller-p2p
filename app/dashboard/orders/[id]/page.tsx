@@ -4,18 +4,37 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, History, FileText } from "lucide-react";
+import { ArrowLeft, Package, History, FileText, Box, Download, ImageOff, Clock, User, MapPin } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
+import { Model3DViewer } from "@/components/Model3DViewer";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
-import { formatCurrency, formatDate } from "@/lib/resources/format";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
 
 interface OrderStatus {
   Id: number;
   Name: string;
+}
+
+interface AIModelPreview {
+  Id: string;
+  PreviewPath: string | null;
+}
+
+interface AIModelFile {
+  Id: string;
+  FileType: string;
+  FilePath: string | null;
+}
+
+interface AIModel {
+  Id: string;
+  ModelName: string | null;
+  Previews?: AIModelPreview[];
+  Files?: AIModelFile[];
 }
 
 interface OrderItem {
@@ -24,6 +43,7 @@ interface OrderItem {
   UnitPrice: number | null;
   MaterialId: number | null;
   PrintProfileId: number | null;
+  AIModel?: AIModel | null;
 }
 
 interface StatusHistoryEntry {
@@ -31,6 +51,34 @@ interface StatusHistoryEntry {
   StatusId: number;
   Remarks: string | null;
   CreatedAt: string | null;
+}
+
+interface CustomerUser {
+  FullName: string | null;
+  Email: string | null;
+  Phone: string | null;
+  WhatsappNumber: string | null;
+}
+
+interface OrderCustomer {
+  Id: string;
+  CompanyName: string | null;
+  User?: CustomerUser | null;
+}
+
+interface AddressRegion {
+  Id: number;
+  Name: string;
+}
+
+interface ShippingAddress {
+  Id: string;
+  RecipientName: string | null;
+  Phone: string | null;
+  Address: string | null;
+  PostalCode: string | null;
+  City?: AddressRegion | null;
+  Province?: AddressRegion | null;
 }
 
 interface OrderDetail {
@@ -46,6 +94,8 @@ interface OrderDetail {
   Status: OrderStatus | null;
   Items?: OrderItem[];
   StatusHistories?: StatusHistoryEntry[];
+  Customer?: OrderCustomer | null;
+  ShippingAddress?: ShippingAddress | null;
 }
 
 export default function OrderDetailPage() {
@@ -62,12 +112,14 @@ export default function OrderDetailPage() {
 
   const [nextStatusId, setNextStatusId] = useState<string>("");
   const [updating, setUpdating] = useState(false);
+  const [expiredPreviews, setExpiredPreviews] = useState<Set<string>>(new Set());
 
   if (isLoading || !data) return <FullPageSpinner />;
 
   const order = data.data;
   const statuses = statusesData?.data ?? [];
   const statusName = (id: number | null) => statuses.find((s) => s.Id === id)?.Name ?? `#${id}`;
+  const models = (order.Items ?? []).map((item) => item.AIModel).filter((m): m is AIModel => Boolean(m));
 
   const updateStatus = async () => {
     if (!nextStatusId) return;
@@ -111,8 +163,10 @@ export default function OrderDetailPage() {
                 <p className="mt-0.5 font-bold text-ink">{formatCurrency(order.TotalAmount)}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold text-ink-soft">ID Pelanggan</p>
-                <p className="mt-0.5 font-mono text-xs text-ink">{order.CustomerId ?? "-"}</p>
+                <p className="text-xs font-semibold text-ink-soft">Pelanggan</p>
+                <p className="mt-0.5 font-bold text-ink">
+                  {order.Customer?.User?.FullName ?? order.Customer?.CompanyName ?? "-"}
+                </p>
               </div>
               {order.Rating != null && (
                 <div>
@@ -128,6 +182,77 @@ export default function OrderDetailPage() {
               )}
             </CardBody>
           </Card>
+
+          {models.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Box className="size-4" /> Hasil Generate 3D
+                </CardTitle>
+              </CardHeader>
+              <CardBody className="flex flex-col gap-5">
+                {models.map((model) => {
+                  const previewUrl = model.Previews?.[0]?.PreviewPath;
+                  const previewExpired = expiredPreviews.has(model.Id);
+                  const files = model.Files ?? [];
+                  const glbFile = files.find((f) => f.FileType?.toUpperCase() === "GLB");
+                  return (
+                    <div key={model.Id} className={`flex flex-col gap-3 ${glbFile ? "" : "sm:flex-row"}`}>
+                      <div
+                        className={`flex shrink-0 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-surface-muted ${
+                          glbFile ? "h-80 w-full" : "size-40"
+                        }`}
+                      >
+                        {glbFile ? (
+                          <Model3DViewer
+                            src={`/api/backend/ai/jobs/files/${glbFile.Id}`}
+                            alt={model.ModelName ?? "Hasil 3D"}
+                          />
+                        ) : previewUrl && !previewExpired ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- external, per-signed Meshy CDN URL, not worth Next/Image's remote-pattern config for a single admin page
+                          <img
+                            src={previewUrl}
+                            alt={model.ModelName ?? "Hasil 3D"}
+                            className="size-full object-cover"
+                            onError={() => setExpiredPreviews((prev) => new Set(prev).add(model.Id))}
+                          />
+                        ) : previewUrl ? (
+                          <>
+                            <Clock className="size-6 text-ink-faint" />
+                            <p className="px-2 text-center text-[11px] text-ink-faint">Pratinjau kedaluwarsa</p>
+                          </>
+                        ) : (
+                          <ImageOff className="size-6 text-ink-faint" />
+                        )}
+                      </div>
+                      <div className="flex flex-1 flex-col gap-2">
+                        <p className="text-sm font-semibold text-ink">{model.ModelName ?? "Model 3D"}</p>
+                        {files.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {files.map((file) =>
+                              file.FilePath ? (
+                                <a
+                                  key={file.Id}
+                                  href={file.FilePath}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-ink hover:bg-surface-muted"
+                                >
+                                  <Download className="size-3.5" /> {file.FileType}
+                                </a>
+                              ) : null,
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-ink-soft">Belum ada file model.</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardBody>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>
@@ -180,7 +305,7 @@ export default function OrderDetailPage() {
                       <div>
                         <p className="font-semibold text-ink">{statusName(h.StatusId)}</p>
                         {h.Remarks && <p className="text-ink-soft">{h.Remarks}</p>}
-                        <p className="text-xs text-ink-faint">{formatDate(h.CreatedAt)}</p>
+                        <p className="text-xs text-ink-faint">{formatDateTime(h.CreatedAt)}</p>
                       </div>
                     </li>
                   ))}
@@ -193,6 +318,48 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex flex-col gap-5">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="size-4" /> Pelanggan
+              </CardTitle>
+            </CardHeader>
+            <CardBody className="flex flex-col gap-3 text-sm">
+              <div>
+                <p className="font-bold text-ink">
+                  {order.Customer?.User?.FullName ?? order.Customer?.CompanyName ?? "-"}
+                </p>
+                {order.Customer?.User?.Email && <p className="text-xs text-ink-soft">{order.Customer.User.Email}</p>}
+                {(order.Customer?.User?.Phone || order.Customer?.User?.WhatsappNumber) && (
+                  <p className="text-xs text-ink-soft">
+                    {order.Customer?.User?.Phone ?? order.Customer?.User?.WhatsappNumber}
+                  </p>
+                )}
+              </div>
+              <div className="border-t border-border pt-3">
+                <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
+                  <MapPin className="size-3.5" /> Alamat Pengiriman
+                </p>
+                {order.ShippingAddress ? (
+                  <div className="text-ink-soft">
+                    {order.ShippingAddress.RecipientName && (
+                      <p className="font-semibold text-ink">{order.ShippingAddress.RecipientName}</p>
+                    )}
+                    {order.ShippingAddress.Phone && <p>{order.ShippingAddress.Phone}</p>}
+                    {order.ShippingAddress.Address && <p>{order.ShippingAddress.Address}</p>}
+                    <p>
+                      {[order.ShippingAddress.City?.Name, order.ShippingAddress.Province?.Name, order.ShippingAddress.PostalCode]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-ink-faint">Alamat belum diisi.</p>
+                )}
+              </div>
+            </CardBody>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

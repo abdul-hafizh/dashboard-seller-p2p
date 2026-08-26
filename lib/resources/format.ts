@@ -33,3 +33,12 @@ export function formatDate(value: unknown) {
   if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
+
+export function formatDateTime(value: unknown) {
+  if (!value) return "-";
+  const d = new Date(String(value));
+  if (Number.isNaN(d.getTime())) return "-";
+  const datePart = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  const timePart = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  return `${datePart}, ${timePart}`;
+}

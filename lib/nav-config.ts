@@ -16,6 +16,8 @@ import {
   Package,
   ShoppingCart,
   Users,
+  MessageCircle,
+  Home,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -43,6 +45,8 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/products", label: "Produk", icon: Package },
       { href: "/dashboard/orders", label: "Pesanan", icon: ShoppingCart },
+      { href: "/dashboard/chat", label: "Pesan", icon: MessageCircle, roles: [ROLE.MERCHANT] },
+      { href: "/dashboard/addresses", label: "Alamat", icon: Home },
     ],
   },
   {

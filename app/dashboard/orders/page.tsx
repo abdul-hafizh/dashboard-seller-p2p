@@ -20,6 +20,7 @@ interface OrderRow {
   TotalAmount: number | null;
   CreatedAt: string | null;
   Status: { Id: number; Name: string; ColorCode: string | null } | null;
+  Customer?: { User?: { FullName: string | null; Phone: string | null } | null } | null;
 }
 
 export default function OrdersPage() {
@@ -72,6 +73,7 @@ export default function OrdersPage() {
             <thead>
               <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
                 <th className="whitespace-nowrap px-4 py-3">No. Pesanan</th>
+                <th className="whitespace-nowrap px-4 py-3">Pelanggan</th>
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
                 <th className="whitespace-nowrap px-4 py-3">Total</th>
                 <th className="whitespace-nowrap px-4 py-3">Tanggal</th>
@@ -83,6 +85,9 @@ export default function OrdersPage() {
                 <tr key={order.Id} className="border-b border-border last:border-0 hover:bg-surface-muted/40">
                   <td className="whitespace-nowrap px-4 py-3 font-semibold text-ink">
                     {order.OrderNumber ?? order.Id.slice(0, 8)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-ink">
+                    {order.Customer?.User?.FullName ?? "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
