@@ -20,6 +20,14 @@ export interface FieldConfig {
   optionsEndpoint?: string;
   optionValueKey?: string;
   optionLabelKey?: string;
+  /** Name of another field in this same form whose value scopes this
+   * select's options (e.g. ProvinceId depends on CountryId). The query
+   * param sent to optionsEndpoint is the parent field name with its first
+   * letter lowercased (CountryId -> countryId), matching every cascading
+   * region endpoint's existing `?countryId=`/`?provinceId=` filter. The
+   * select is disabled and empty until the parent has a value, and clears
+   * itself whenever the parent's value actually changes. */
+  dependsOn?: string;
   /** Overrides optionLabelKey when a single field isn't enough (e.g. combining Brand + Model). */
   optionLabel?: (row: Record<string, unknown>) => string;
   defaultValue?: string | number | boolean;

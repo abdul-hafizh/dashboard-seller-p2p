@@ -73,6 +73,8 @@ export function ResourceForm({ fields, initialValues, submitLabel, onSubmit, onC
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -86,7 +88,7 @@ export function ResourceForm({ fields, initialValues, submitLabel, onSubmit, onC
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
       {fields.map((field) => (
-        <FormField key={field.name} field={field} register={register} errors={errors} />
+        <FormField key={field.name} field={field} register={register} errors={errors} watch={watch} setValue={setValue} />
       ))}
 
       <div className="mt-2 flex justify-end gap-2">

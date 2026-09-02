@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import useSWR from "swr";
-import type { UseFormRegister, FieldErrors } from "react-hook-form";
+import type { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from "react-hook-form";
 import { apiFetch } from "@/lib/api-client";
 import type { FieldConfig, SelectOption } from "@/lib/resources/types";
 import { Input } from "@/components/ui/Input";
@@ -16,12 +17,30 @@ interface FieldProps {
   field: FieldConfig;
   register: UseFormRegister<FormValues>;
   errors: FieldErrors<FormValues>;
+  watch: UseFormWatch<FormValues>;
+  setValue: UseFormSetValue<FormValues>;
 }
 
-function useDynamicOptions(field: FieldConfig): SelectOption[] {
-  const shouldFetch = field.type === "select" && Boolean(field.optionsEndpoint);
-  const { data } = useSWR(shouldFetch ? ["field-options", field.optionsEndpoint] : null, () =>
-    apiFetch<Record<string, unknown>[]>(field.optionsEndpoint as string, { query: { limit: 500 } }),
+/** CountryId -> countryId — matches every cascading region endpoint's own
+ * `?countryId=`/`?provinceId=` query param naming. */
+function dependsOnQueryKey(parentFieldName: string): string {
+  return parentFieldName.charAt(0).toLowerCase() + parentFieldName.slice(1);
+}
+
+function useDynamicOptions(field: FieldConfig, parentValue: unknown): SelectOption[] {
+  const hasParentValue = Boolean(parentValue);
+  const shouldFetch =
+    field.type === "select" && Boolean(field.optionsEndpoint) && (!field.dependsOn || hasParentValue);
+
+  const { data } = useSWR(
+    shouldFetch ? ["field-options", field.optionsEndpoint, field.dependsOn ? parentValue : null] : null,
+    () =>
+      apiFetch<Record<string, unknown>[]>(field.optionsEndpoint as string, {
+        query: {
+          limit: 500,
+          ...(field.dependsOn && hasParentValue ? { [dependsOnQueryKey(field.dependsOn)]: parentValue } : {}),
+        },
+      }),
   );
 
   if (field.options) return field.options;
@@ -36,15 +55,35 @@ function useDynamicOptions(field: FieldConfig): SelectOption[] {
   }));
 }
 
-function SelectField({ field, register, errors }: FieldProps) {
-  const options = useDynamicOptions(field);
+function SelectField({ field, register, errors, watch, setValue }: FieldProps) {
+  const parentValue = field.dependsOn ? watch(field.dependsOn) : undefined;
+  const options = useDynamicOptions(field, parentValue);
   const error = errors[field.name]?.message as string | undefined;
+  const locked = Boolean(field.dependsOn) && !parentValue;
+
+  // Only clear this field when the parent's value actually changes after
+  // mount — not on the initial render, which would otherwise wipe out an
+  // already-consistent CountryId/ProvinceId/CityId trio loaded for editing.
+  const mountedRef = useRef(false);
+  const prevParentRef = useRef(parentValue);
+  useEffect(() => {
+    if (!field.dependsOn) return;
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      prevParentRef.current = parentValue;
+      return;
+    }
+    if (parentValue !== prevParentRef.current) {
+      prevParentRef.current = parentValue;
+      setValue(field.name, "");
+    }
+  }, [field.dependsOn, field.name, parentValue, setValue]);
 
   return (
     <div>
       <FieldLabel required={field.required}>{field.label}</FieldLabel>
-      <Select invalid={Boolean(error)} {...register(field.name)}>
-        <option value="">{field.placeholder ?? "Pilih..."}</option>
+      <Select invalid={Boolean(error)} disabled={locked} {...register(field.name)}>
+        <option value="">{locked ? "Pilih dahulu di atas..." : (field.placeholder ?? "Pilih...")}</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}

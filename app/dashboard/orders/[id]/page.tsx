@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, History, FileText, Box, Download, ImageOff, Clock, User, MapPin } from "lucide-react";
+import { ArrowLeft, Package, History, FileText, Box, Download, ImageOff, Clock, User, MapPin, Tag } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Model3DViewer } from "@/components/Model3DViewer";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
@@ -81,6 +82,11 @@ interface ShippingAddress {
   Province?: AddressRegion | null;
 }
 
+interface PaymentSummary {
+  Id: string;
+  Status: string | null;
+}
+
 interface OrderDetail {
   Id: string;
   OrderNumber: string | null;
@@ -96,6 +102,7 @@ interface OrderDetail {
   StatusHistories?: StatusHistoryEntry[];
   Customer?: OrderCustomer | null;
   ShippingAddress?: ShippingAddress | null;
+  Payments?: PaymentSummary[];
 }
 
 export default function OrderDetailPage() {
@@ -113,6 +120,15 @@ export default function OrderDetailPage() {
   const [nextStatusId, setNextStatusId] = useState<string>("");
   const [updating, setUpdating] = useState(false);
   const [expiredPreviews, setExpiredPreviews] = useState<Set<string>>(new Set());
+  const [priceInput, setPriceInput] = useState<string>("");
+  const [updatingPrice, setUpdatingPrice] = useState(false);
+
+  // Keep the price field synced with the fetched order — re-runs after
+  // mutate() too, so a successful save shows the newly-saved value back.
+  useEffect(() => {
+    const amount = data?.data.TotalAmount;
+    setPriceInput(amount != null && amount > 0 ? String(amount) : "");
+  }, [data?.data.TotalAmount]);
 
   if (isLoading || !data) return <FullPageSpinner />;
 
@@ -120,6 +136,11 @@ export default function OrderDetailPage() {
   const statuses = statusesData?.data ?? [];
   const statusName = (id: number | null) => statuses.find((s) => s.Id === id)?.Name ?? `#${id}`;
   const models = (order.Items ?? []).map((item) => item.AIModel).filter((m): m is AIModel => Boolean(m));
+  // Once a payment is PAID, the customer already paid this exact amount —
+  // changing it afterwards would no longer match what was actually charged
+  // (see api-meshy's PaymentController.createSnapToken, which locks the
+  // amount in at snap-token creation), so price editing is locked from here on.
+  const isPaid = (order.Payments ?? []).some((p) => p.Status === "PAID");
 
   const updateStatus = async () => {
     if (!nextStatusId) return;
@@ -133,6 +154,24 @@ export default function OrderDetailPage() {
       toast.error(error instanceof ApiError ? error.message : "Gagal memperbarui status.");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const updatePrice = async () => {
+    const amount = Number(priceInput);
+    if (!priceInput || Number.isNaN(amount) || amount <= 0) {
+      toast.error("Masukkan harga yang valid (lebih dari 0).");
+      return;
+    }
+    setUpdatingPrice(true);
+    try {
+      await apiFetch(`orders/${orderId}`, { method: "PUT", json: { TotalAmount: amount } });
+      toast.success("Harga pesanan berhasil disimpan");
+      mutate();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Gagal menyimpan harga.");
+    } finally {
+      setUpdatingPrice(false);
     }
   };
 
@@ -357,6 +396,42 @@ export default function OrderDetailPage() {
                   <p className="text-ink-faint">Alamat belum diisi.</p>
                 )}
               </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="size-4" /> Atur Harga
+              </CardTitle>
+            </CardHeader>
+            <CardBody className="flex flex-col gap-3">
+              {isPaid ? (
+                <>
+                  <p className="text-sm font-bold text-ink">{formatCurrency(order.TotalAmount)}</p>
+                  <p className="text-xs text-ink-soft">
+                    Pesanan ini sudah dibayar pelanggan sesuai harga di atas — harga tidak dapat diubah lagi.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-ink-soft">
+                    {(order.TotalAmount ?? 0) <= 0
+                      ? "Pelanggan menunggu harga ini sebelum bisa melanjutkan ke pembayaran & pengiriman."
+                      : "Pelanggan sudah bisa melihat harga ini dan melanjutkan ke pembayaran."}
+                  </p>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Contoh: 150000"
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                  />
+                  <Button onClick={updatePrice} loading={updatingPrice} disabled={!priceInput}>
+                    {(order.TotalAmount ?? 0) <= 0 ? "Kirim Harga" : "Simpan Perubahan"}
+                  </Button>
+                </>
+              )}
             </CardBody>
           </Card>
 
