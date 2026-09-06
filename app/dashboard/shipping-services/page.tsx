@@ -3,11 +3,11 @@
 import { ShieldAlert } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ResourceTable } from "@/components/crud/ResourceTable";
-import { printProfilesConfig } from "@/lib/resources/print-profiles.config";
+import { shippingServicesConfig } from "@/lib/resources/shipping-services.config";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 
-export default function PrintProfilesPage() {
+export default function ShippingServicesPage() {
   const { isAdmin, loading } = useAuth();
 
   if (loading) return <FullPageSpinner />;
@@ -22,5 +22,5 @@ export default function PrintProfilesPage() {
     );
   }
 
-  return <ResourceTable config={printProfilesConfig} />;
+  return <ResourceTable config={shippingServicesConfig} />;
 }

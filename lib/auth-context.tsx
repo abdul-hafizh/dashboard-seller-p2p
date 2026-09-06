@@ -22,6 +22,8 @@ export interface CurrentUser {
   RoleId: number;
   Role: CurrentUserRole | null;
   IsActive: boolean;
+  TelegramChatId: string | null;
+  BranchId: string | null;
 }
 
 interface AuthContextValue {

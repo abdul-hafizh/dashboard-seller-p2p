@@ -24,7 +24,7 @@ export class ApiError extends Error {
 export type QueryValue = string | number | boolean | undefined | null;
 
 interface ApiFetchOptions {
-  method?: "GET" | "POST" | "PUT" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   json?: unknown;
   formData?: FormData;
   query?: Record<string, QueryValue>;

@@ -22,6 +22,7 @@ export const materialsConfig: ResourceConfig = {
     { name: "Name", label: "Nama Material", type: "text", required: true, placeholder: "PLA" },
     { name: "Density", label: "Densitas (g/cm³)", type: "number", placeholder: "1.24" },
     { name: "PricePerGram", label: "Harga per Gram (Rp)", type: "number", placeholder: "500" },
+    { name: "Description", label: "Deskripsi", type: "textarea", placeholder: "Catatan tambahan tentang material ini" },
     { name: "Status", label: "Aktif", type: "boolean", defaultValue: true },
   ],
 };

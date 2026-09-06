@@ -22,6 +22,14 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
         },
       },
       { key: "Price", label: "Harga", render: (r) => formatCurrency(r.Price) },
+      {
+        key: "Stock",
+        label: "Stok",
+        render: (r) => {
+          const stock = Number(r.Stock ?? 0);
+          return <Badge tone={stock > 0 ? "success" : "neutral"}>{stock > 0 ? stock : "Habis"}</Badge>;
+        },
+      },
       ...(isAdmin
         ? [
             {
@@ -53,6 +61,7 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
       },
       { name: "Description", label: "Deskripsi", type: "textarea" },
       { name: "Price", label: "Harga (Rp)", type: "number", placeholder: "150000" },
+      { name: "Stock", label: "Stok", type: "number", placeholder: "10", defaultValue: 0 },
       ...(isAdmin
         ? [
             {
