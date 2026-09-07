@@ -11,6 +11,11 @@ export const printersConfig: ResourceConfig = {
   columns: [
     { key: "Name", label: "Nama" },
     { key: "SerialNumber", label: "No. Seri", render: (r) => (r.SerialNumber ? String(r.SerialNumber) : "-") },
+    {
+      key: "PrintSpeedGramsPerMinute",
+      label: "Kecepatan",
+      render: (r) => `${r.PrintSpeedGramsPerMinute ?? 1} g/menit`,
+    },
     { key: "CurrentStatus", label: "Status", render: (r) => <Badge tone="info">{String(r.CurrentStatus ?? "-")}</Badge> },
     {
       key: "IsEnabled",
@@ -21,14 +26,6 @@ export const printersConfig: ResourceConfig = {
   fields: [
     { name: "Name", label: "Nama Printer", type: "text", required: true, placeholder: "Printer #1" },
     {
-      name: "BranchId",
-      label: "Cabang",
-      type: "select",
-      required: true,
-      optionsEndpoint: "branches",
-      optionLabelKey: "Name",
-    },
-    {
       name: "PrinterTypeId",
       label: "Tipe Printer",
       type: "select",
@@ -36,8 +33,13 @@ export const printersConfig: ResourceConfig = {
       optionLabel: (row) => `${row.Brand ?? ""} ${row.Model ?? ""}`.trim() || "Tanpa nama",
     },
     { name: "SerialNumber", label: "No. Seri", type: "text" },
-    { name: "FirmwareVersion", label: "Versi Firmware", type: "text" },
-    { name: "IpAddress", label: "Alamat IP", type: "text", placeholder: "192.168.1.10" },
+    {
+      name: "PrintSpeedGramsPerMinute",
+      label: "Kecepatan Cetak (gram/menit)",
+      type: "number",
+      placeholder: "60",
+      helpText: "Dipakai untuk menghitung estimasi waktu selesai di Antrian Cetak.",
+    },
     {
       name: "CurrentStatus",
       label: "Status Saat Ini",

@@ -20,7 +20,7 @@ interface OrderRow {
   TotalAmount: number | null;
   CreatedAt: string | null;
   Status: { Id: number; Name: string; ColorCode: string | null } | null;
-  Customer?: { User?: { FullName: string | null; Phone: string | null } | null } | null;
+  Customer?: { User?: { FullName: string | null; Phone: string | null; UserLevel?: string | null } | null } | null;
 }
 
 export default function OrdersPage() {
@@ -87,7 +87,12 @@ export default function OrdersPage() {
                     {order.OrderNumber ?? order.Id.slice(0, 8)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink">
-                    {order.Customer?.User?.FullName ?? "-"}
+                    <div className="flex items-center gap-2">
+                      <span>{order.Customer?.User?.FullName ?? "-"}</span>
+                      {order.Customer?.User?.UserLevel && (
+                        <Badge tone="brand">{order.Customer.User.UserLevel}</Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>

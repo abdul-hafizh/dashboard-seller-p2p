@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { API_BASE_URL } from "@/lib/api-config";
+import { getApiBaseUrl } from "@/lib/api-config";
 import { ROLE } from "@/lib/constants";
 
 /** Only merchants may self-register from this dashboard — RoleId is forced
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: "Permintaan tidak valid." }, { status: 400 });
   }
 
-  const upstream = await fetch(`${API_BASE_URL}/api/auth/register`, {
+  const upstream = await fetch(`${await getApiBaseUrl()}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...body, RoleId: ROLE.MERCHANT }),

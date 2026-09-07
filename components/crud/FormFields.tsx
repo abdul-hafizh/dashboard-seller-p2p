@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
+import { toast } from "sonner";
+import { ImagePlus, Loader2, X } from "lucide-react";
 import type { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from "react-hook-form";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, ApiError } from "@/lib/api-client";
 import type { FieldConfig, SelectOption } from "@/lib/resources/types";
+import { toPublicAssetUrl } from "@/lib/resources/format";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { Button } from "@/components/ui/Button";
 import { FieldLabel, FieldError } from "@/components/ui/FieldLabel";
 
 type FormValues = Record<string, unknown>;
@@ -96,12 +100,91 @@ function SelectField({ field, register, errors, watch, setValue }: FieldProps) {
   );
 }
 
+interface UploadedImageResponse {
+  FilePath: string;
+}
+
+function ImageField({ field, watch, setValue, errors }: FieldProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const value = watch(field.name) as string | undefined;
+  const previewUrl = toPublicAssetUrl(value);
+  const error = errors[field.name]?.message as string | undefined;
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await apiFetch<UploadedImageResponse>("uploaded-images", { method: "POST", formData });
+      setValue(field.name, res.data.FilePath, { shouldValidate: true, shouldDirty: true });
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Gagal mengunggah gambar.");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div>
+      <FieldLabel required={field.required}>{field.label}</FieldLabel>
+      <div className="flex items-center gap-3">
+        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-muted">
+          {uploading ? (
+            <Loader2 className="size-5 animate-spin text-ink-faint" />
+          ) : previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- externally-hosted upload, not worth Next/Image's remote-pattern config
+            <img src={previewUrl} alt={field.label} className="size-full object-cover" />
+          ) : (
+            <ImagePlus className="size-5 text-ink-faint" />
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            loading={uploading}
+            onClick={() => inputRef.current?.click()}
+          >
+            {value ? "Ganti Gambar" : "Unggah Gambar"}
+          </Button>
+          {value && !uploading && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-ink-faint hover:text-error"
+              onClick={() => setValue(field.name, "", { shouldValidate: true, shouldDirty: true })}
+            >
+              <X className="size-3.5" /> Hapus gambar
+            </button>
+          )}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/jpg"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+      </div>
+      <FieldError message={error} />
+      {field.helpText && !error && <p className="mt-1 text-xs text-ink-faint">{field.helpText}</p>}
+    </div>
+  );
+}
+
 export function FormField(props: FieldProps) {
   const { field, register, errors } = props;
   const error = errors[field.name]?.message as string | undefined;
 
   if (field.type === "select") {
     return <SelectField {...props} />;
+  }
+
+  if (field.type === "image") {
+    return <ImageField {...props} />;
   }
 
   if (field.type === "boolean") {

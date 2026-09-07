@@ -59,6 +59,8 @@ interface CustomerUser {
   Email: string | null;
   Phone: string | null;
   WhatsappNumber: string | null;
+  UserLevel?: string | null;
+  TotalSpent?: number | null;
 }
 
 interface OrderCustomer {
@@ -365,13 +367,21 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardBody className="flex flex-col gap-3 text-sm">
               <div>
-                <p className="font-bold text-ink">
-                  {order.Customer?.User?.FullName ?? order.Customer?.CompanyName ?? "-"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-ink">
+                    {order.Customer?.User?.FullName ?? order.Customer?.CompanyName ?? "-"}
+                  </p>
+                  {order.Customer?.User?.UserLevel && <Badge tone="brand">{order.Customer.User.UserLevel}</Badge>}
+                </div>
                 {order.Customer?.User?.Email && <p className="text-xs text-ink-soft">{order.Customer.User.Email}</p>}
                 {(order.Customer?.User?.Phone || order.Customer?.User?.WhatsappNumber) && (
                   <p className="text-xs text-ink-soft">
                     {order.Customer?.User?.Phone ?? order.Customer?.User?.WhatsappNumber}
+                  </p>
+                )}
+                {order.Customer?.User?.TotalSpent != null && (
+                  <p className="mt-1 text-xs text-ink-soft">
+                    Total belanja: <span className="font-semibold text-ink">{formatCurrency(order.Customer.User.TotalSpent)}</span>
                   </p>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { API_BASE_URL } from "@/lib/api-config";
+import { getApiBaseUrl } from "@/lib/api-config";
 import { respondWithSession } from "@/lib/auth-response";
 
 /** Shared by both the login and register pages — Google doesn't distinguish
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: "Token Google tidak ditemukan." }, { status: 400 });
   }
 
-  const upstream = await fetch(`${API_BASE_URL}/api/auth/google`, {
+  const upstream = await fetch(`${await getApiBaseUrl()}/api/auth/google`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

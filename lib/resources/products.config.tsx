@@ -1,6 +1,7 @@
 import type { ResourceConfig } from "./types";
-import { formatCurrency } from "./format";
+import { formatCurrency, toPublicAssetUrl } from "./format";
 import { Badge } from "@/components/ui/Badge";
+import { ImageOff } from "lucide-react";
 
 /** SellerId is only editable by admins — merchants always create products under themselves
  * (the backend defaults SellerId to the authenticated user when it's omitted). */
@@ -12,6 +13,23 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
     description: isAdmin ? "Seluruh produk dari semua merchant." : "Produk yang kamu jual di marketplace.",
     searchPlaceholder: "Cari produk...",
     columns: [
+      {
+        key: "ThumbnailPath",
+        label: "Gambar",
+        render: (r) => {
+          const url = toPublicAssetUrl(r.ThumbnailPath);
+          return (
+            <div className="flex size-10 items-center justify-center overflow-hidden rounded-lg bg-surface-muted">
+              {url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- externally-hosted upload, not worth Next/Image's remote-pattern config
+                <img src={url} alt="" className="size-full object-cover" />
+              ) : (
+                <ImageOff className="size-4 text-ink-faint" />
+              )}
+            </div>
+          );
+        },
+      },
       { key: "ProductName", label: "Nama Produk" },
       {
         key: "Category",
@@ -52,6 +70,7 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
     ],
     fields: [
       { name: "ProductName", label: "Nama Produk", type: "text", required: true, placeholder: "Miniatur Karakter" },
+      { name: "ThumbnailPath", label: "Gambar Produk", type: "image" },
       {
         name: "CategoryId",
         label: "Kategori",

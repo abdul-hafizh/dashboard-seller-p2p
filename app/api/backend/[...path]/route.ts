@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { API_BASE_URL } from "@/lib/api-config";
+import { getApiBaseUrl } from "@/lib/api-config";
 import { getSessionToken, clearSessionCookie } from "@/lib/session";
 
 /** Generic authenticated proxy: every resource (materials, products, orders, ...)
@@ -14,7 +14,7 @@ async function proxy(request: NextRequest, path: string[]) {
     );
   }
 
-  const targetUrl = new URL(`${API_BASE_URL}/api/${path.join("/")}`);
+  const targetUrl = new URL(`${await getApiBaseUrl()}/api/${path.join("/")}`);
   targetUrl.search = request.nextUrl.search;
 
   const headers: Record<string, string> = {

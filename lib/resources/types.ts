@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type FieldType = "text" | "password" | "number" | "textarea" | "boolean" | "select" | "time";
+export type FieldType = "text" | "password" | "number" | "textarea" | "boolean" | "select" | "time" | "image";
 
 export interface SelectOption {
   value: string | number;

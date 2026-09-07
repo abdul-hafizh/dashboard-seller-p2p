@@ -1,3 +1,13 @@
+/** Backend-served static files (e.g. an uploaded product image's `/uploads/xxx.jpg`
+ * ThumbnailPath) live outside `/api`, so they can't go through the `/api/backend/*`
+ * proxy — render them directly against the public API origin instead. */
+export function toPublicAssetUrl(path: unknown): string | null {
+  if (!path || typeof path !== "string") return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const origin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "";
+  return `${origin}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 export function formatCurrency(value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
   const num = Number(value);
