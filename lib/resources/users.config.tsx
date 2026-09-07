@@ -1,5 +1,6 @@
 import type { ResourceConfig } from "./types";
 import { Badge } from "@/components/ui/Badge";
+import { formatCurrency } from "./format";
 import { ROLE } from "@/lib/constants";
 
 export const usersConfig: ResourceConfig = {
@@ -18,6 +19,16 @@ export const usersConfig: ResourceConfig = {
         const role = r.Role as { Name?: string } | null | undefined;
         return <Badge tone="brand">{role?.Name ?? "-"}</Badge>;
       },
+    },
+    {
+      key: "UserLevel",
+      label: "Tier",
+      render: (r) => <Badge tone="brand">{(r.UserLevel as string) || "BRONZE"}</Badge>,
+    },
+    {
+      key: "TotalSpent",
+      label: "Total Belanja",
+      render: (r) => formatCurrency(r.TotalSpent ?? 0),
     },
     {
       key: "IsActive",

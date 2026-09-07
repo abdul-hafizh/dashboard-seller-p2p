@@ -12,6 +12,15 @@ export interface CurrentUserRole {
   Permissions?: { Id: number; Code: string; Name: string }[];
 }
 
+export interface TierDetails {
+  level: string;
+  discountPercent: number;
+  nextTier: string | null;
+  nextThreshold: number | null;
+  remainingForNextTier: number;
+  progressPercent: number;
+}
+
 export interface CurrentUser {
   Id: string;
   FullName: string;
@@ -24,6 +33,10 @@ export interface CurrentUser {
   IsActive: boolean;
   TelegramChatId: string | null;
   BranchId: string | null;
+  UserLevel: string;
+  TotalSpent: number;
+  DiscountPercent: number;
+  TierDetails: TierDetails | null;
 }
 
 interface AuthContextValue {

@@ -21,6 +21,7 @@ import {
   ListOrdered,
   Palette,
   UserCog,
+  Settings2,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -92,6 +93,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Administrasi",
     items: [
       { href: "/dashboard/users", label: "Pengguna", icon: Users, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/system-settings", label: "Pengaturan Sistem", icon: Settings2, roles: [ROLE.SUPER_ADMIN] },
     ],
   },
 ];

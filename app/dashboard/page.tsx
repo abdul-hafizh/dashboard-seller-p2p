@@ -1,10 +1,69 @@
 "use client";
 
-import { Package, ShoppingCart, Layers, Printer, Building2, Building } from "lucide-react";
+import { Package, ShoppingCart, Layers, Printer, Building2, Building, Award } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useResourceCount } from "@/lib/hooks/useResourceCount";
 import { Card, CardBody } from "@/components/ui/Card";
+import { formatCurrency } from "@/lib/resources/format";
+
+const TIER_COLORS: Record<string, string> = {
+  BRONZE: "#C77B4A",
+  SILVER: "#9AA3AF",
+  GOLD: "#E0AA23",
+  PLATINUM: "#4FA8E0",
+  SOLITAIRE: "#9B2FCE",
+};
+
+function AccountTierCard() {
+  const { user } = useAuth();
+  if (!user) return null;
+
+  const level = user.UserLevel || "BRONZE";
+  const color = TIER_COLORS[level] ?? TIER_COLORS.BRONZE;
+  const tier = user.TierDetails;
+
+  return (
+    <Card>
+      <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div
+            className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
+            style={{ backgroundColor: `${color}1f` }}
+          >
+            <Award className="size-5" style={{ color }} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-ink-soft">Tier Akun Saya</p>
+            <p className="mt-0.5 text-lg font-extrabold text-ink">
+              {level} <span className="font-semibold text-ink-soft">· Diskon {user.DiscountPercent ?? 0}%</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1 sm:min-w-64 sm:items-end">
+          <p className="text-xs text-ink-soft">
+            Total transaksi: <span className="font-semibold text-ink">{formatCurrency(user.TotalSpent ?? 0)}</span>
+          </p>
+          {tier?.nextTier ? (
+            <>
+              <div className="h-1.5 w-full max-w-64 overflow-hidden rounded-full bg-surface-muted">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${Math.min(100, Math.max(0, tier.progressPercent))}%`, backgroundColor: color }}
+                />
+              </div>
+              <p className="text-[11px] text-ink-soft">
+                {formatCurrency(tier.remainingForNextTier)} lagi menuju {tier.nextTier}
+              </p>
+            </>
+          ) : (
+            <p className="text-[11px] font-semibold text-ink-soft">Tier tertinggi tercapai 🎉</p>
+          )}
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
 
 interface StatDef {
   label: string;
@@ -53,6 +112,8 @@ export default function DashboardHomePage() {
             : "Ringkasan produk dan pesanan yang perlu kamu pantau."}
         </p>
       </div>
+
+      <AccountTierCard />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {STATS.map((stat) => (
