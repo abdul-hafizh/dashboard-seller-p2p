@@ -21,6 +21,7 @@ interface OrderRow {
   CreatedAt: string | null;
   Status: { Id: number; Name: string; ColorCode: string | null } | null;
   Customer?: { User?: { FullName: string | null; Phone: string | null; UserLevel?: string | null } | null } | null;
+  Shipments?: { CourierCompany: string | null; CourierServiceName: string | null }[] | null;
 }
 
 export default function OrdersPage() {
@@ -75,6 +76,7 @@ export default function OrdersPage() {
                 <th className="whitespace-nowrap px-4 py-3">No. Pesanan</th>
                 <th className="whitespace-nowrap px-4 py-3">Pelanggan</th>
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
+                <th className="whitespace-nowrap px-4 py-3">Kurir</th>
                 <th className="whitespace-nowrap px-4 py-3">Total</th>
                 <th className="whitespace-nowrap px-4 py-3">Tanggal</th>
                 <th className="px-4 py-3 text-right">Detail</th>
@@ -96,6 +98,11 @@ export default function OrdersPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-ink-soft">
+                    {order.Shipments?.[0]?.CourierCompany
+                      ? `${order.Shipments[0].CourierCompany}${order.Shipments[0].CourierServiceName ? ` · ${order.Shipments[0].CourierServiceName}` : ""}`
+                      : "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink">{formatCurrency(order.TotalAmount)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-soft">{formatDate(order.CreatedAt)}</td>

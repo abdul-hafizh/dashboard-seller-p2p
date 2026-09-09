@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, History, FileText, Box, Download, ImageOff, Clock, User, MapPin, Tag } from "lucide-react";
+import { ArrowLeft, Package, History, FileText, Box, Download, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Model3DViewer } from "@/components/Model3DViewer";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -89,6 +89,46 @@ interface PaymentSummary {
   Status: string | null;
 }
 
+interface ShipmentMethodInfo {
+  Id: number;
+  Name: string | null;
+  Provider: string | null;
+  ShippingType: string | null;
+}
+
+interface ShipmentServiceInfo {
+  Id: number;
+  ServiceName: string | null;
+  ServiceCategory: string | null;
+  EstimatedDelivery: string | null;
+}
+
+interface ShipmentInfo {
+  Id: string;
+  CourierCompany: string | null;
+  CourierType: string | null;
+  CourierServiceName: string | null;
+  ShippingCost: number | null;
+  PackageWeight: number | null;
+  Status: string | null;
+  TrackingNumber: string | null;
+  ShippingMethod?: ShipmentMethodInfo | null;
+  ShippingService?: ShipmentServiceInfo | null;
+}
+
+interface TrackingHistoryEntry {
+  status?: string | null;
+  note?: string | null;
+  updated_at?: string | null;
+  service_type?: string | null;
+}
+
+interface TrackingResult {
+  status: string;
+  biteshipStatus: string;
+  history: TrackingHistoryEntry[];
+}
+
 interface OrderDetail {
   Id: string;
   OrderNumber: string | null;
@@ -105,6 +145,26 @@ interface OrderDetail {
   Customer?: OrderCustomer | null;
   ShippingAddress?: ShippingAddress | null;
   Payments?: PaymentSummary[];
+  Shipments?: ShipmentInfo[];
+}
+
+/** Mirrors flutter_meshy1's shippingCategoryLabel() so the merchant and
+ * customer see the same category name for a shipment. */
+function shippingCategoryLabel(shippingType: string | null | undefined): string {
+  switch ((shippingType ?? "").toUpperCase()) {
+    case "INSTANT_SHIPMENT":
+      return "Instan";
+    case "REGULAR_SHIPMENT":
+      return "Reguler";
+    case "REGULAR_CARGO_SHIPMENT":
+      return "Kargo";
+    case "INTERNATIONAL_CARGO_SHIPMENT":
+      return "Internasional";
+    case "INTERNAL_SHIPMENT":
+      return "Internal";
+    default:
+      return "Lainnya";
+  }
 }
 
 export default function OrderDetailPage() {
@@ -124,6 +184,8 @@ export default function OrderDetailPage() {
   const [expiredPreviews, setExpiredPreviews] = useState<Set<string>>(new Set());
   const [priceInput, setPriceInput] = useState<string>("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
+  const [tracking, setTracking] = useState<Record<string, TrackingResult>>({});
+  const [trackingLoading, setTrackingLoading] = useState<Record<string, boolean>>({});
 
   // Keep the price field synced with the fetched order — re-runs after
   // mutate() too, so a successful save shows the newly-saved value back.
@@ -174,6 +236,22 @@ export default function OrderDetailPage() {
       toast.error(error instanceof ApiError ? error.message : "Gagal menyimpan harga.");
     } finally {
       setUpdatingPrice(false);
+    }
+  };
+
+  // Backend's GET /shipments/:id/track already scopes access to the
+  // requester (merchant → only their own orders, admin → any order), so no
+  // role check is needed here — this button behaves correctly for both.
+  const trackShipment = async (shipmentId: string) => {
+    setTrackingLoading((prev) => ({ ...prev, [shipmentId]: true }));
+    try {
+      const res = await apiFetch<TrackingResult>(`shipments/${shipmentId}/track`);
+      setTracking((prev) => ({ ...prev, [shipmentId]: res.data }));
+      mutate();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Gagal melacak pengiriman.");
+    } finally {
+      setTrackingLoading((prev) => ({ ...prev, [shipmentId]: false }));
     }
   };
 
@@ -406,6 +484,72 @@ export default function OrderDetailPage() {
                   <p className="text-ink-faint">Alamat belum diisi.</p>
                 )}
               </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="size-4" /> Pengiriman
+              </CardTitle>
+            </CardHeader>
+            <CardBody className="flex flex-col gap-2 text-sm">
+              {order.Shipments && order.Shipments.length > 0 ? (
+                order.Shipments.map((shipment) => (
+                  <div key={shipment.Id} className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-ink">
+                        {shipment.CourierCompany || shipment.ShippingMethod?.Name || "-"}
+                        {shipment.CourierServiceName ? ` · ${shipment.CourierServiceName}` : ""}
+                      </p>
+                      <Badge tone="brand">{shippingCategoryLabel(shipment.ShippingMethod?.ShippingType)}</Badge>
+                    </div>
+                    <p className="text-xs text-ink-soft">
+                      Ongkir: <span className="font-semibold text-ink">{formatCurrency(shipment.ShippingCost)}</span>
+                      {shipment.PackageWeight != null ? ` · ${shipment.PackageWeight} gram` : ""}
+                    </p>
+                    {shipment.TrackingNumber && (
+                      <p className="text-xs text-ink-soft">No. Resi: {shipment.TrackingNumber}</p>
+                    )}
+                    <Badge tone={shipment.Status === "DELIVERED" ? "success" : "info"} className="w-fit">
+                      {shipment.Status ?? "PENDING"}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-fit"
+                      onClick={() => trackShipment(shipment.Id)}
+                      loading={trackingLoading[shipment.Id]}
+                    >
+                      <RefreshCw className="size-3.5" /> Lacak Pengiriman
+                    </Button>
+                    {tracking[shipment.Id] && (
+                      <div className="mt-1 flex flex-col gap-2 border-t border-border pt-2">
+                        <p className="text-xs font-semibold text-ink-soft">
+                          Status Biteship: <span className="text-ink">{tracking[shipment.Id].biteshipStatus}</span>
+                        </p>
+                        {tracking[shipment.Id].history.length > 0 ? (
+                          <ol className="flex flex-col gap-2">
+                            {tracking[shipment.Id].history.map((h, idx) => (
+                              <li key={idx} className="flex gap-2 text-xs">
+                                <div className="mt-1 size-1.5 shrink-0 rounded-full bg-brand-purple" />
+                                <div>
+                                  <p className="font-semibold text-ink">{h.note || h.status || "-"}</p>
+                                  {h.updated_at && <p className="text-ink-faint">{formatDateTime(h.updated_at)}</p>}
+                                </div>
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="text-xs text-ink-faint">Belum ada riwayat perjalanan dari kurir.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-ink-faint">Pelanggan belum memilih jasa kirim.</p>
+              )}
             </CardBody>
           </Card>
 
