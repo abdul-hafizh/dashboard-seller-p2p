@@ -22,6 +22,8 @@ import {
   Palette,
   UserCog,
   Settings2,
+  Sparkles,
+  FilePlus2,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -49,6 +51,18 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/products", label: "Produk", icon: Package },
       { href: "/dashboard/orders", label: "Pesanan", icon: ShoppingCart },
+      {
+        href: "/dashboard/ai-model-orders",
+        label: "Pesanan dari AI Model",
+        icon: Sparkles,
+        roles: [ROLE.MERCHANT],
+      },
+      {
+        href: "/dashboard/custom-orders",
+        label: "Pesanan Custom",
+        icon: FilePlus2,
+        roles: [ROLE.MERCHANT],
+      },
       { href: "/dashboard/chat", label: "Pesan", icon: MessageCircle, roles: [ROLE.MERCHANT] },
       { href: "/dashboard/print-queue", label: "Antrian Cetak", icon: ListOrdered, roles: [ROLE.MERCHANT] },
       { href: "/dashboard/canva", label: "Canva", icon: Palette, roles: [ROLE.MERCHANT] },
