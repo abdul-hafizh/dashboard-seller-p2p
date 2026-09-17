@@ -6,6 +6,7 @@ import {
   Channel,
   ChannelHeader,
   ChannelList,
+  ComponentProvider,
   MessageComposer,
   MessageList,
   Thread,
@@ -15,6 +16,8 @@ import {
 import { useChatToken, type ChatTokenData } from "@/lib/hooks/use-stream-chat";
 import { useAuth } from "@/lib/auth-context";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { CustomAttachment } from "@/components/chat/CustomAttachment";
+import { ShareActions } from "@/components/chat/ShareActions";
 
 // Only mounted once `tokenData` is available, so `useCreateChatClient` (which
 // must run unconditionally, like any hook) always gets real values — it
@@ -41,12 +44,14 @@ function ChatWindow({ tokenData, userId }: { tokenData: ChatTokenData; userId: s
           </div>
           <div className="flex min-w-0 flex-1">
             <Channel>
-              <Window>
-                <ChannelHeader />
-                <MessageList />
-                <MessageComposer />
-              </Window>
-              <Thread />
+              <ComponentProvider value={{ Attachment: CustomAttachment, AdditionalMessageComposerActions: ShareActions }}>
+                <Window>
+                  <ChannelHeader />
+                  <MessageList />
+                  <MessageComposer />
+                </Window>
+                <Thread />
+              </ComponentProvider>
             </Channel>
           </div>
         </div>

@@ -36,7 +36,7 @@ function TokenPricingCard() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await apiFetch<TokenPricing>("system/token-pricing");
+      const res = await apiFetch<TokenPricing>("system-settings/token-pricing");
       setPricing(res.data);
       setPricePerTokenDraft(String(res.data.pricePerToken));
       setPackagesDraft(res.data.allowedPackages.join(", "));
@@ -64,7 +64,7 @@ function TokenPricingCard() {
 
     setSaving(true);
     try {
-      await apiFetch("system/token-pricing", {
+      await apiFetch("system-settings/token-pricing", {
         method: "PUT",
         json: { pricePerToken: Number(pricePerTokenDraft), allowedPackages },
       });
