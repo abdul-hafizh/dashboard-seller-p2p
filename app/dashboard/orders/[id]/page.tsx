@@ -135,6 +135,7 @@ interface OrderDetail {
   CustomerId: string | null;
   StatusId: number | null;
   TotalAmount: number | null;
+  SubtotalAmount?: number | null;
   Notes: string | null;
   Rating: number | null;
   RatingNotes: string | null;
@@ -184,15 +185,18 @@ export default function OrderDetailPage() {
   const [expiredPreviews, setExpiredPreviews] = useState<Set<string>>(new Set());
   const [priceInput, setPriceInput] = useState<string>("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
+  const [shipping, setShipping] = useState(false);
   const [tracking, setTracking] = useState<Record<string, TrackingResult>>({});
   const [trackingLoading, setTrackingLoading] = useState<Record<string, boolean>>({});
 
   // Keep the price field synced with the fetched order — re-runs after
   // mutate() too, so a successful save shows the newly-saved value back.
   useEffect(() => {
-    const amount = data?.data.TotalAmount;
+    // The input is the item price (before PPN / app fee / discount); older
+    // orders without a stored subtotal fall back to the total.
+    const amount = data?.data.SubtotalAmount ?? data?.data.TotalAmount;
     setPriceInput(amount != null && amount > 0 ? String(amount) : "");
-  }, [data?.data.TotalAmount]);
+  }, [data?.data.SubtotalAmount, data?.data.TotalAmount]);
 
   if (isLoading || !data) return <FullPageSpinner />;
 
@@ -229,7 +233,7 @@ export default function OrderDetailPage() {
     }
     setUpdatingPrice(true);
     try {
-      await apiFetch(`orders/${orderId}`, { method: "PUT", json: { TotalAmount: amount } });
+      await apiFetch(`orders/${orderId}`, { method: "PUT", json: { SubtotalAmount: amount } });
       toast.success("Harga pesanan berhasil disimpan");
       mutate();
     } catch (error) {
@@ -242,6 +246,19 @@ export default function OrderDetailPage() {
   // Backend's GET /shipments/:id/track already scopes access to the
   // requester (merchant → only their own orders, admin → any order), so no
   // role check is needed here — this button behaves correctly for both.
+  const markShipped = async () => {
+    setShipping(true);
+    try {
+      await apiFetch(`orders/${orderId}/ship`, { method: "POST", json: {} });
+      toast.success("Pesanan ditandai sedang dikirim");
+      mutate();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Gagal menandai pesanan dikirim.");
+    } finally {
+      setShipping(false);
+    }
+  };
+
   const trackShipment = async (shipmentId: string) => {
     setTrackingLoading((prev) => ({ ...prev, [shipmentId]: true }));
     try {
@@ -514,6 +531,11 @@ export default function OrderDetailPage() {
                     <Badge tone={shipment.Status === "DELIVERED" ? "success" : "info"} className="w-fit">
                       {shipment.Status ?? "PENDING"}
                     </Badge>
+                    {isPaid && (shipment.Status ?? "PENDING") === "PENDING" && (
+                      <Button size="sm" className="w-fit" onClick={markShipped} loading={shipping}>
+                        Tandai Sudah Dikirim
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -581,6 +603,9 @@ export default function OrderDetailPage() {
                     value={priceInput}
                     onChange={(e) => setPriceInput(e.target.value)}
                   />
+                  <p className="text-xs text-ink-soft">
+                    Isi harga barang saja — PPN, biaya layanan aplikasi, dan diskon tier pelanggan ditambahkan otomatis.
+                  </p>
                   <Button onClick={updatePrice} loading={updatingPrice} disabled={!priceInput}>
                     {(order.TotalAmount ?? 0) <= 0 ? "Kirim Harga" : "Simpan Perubahan"}
                   </Button>

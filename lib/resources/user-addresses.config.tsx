@@ -71,6 +71,14 @@ export function buildUserAddressesConfig(isAdmin: boolean): ResourceConfig {
         dependsOn: "ProvinceId",
       },
       { name: "PostalCode", label: "Kode Pos", type: "text", placeholder: "12345" },
+      {
+        name: "Latitude",
+        label: "Latitude",
+        type: "number",
+        placeholder: "-6.2441",
+        helpText: "Wajib diisi (bersama Longitude) agar kurir instan seperti Gojek/Grab muncul di ongkir pembeli. Salin dari Google Maps.",
+      },
+      { name: "Longitude", label: "Longitude", type: "number", placeholder: "106.8003" },
       { name: "IsDefault", label: "Jadikan alamat utama", type: "boolean", defaultValue: false, intBoolean: true },
     ],
   };
