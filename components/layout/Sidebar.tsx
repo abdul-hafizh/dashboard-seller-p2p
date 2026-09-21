@@ -6,6 +6,7 @@ import { Box, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "@/lib/nav-config";
 import { useAuth } from "@/lib/auth-context";
+import { siteConfig } from "@/lib/site-config";
 
 interface SidebarProps {
   mobileOpen: boolean;
@@ -35,7 +36,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
               <Box className="size-5 text-white" strokeWidth={2.2} />
             </div>
             <div>
-              <p className="text-sm font-extrabold leading-tight text-ink">Snapy Seller</p>
+              <p className="text-sm font-extrabold leading-tight text-ink">{siteConfig.appName} Seller</p>
               <p className="text-[11px] font-medium leading-tight text-ink-faint">Dashboard</p>
             </div>
           </div>

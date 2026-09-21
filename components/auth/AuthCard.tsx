@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Box } from "lucide-react";
+import { Footer } from "@/components/layout/Footer";
 
 interface AuthCardProps {
   title: string;
@@ -11,7 +12,8 @@ interface AuthCardProps {
 
 export function AuthCard({ title, subtitle, error, children, footer }: AuthCardProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-10">
+    <div className="flex min-h-screen flex-col bg-bg">
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-xl shadow-ink/[0.04]">
         <div className="flex flex-col items-center text-center">
           <div className="brand-gradient flex size-16 items-center justify-center rounded-full shadow-lg shadow-brand-purple/25">
@@ -30,6 +32,8 @@ export function AuthCard({ title, subtitle, error, children, footer }: AuthCardP
         <div className="mt-6">{children}</div>
         <div className="mt-6 text-center text-sm text-ink-soft">{footer}</div>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
 import "./globals.css";
+import { siteConfig } from "@/lib/site-config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Snapy Seller Dashboard",
-  description: "Dashboard merchant & admin untuk Snapy AI 3D.",
+  title: `${siteConfig.appName} Seller Dashboard`,
+  description: `Dashboard merchant & admin ${siteConfig.appName}.`,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

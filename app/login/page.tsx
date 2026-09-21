@@ -13,6 +13,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { FieldLabel, FieldError } from "@/components/ui/FieldLabel";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { siteConfig } from "@/lib/site-config";
 
 const schema = z.object({
   Email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
@@ -65,7 +66,7 @@ export default function LoginPage() {
   return (
     <AuthCard
       title="Masuk ke Dashboard"
-      subtitle="Khusus untuk merchant & admin Snapy AI 3D"
+      subtitle={`Khusus untuk merchant & admin ${siteConfig.appName}`}
       error={serverError}
       footer={
         <>

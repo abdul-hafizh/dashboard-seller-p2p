@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { Footer } from "@/components/layout/Footer";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 
 function DashboardShell({ children }: { children: ReactNode }) {
@@ -28,6 +29,7 @@ function DashboardShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenMobileNav={() => setMobileNavOpen(true)} />
         <main className="flex-1 p-4 md:p-6">{children}</main>
+        <Footer />
       </div>
     </div>
   );

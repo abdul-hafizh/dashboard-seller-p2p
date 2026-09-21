@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { setSessionCookie } from "./session";
 import { DASHBOARD_ROLE_IDS } from "./constants";
+import { siteConfig } from "./site-config";
 
 interface UpstreamAuthPayload {
   success: boolean;
@@ -23,7 +24,7 @@ export async function respondWithSession(payload: UpstreamAuthPayload) {
       {
         success: false,
         message:
-          "Akun ini tidak memiliki akses ke dashboard. Gunakan aplikasi Snapy AI 3D untuk masuk sebagai pelanggan.",
+          `Akun ini tidak memiliki akses ke dashboard. Gunakan aplikasi ${siteConfig.appName} untuk masuk sebagai pelanggan.`,
       },
       { status: 403 },
     );

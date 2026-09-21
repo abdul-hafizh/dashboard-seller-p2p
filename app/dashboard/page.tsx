@@ -3,6 +3,7 @@
 import { Package, ShoppingCart, Layers, Printer, Building2, Building } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { siteConfig } from "@/lib/site-config";
 import { useResourceCount } from "@/lib/hooks/useResourceCount";
 import { Card, CardBody } from "@/components/ui/Card";
 
@@ -49,7 +50,7 @@ export default function DashboardHomePage() {
         <h1 className="text-xl font-extrabold text-ink">Halo, {user?.FullName?.split(" ")[0] ?? "!"} 👋</h1>
         <p className="mt-1 text-sm text-ink-soft">
           {isAdmin
-            ? "Ringkasan seluruh data platform Snapy AI 3D."
+            ? `Ringkasan seluruh data platform ${siteConfig.appName}.`
             : "Ringkasan produk dan pesanan yang perlu kamu pantau."}
         </p>
       </div>
