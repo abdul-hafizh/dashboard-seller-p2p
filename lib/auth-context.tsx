@@ -37,6 +37,8 @@ export interface CurrentUser {
   TotalSpent: number;
   DiscountPercent: number;
   TierDetails: TierDetails | null;
+  /** Merchant-only. `Applicable` is false for non-Indonesian merchants; `CanEdit` is false until an admin links the merchant to a company/branch. */
+  TaxProfile?: { Applicable: boolean; CanEdit: boolean; TaxType: "PKP" | "NON_PKP"; NPWP: string | null };
 }
 
 interface AuthContextValue {

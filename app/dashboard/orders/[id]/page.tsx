@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
+import { downloadInvoice } from "@/lib/download-invoice";
 
 interface OrderStatus {
   Id: number;
@@ -185,6 +186,7 @@ export default function OrderDetailPage() {
   const [expiredPreviews, setExpiredPreviews] = useState<Set<string>>(new Set());
   const [priceInput, setPriceInput] = useState<string>("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [shipping, setShipping] = useState(false);
   const [tracking, setTracking] = useState<Record<string, TrackingResult>>({});
   const [trackingLoading, setTrackingLoading] = useState<Record<string, boolean>>({});
@@ -209,6 +211,17 @@ export default function OrderDetailPage() {
   // (see api-meshy's PaymentController.createSnapToken, which locks the
   // amount in at snap-token creation), so price editing is locked from here on.
   const isPaid = (order.Payments ?? []).some((p) => p.Status === "PAID");
+
+  const handleDownloadInvoice = async () => {
+    setDownloadingInvoice(true);
+    try {
+      await downloadInvoice(order.Id, order.OrderNumber);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal mengunduh invoice.");
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
 
   const updateStatus = async () => {
     if (!nextStatusId) return;
@@ -282,9 +295,14 @@ export default function OrderDetailPage() {
           <h1 className="text-lg font-extrabold text-ink">{order.OrderNumber ?? `Pesanan #${order.Id.slice(0, 8)}`}</h1>
           <p className="text-xs text-ink-soft">Dibuat {formatDate(order.CreatedAt)}</p>
         </div>
-        <Badge tone="info" className="ml-auto">
-          {order.Status?.Name ?? "-"}
-        </Badge>
+        <div className="ml-auto flex items-center gap-2">
+          {isPaid && (
+            <Button variant="outline" size="sm" loading={downloadingInvoice} onClick={handleDownloadInvoice}>
+              <FileText className="size-4" /> Unduh Invoice
+            </Button>
+          )}
+          <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
@@ -308,6 +326,12 @@ export default function OrderDetailPage() {
                 <div>
                   <p className="text-xs font-semibold text-ink-soft">Rating</p>
                   <p className="mt-0.5 text-ink">{order.Rating} / 5</p>
+                </div>
+              )}
+              {order.Rating != null && order.RatingNotes && (
+                <div className="col-span-2">
+                  <p className="text-xs font-semibold text-ink-soft">Komentar Pelanggan</p>
+                  <p className="mt-0.5 whitespace-pre-line text-ink">{order.RatingNotes}</p>
                 </div>
               )}
               {order.Notes && (

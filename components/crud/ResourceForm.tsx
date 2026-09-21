@@ -17,6 +17,10 @@ function buildSchema(fields: FieldConfig[]) {
       shape[field.name] = z.boolean().optional();
       continue;
     }
+    if (field.type === "multiselect") {
+      shape[field.name] = z.array(z.string()).optional();
+      continue;
+    }
 
     let schema = z.string();
     if (field.type === "number") {
@@ -36,6 +40,8 @@ function buildDefaultValues(fields: FieldConfig[], initial?: Record<string, unkn
     const raw = initial?.[field.name] ?? field.defaultValue;
     if (field.type === "boolean") {
       values[field.name] = Boolean(raw);
+    } else if (field.type === "multiselect") {
+      values[field.name] = initial && field.initialFromRow ? field.initialFromRow(initial) : [];
     } else if (field.type === "time") {
       values[field.name] = toTimeInputValue(raw);
     } else {
@@ -51,6 +57,8 @@ function toPayload(fields: FieldConfig[], values: FormValues): Record<string, un
     const raw = values[field.name];
     if (field.type === "boolean") {
       payload[field.name] = field.intBoolean ? (raw ? 1 : 0) : Boolean(raw);
+    } else if (field.type === "multiselect") {
+      payload[field.name] = Array.isArray(raw) ? raw : [];
     } else if (field.type === "number") {
       payload[field.name] = raw === "" || raw === undefined ? null : Number(raw);
     } else {

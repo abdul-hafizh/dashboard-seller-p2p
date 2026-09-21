@@ -33,6 +33,18 @@ export const branchesConfig: ResourceConfig = {
       optionLabelKey: "Name",
     },
     { name: "Address", label: "Alamat", type: "textarea" },
+    {
+      name: "TaxType",
+      label: "Jenis Pajak (Indonesia)",
+      type: "select",
+      defaultValue: "NON_PKP",
+      options: [
+        { value: "NON_PKP", label: "Non-PKP (tanpa PPN)" },
+        { value: "PKP", label: "PKP (PPN berlaku)" },
+      ],
+      helpText: "Hanya berlaku untuk perusahaan di Indonesia.",
+    },
+    { name: "NPWP", label: "NPWP", type: "text", placeholder: "15 atau 16 digit (wajib jika PKP)" },
     { name: "OpenHour", label: "Jam Buka", type: "time" },
     { name: "CloseHour", label: "Jam Tutup", type: "time" },
     {

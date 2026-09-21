@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type FieldType = "text" | "password" | "number" | "textarea" | "boolean" | "select" | "time" | "image";
+export type FieldType = "text" | "password" | "number" | "textarea" | "boolean" | "select" | "multiselect" | "time" | "image";
 
 export interface SelectOption {
   value: string | number;
@@ -28,6 +28,8 @@ export interface FieldConfig {
    * select is disabled and empty until the parent has a value, and clears
    * itself whenever the parent's value actually changes. */
   dependsOn?: string;
+  /** For a multiselect field: derives the initially-checked option values from the row being edited. */
+  initialFromRow?: (row: Record<string, unknown>) => string[];
   /** Overrides optionLabelKey when a single field isn't enough (e.g. combining Brand + Model). */
   optionLabel?: (row: Record<string, unknown>) => string;
   defaultValue?: string | number | boolean;
@@ -54,4 +56,7 @@ export interface ResourceConfig<T = Record<string, unknown>> {
   columns: ColumnConfig<T>[];
   fields: FieldConfig[];
   pageSize?: number;
+  /** Runs after a successful create/update with the saved row's id and the submitted payload — for data that lives
+   * behind its own endpoint (e.g. a printer's material list). A failure here is reported to the user. */
+  afterSave?: (id: string, payload: Record<string, unknown>) => Promise<void>;
 }

@@ -39,6 +39,18 @@ export const companiesConfig: ResourceConfig = {
       dependsOn: "ProvinceId",
     },
     { name: "Address", label: "Alamat", type: "textarea" },
+    {
+      name: "TaxType",
+      label: "Jenis Pajak (Indonesia)",
+      type: "select",
+      defaultValue: "NON_PKP",
+      options: [
+        { value: "NON_PKP", label: "Non-PKP (tanpa PPN)" },
+        { value: "PKP", label: "PKP (PPN berlaku)" },
+      ],
+      helpText: "Hanya berlaku untuk perusahaan di Indonesia.",
+    },
+    { name: "NPWP", label: "NPWP", type: "text", placeholder: "15 atau 16 digit (wajib jika PKP)" },
     { name: "Phone", label: "Telepon", type: "text" },
     { name: "Email", label: "Email", type: "text" },
     {

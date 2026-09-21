@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { Select } from "@/components/ui/Select";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -20,6 +21,14 @@ interface CustomerUser {
   Email: string | null;
   Phone: string | null;
   WhatsappNumber: string | null;
+}
+
+interface AddressOption {
+  Id: string;
+  Label: string | null;
+  RecipientName: string | null;
+  Address: string | null;
+  IsDefault: boolean;
 }
 
 interface CreatedOrderSummary {
@@ -37,6 +46,8 @@ export default function CustomOrdersPage() {
   const [customers, setCustomers] = useState<CustomerUser[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerUser | null>(null);
+  const [addresses, setAddresses] = useState<AddressOption[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   const [form, setForm] = useState({
     itemName: "",
@@ -45,6 +56,7 @@ export default function CustomOrdersPage() {
     courierCompany: "",
     courierType: "REG",
     shippingCost: "0",
+    shippingAddressId: "",
     notes: "",
     sendToChat: true,
   });
@@ -70,8 +82,29 @@ export default function CustomOrdersPage() {
     return () => clearTimeout(handle);
   }, [search]);
 
+  // Picking a customer loads their saved addresses so the merchant can choose
+  // where this order ships (the default address is preselected).
+  const pickCustomer = async (customer: CustomerUser) => {
+    setSelectedCustomer(customer);
+    setCreatedOrder(null);
+    setForm((f) => ({ ...f, shippingAddressId: "" }));
+    setAddresses([]);
+    setLoadingAddresses(true);
+    try {
+      const res = await apiFetch<AddressOption[]>(`user-addresses/user/${customer.Id}`);
+      setAddresses(res.data);
+      const preferred = res.data.find((a) => a.IsDefault) || res.data[0];
+      if (preferred) setForm((f) => ({ ...f, shippingAddressId: preferred.Id }));
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Gagal memuat alamat customer.");
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
   const resetAll = () => {
     setSelectedCustomer(null);
+    setAddresses([]);
     setCreatedOrder(null);
     setSearch("");
     setCustomers(null);
@@ -82,6 +115,7 @@ export default function CustomOrdersPage() {
       courierCompany: "",
       courierType: "REG",
       shippingCost: "0",
+      shippingAddressId: "",
       notes: "",
       sendToChat: true,
     });
@@ -103,6 +137,7 @@ export default function CustomOrdersPage() {
           courierCompany: form.courierCompany || undefined,
           courierType: form.courierType || undefined,
           shippingCost: Number(form.shippingCost) || 0,
+          shippingAddressId: form.shippingAddressId || undefined,
           notes: form.notes || undefined,
           sendToChat: form.sendToChat,
         },
@@ -124,7 +159,7 @@ export default function CustomOrdersPage() {
         <h1 className="text-xl font-extrabold text-ink">Pesanan Custom (Ready to Print)</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Buat pesanan produk manual/custom (Gantungan Kunci, Plakat, Stiker, dll) untuk customer setelah harga & ongkir
-          disepakati lewat chat — sistem otomatis menghitung PPN 11%, biaya aplikasi, dan mengirim kartu tagihan ke chat.
+          disepakati lewat chat — sistem otomatis menghitung PPN (khusus merchant PKP), biaya aplikasi, dan mengirim kartu tagihan ke chat.
         </p>
       </div>
 
@@ -169,10 +204,7 @@ export default function CustomOrdersPage() {
                   <button
                     key={c.Id}
                     type="button"
-                    onClick={() => {
-                      setSelectedCustomer(c);
-                      setCreatedOrder(null);
-                    }}
+                    onClick={() => pickCustomer(c)}
                     className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-brand-purple hover:bg-surface-muted"
                   >
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-muted">
@@ -268,6 +300,27 @@ export default function CustomOrdersPage() {
                   value={form.shippingCost}
                   onChange={(e) => setForm((f) => ({ ...f, shippingCost: e.target.value }))}
                 />
+              </div>
+              <div className="sm:col-span-2">
+                <FieldLabel>Alamat Pengiriman Customer</FieldLabel>
+                {loadingAddresses ? (
+                  <p className="text-sm text-ink-faint">Memuat alamat...</p>
+                ) : addresses.length === 0 ? (
+                  <p className="text-sm text-ink-faint">
+                    Customer ini belum punya alamat tersimpan. Pesanan tetap bisa dibuat; customer melengkapi alamat saat checkout.
+                  </p>
+                ) : (
+                  <Select
+                    value={form.shippingAddressId}
+                    onChange={(e) => setForm((f) => ({ ...f, shippingAddressId: e.target.value }))}
+                  >
+                    {addresses.map((a) => (
+                      <option key={a.Id} value={a.Id}>
+                        {a.Label ?? "Alamat"} — {a.RecipientName} — {a.Address}
+                      </option>
+                    ))}
+                  </Select>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <FieldLabel>Catatan</FieldLabel>

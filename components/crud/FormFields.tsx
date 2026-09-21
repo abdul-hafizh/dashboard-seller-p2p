@@ -34,7 +34,7 @@ function dependsOnQueryKey(parentFieldName: string): string {
 function useDynamicOptions(field: FieldConfig, parentValue: unknown): SelectOption[] {
   const hasParentValue = Boolean(parentValue);
   const shouldFetch =
-    field.type === "select" && Boolean(field.optionsEndpoint) && (!field.dependsOn || hasParentValue);
+    (field.type === "select" || field.type === "multiselect") && Boolean(field.optionsEndpoint) && (!field.dependsOn || hasParentValue);
 
   const { data } = useSWR(
     shouldFetch ? ["field-options", field.optionsEndpoint, field.dependsOn ? parentValue : null] : null,
@@ -94,6 +94,42 @@ function SelectField({ field, register, errors, watch, setValue }: FieldProps) {
           </option>
         ))}
       </Select>
+      <FieldError message={error} />
+      {field.helpText && !error && <p className="mt-1 text-xs text-ink-faint">{field.helpText}</p>}
+    </div>
+  );
+}
+
+function MultiSelectField({ field, errors, watch, setValue }: FieldProps) {
+  const options = useDynamicOptions(field, undefined);
+  const selected = ((watch(field.name) as string[] | undefined) ?? []).map(String);
+  const error = errors[field.name]?.message as string | undefined;
+
+  const toggle = (value: string) => {
+    const next = selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value];
+    setValue(field.name, next, { shouldDirty: true });
+  };
+
+  return (
+    <div>
+      <FieldLabel required={field.required}>{field.label}</FieldLabel>
+      {options.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border px-3.5 py-3 text-xs text-ink-faint">
+          {field.placeholder ?? "Belum ada pilihan tersedia."}
+        </p>
+      ) : (
+        <div className="grid max-h-48 gap-1.5 overflow-y-auto rounded-xl border border-border bg-surface p-2 sm:grid-cols-2">
+          {options.map((opt) => {
+            const value = String(opt.value);
+            return (
+              <label key={value} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-surface-muted">
+                <Checkbox checked={selected.includes(value)} onChange={() => toggle(value)} />
+                <span className="text-sm text-ink">{opt.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
       <FieldError message={error} />
       {field.helpText && !error && <p className="mt-1 text-xs text-ink-faint">{field.helpText}</p>}
     </div>
@@ -181,6 +217,10 @@ export function FormField(props: FieldProps) {
 
   if (field.type === "select") {
     return <SelectField {...props} />;
+  }
+
+  if (field.type === "multiselect") {
+    return <MultiSelectField {...props} />;
   }
 
   if (field.type === "image") {

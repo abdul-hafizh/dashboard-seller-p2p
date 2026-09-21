@@ -66,10 +66,13 @@ export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverri
   const handleSubmit = async (payload: Record<string, unknown>) => {
     try {
       if (modal?.mode === "edit" && modal.row) {
-        await apiFetch(`${config.endpoint}/${modal.row[idKey]}`, { method: "PUT", json: payload });
+        const id = String(modal.row[idKey]);
+        await apiFetch(`${config.endpoint}/${id}`, { method: "PUT", json: payload });
+        await config.afterSave?.(id, payload);
         toast.success(`${config.title} berhasil diperbarui`);
       } else {
-        await apiFetch(config.endpoint, { method: "POST", json: payload });
+        const res = await apiFetch<Row>(config.endpoint, { method: "POST", json: payload });
+        await config.afterSave?.(String(res.data[idKey]), payload);
         toast.success(`${config.title} berhasil ditambahkan`);
       }
       closeModal();
