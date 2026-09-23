@@ -5,6 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, ShoppingCart, ChevronRight as ArrowRight } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
@@ -21,10 +22,21 @@ interface OrderRow {
   CreatedAt: string | null;
   Status: { Id: number; Name: string; ColorCode: string | null } | null;
   Customer?: { User?: { FullName: string | null; Phone: string | null; UserLevel?: string | null } | null } | null;
+  Merchant?: {
+    FullName: string | null;
+    Company?: { Name: string | null } | null;
+    Branch?: { Name: string | null } | null;
+  } | null;
   Shipments?: { CourierCompany: string | null; CourierServiceName: string | null }[] | null;
 }
 
+/** Store/branch name takes precedence over the logged-in staff account's own name. */
+function merchantLabel(merchant: OrderRow["Merchant"]): string {
+  return merchant?.Branch?.Name || merchant?.Company?.Name || merchant?.FullName || "-";
+}
+
 export default function OrdersPage() {
+  const { isAdmin } = useAuth();
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -75,6 +87,7 @@ export default function OrdersPage() {
               <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
                 <th className="whitespace-nowrap px-4 py-3">No. Pesanan</th>
                 <th className="whitespace-nowrap px-4 py-3">Pelanggan</th>
+                {isAdmin && <th className="whitespace-nowrap px-4 py-3">Merchant</th>}
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
                 <th className="whitespace-nowrap px-4 py-3">Kurir</th>
                 <th className="whitespace-nowrap px-4 py-3">Total</th>
@@ -96,6 +109,9 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </td>
+                  {isAdmin && (
+                    <td className="whitespace-nowrap px-4 py-3 text-ink-soft">{merchantLabel(order.Merchant)}</td>
+                  )}
                   <td className="whitespace-nowrap px-4 py-3">
                     <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
                   </td>

@@ -28,6 +28,7 @@ interface AIJobResult {
   UserId: string;
   User?: AIJobUser;
   Prompt: string | null;
+  Note: string | null;
   Status: string;
   PreviewUrl: string | null;
   HasModel: boolean;
@@ -292,6 +293,13 @@ export default function AiModelOrdersPage() {
                 Ganti
               </Button>
             </div>
+
+            {selectedJob.Note && (
+              <div className="rounded-xl border border-brand-purple/20 bg-brand-purple/5 p-3">
+                <p className="text-xs font-semibold text-brand-purple">Catatan dari Customer</p>
+                <p className="mt-1 text-sm text-ink">{selectedJob.Note}</p>
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>

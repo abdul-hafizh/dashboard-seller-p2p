@@ -10,6 +10,10 @@ export interface ApiEnvelope<T> {
   message: string;
   data: T;
   pagination?: Pagination;
+  /** A handful of endpoints attach extra context alongside `data` (e.g. GET
+   * /users/:id/profile-logs' `{ user: {...} }`) — left loosely typed here
+   * since its shape is endpoint-specific; callers narrow it themselves. */
+  meta?: Record<string, unknown>;
 }
 
 export class ApiError extends Error {

@@ -153,6 +153,7 @@ export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverri
                   ))}
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1.5">
+                      {config.rowActions?.(row)}
                       <button
                         type="button"
                         onClick={() => setModal({ mode: "edit", row })}

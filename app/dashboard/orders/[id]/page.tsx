@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import { ArrowLeft, Package, History, FileText, Box, Download, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { Model3DViewer } from "@/components/Model3DViewer";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -32,11 +33,17 @@ interface AIModelFile {
   FilePath: string | null;
 }
 
+interface AIJobRef {
+  Id: string;
+  Note: string | null;
+}
+
 interface AIModel {
   Id: string;
   ModelName: string | null;
   Previews?: AIModelPreview[];
   Files?: AIModelFile[];
+  Job?: AIJobRef | null;
 }
 
 interface OrderItem {
@@ -68,6 +75,16 @@ interface OrderCustomer {
   Id: string;
   CompanyName: string | null;
   User?: CustomerUser | null;
+}
+
+interface OrderMerchant {
+  Id: string;
+  FullName: string | null;
+  Email: string | null;
+  Phone: string | null;
+  WhatsappNumber: string | null;
+  Company?: { Id: string; Name: string | null } | null;
+  Branch?: { Id: string; Name: string | null } | null;
 }
 
 interface AddressRegion {
@@ -145,6 +162,7 @@ interface OrderDetail {
   Items?: OrderItem[];
   StatusHistories?: StatusHistoryEntry[];
   Customer?: OrderCustomer | null;
+  Merchant?: OrderMerchant | null;
   ShippingAddress?: ShippingAddress | null;
   Payments?: PaymentSummary[];
   Shipments?: ShipmentInfo[];
@@ -170,6 +188,7 @@ function shippingCategoryLabel(shippingType: string | null | undefined): string 
 }
 
 export default function OrderDetailPage() {
+  const { isAdmin } = useAuth();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const orderId = params.id;
@@ -322,6 +341,21 @@ export default function OrderDetailPage() {
                   {order.Customer?.User?.FullName ?? order.Customer?.CompanyName ?? "-"}
                 </p>
               </div>
+              {isAdmin && (
+                <div>
+                  <p className="text-xs font-semibold text-ink-soft">Merchant</p>
+                  <p className="mt-0.5 font-bold text-ink">
+                    {order.Merchant?.Branch?.Name ?? order.Merchant?.Company?.Name ?? order.Merchant?.FullName ?? "-"}
+                  </p>
+                  {(order.Merchant?.Company?.Name || order.Merchant?.Phone || order.Merchant?.WhatsappNumber) && (
+                    <p className="mt-0.5 text-xs text-ink-soft">
+                      {order.Merchant?.Branch?.Name && order.Merchant.Company?.Name}
+                      {order.Merchant?.Branch?.Name && order.Merchant.Company?.Name && " · "}
+                      {order.Merchant?.Phone ?? order.Merchant?.WhatsappNumber}
+                    </p>
+                  )}
+                </div>
+              )}
               {order.Rating != null && (
                 <div>
                   <p className="text-xs font-semibold text-ink-soft">Rating</p>
@@ -387,6 +421,12 @@ export default function OrderDetailPage() {
                       </div>
                       <div className="flex flex-1 flex-col gap-2">
                         <p className="text-sm font-semibold text-ink">{model.ModelName ?? "Model 3D"}</p>
+                        {model.Job?.Note && (
+                          <div className="rounded-xl border border-brand-purple/20 bg-brand-purple/5 p-3">
+                            <p className="text-xs font-semibold text-brand-purple">Catatan dari Customer</p>
+                            <p className="mt-1 text-sm text-ink">{model.Job.Note}</p>
+                          </div>
+                        )}
                         {files.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {files.map((file) =>

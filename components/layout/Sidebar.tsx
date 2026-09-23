@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Box, X } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "@/lib/nav-config";
 import { useAuth } from "@/lib/auth-context";
@@ -32,8 +33,8 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
       >
         <div className="flex items-center justify-between gap-2 px-5 py-5">
           <div className="flex items-center gap-2.5">
-            <div className="brand-gradient flex size-9 items-center justify-center rounded-xl">
-              <Box className="size-5 text-white" strokeWidth={2.2} />
+            <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-sm shadow-brand-purple/20">
+              <Image src="/logo-petope.png" alt={siteConfig.appName} width={36} height={36} className="size-9 object-cover" />
             </div>
             <div>
               <p className="text-sm font-extrabold leading-tight text-ink">{siteConfig.appName} Seller</p>

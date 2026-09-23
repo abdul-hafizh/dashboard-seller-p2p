@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Box } from "lucide-react";
+import Image from "next/image";
 import { Footer } from "@/components/layout/Footer";
 import { siteConfig } from "@/lib/site-config";
 
@@ -10,8 +10,8 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="brand-gradient flex size-9 items-center justify-center rounded-full">
-              <Box className="size-5 text-white" strokeWidth={2.2} />
+            <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full">
+              <Image src="/logo-petope.png" alt={siteConfig.appName} width={36} height={36} className="size-9 object-cover" />
             </span>
             <span className="text-base font-extrabold text-ink">{siteConfig.appName}</span>
           </Link>

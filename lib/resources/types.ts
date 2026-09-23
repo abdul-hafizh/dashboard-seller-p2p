@@ -59,4 +59,6 @@ export interface ResourceConfig<T = Record<string, unknown>> {
   /** Runs after a successful create/update with the saved row's id and the submitted payload — for data that lives
    * behind its own endpoint (e.g. a printer's material list). A failure here is reported to the user. */
   afterSave?: (id: string, payload: Record<string, unknown>) => Promise<void>;
+  /** Extra per-row action rendered before the built-in Ubah/Hapus buttons (e.g. a link to that row's audit log). */
+  rowActions?: (row: T) => ReactNode;
 }

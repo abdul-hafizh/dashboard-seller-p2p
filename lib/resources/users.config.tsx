@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { History } from "lucide-react";
 import type { ResourceConfig } from "./types";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "./format";
@@ -36,6 +38,19 @@ export const usersConfig: ResourceConfig = {
       render: (r) => <Badge tone={r.IsActive ? "success" : "neutral"}>{r.IsActive ? "Aktif" : "Nonaktif"}</Badge>,
     },
   ],
+  // Audit trail of this user's own self-service profile edits (PUT /auth/me)
+  // — who changed name/telepon/WhatsApp, from what to what, and when. Admin-only,
+  // matching the backend endpoint (GET /users/:id/profile-logs) it links to.
+  rowActions: (r) => (
+    <Link
+      href={`/dashboard/users/${r.Id}/logs`}
+      className="rounded-lg p-1.5 text-ink-soft transition-colors hover:bg-brand-purple/10 hover:text-brand-purple"
+      aria-label="Riwayat Perubahan Profil"
+      title="Riwayat Perubahan Profil"
+    >
+      <History className="size-4" />
+    </Link>
+  ),
   fields: [
     { name: "FullName", label: "Nama Lengkap", type: "text", required: true },
     { name: "Email", label: "Email", type: "text", required: true, placeholder: "nama@email.com" },
