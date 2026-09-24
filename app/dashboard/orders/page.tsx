@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Search, ChevronLeft, ChevronRight, ShoppingCart, ChevronRight as ArrowRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ShoppingCart, ChevronRight as ArrowRight, Star, MessageSquareText } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/Card";
@@ -20,6 +20,8 @@ interface OrderRow {
   CustomerId: string | null;
   TotalAmount: number | null;
   CreatedAt: string | null;
+  Rating: number | null;
+  RatingNotes: string | null;
   Status: { Id: number; Name: string; ColorCode: string | null } | null;
   Customer?: { User?: { FullName: string | null; Phone: string | null; UserLevel?: string | null } | null } | null;
   Merchant?: {
@@ -91,6 +93,7 @@ export default function OrdersPage() {
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
                 <th className="whitespace-nowrap px-4 py-3">Kurir</th>
                 <th className="whitespace-nowrap px-4 py-3">Total</th>
+                <th className="whitespace-nowrap px-4 py-3">Rating</th>
                 <th className="whitespace-nowrap px-4 py-3">Tanggal</th>
                 <th className="px-4 py-3 text-right">Detail</th>
               </tr>
@@ -121,6 +124,24 @@ export default function OrdersPage() {
                       : "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink">{formatCurrency(order.TotalAmount)}</td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {order.Rating != null ? (
+                      <div className="flex items-center gap-1.5 text-ink">
+                        <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                        <span className="font-semibold">{order.Rating}/5</span>
+                        {order.RatingNotes && (
+                          <MessageSquareText
+                            className="size-3.5 text-ink-faint"
+                            aria-label="Ada komentar pelanggan"
+                          >
+                            <title>{order.RatingNotes}</title>
+                          </MessageSquareText>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-ink-faint">-</span>
+                    )}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-soft">{formatDate(order.CreatedAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/dashboard/orders/${order.Id}`}>

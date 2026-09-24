@@ -1,7 +1,7 @@
 import type { ResourceConfig } from "./types";
 import { formatCurrency, toPublicAssetUrl } from "./format";
 import { Badge } from "@/components/ui/Badge";
-import { ImageOff } from "lucide-react";
+import { ImageOff, Star } from "lucide-react";
 
 /** SellerId is only editable by admins — merchants always create products under themselves
  * (the backend defaults SellerId to the authenticated user when it's omitted). */
@@ -46,6 +46,22 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
         render: (r) => {
           const stock = Number(r.Stock ?? 0);
           return <Badge tone={stock > 0 ? "success" : "neutral"}>{stock > 0 ? stock : "Habis"}</Badge>;
+        },
+      },
+      {
+        key: "AvgRating",
+        label: "Rating",
+        render: (r) => {
+          const avg = r.AvgRating as number | null | undefined;
+          const count = Number(r.RatingCount ?? 0);
+          if (avg == null || count === 0) return <span className="text-ink-faint">Belum ada</span>;
+          return (
+            <div className="flex items-center gap-1.5 text-ink">
+              <Star className="size-3.5 fill-amber-400 text-amber-400" />
+              <span className="font-semibold">{avg}</span>
+              <span className="text-xs text-ink-faint">({count})</span>
+            </div>
+          );
         },
       },
       ...(isAdmin

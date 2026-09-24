@@ -1,7 +1,9 @@
 "use client";
 
-import { Menu, LogOut } from "lucide-react";
+import Link from "next/link";
+import { Menu, LogOut, Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useChatUnreadCount } from "@/lib/hooks/use-chat-unread-count";
 import { Badge } from "@/components/ui/Badge";
 
 function initials(name: string) {
@@ -12,6 +14,7 @@ function initials(name: string) {
 
 export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const { user, isAdmin, logout } = useAuth();
+  const unreadCount = useChatUnreadCount();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur md:px-6">
@@ -27,6 +30,18 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
       <div className="hidden md:block" />
 
       <div className="flex items-center gap-3">
+        <Link
+          href="/dashboard/chat"
+          className="relative rounded-xl p-2 text-ink-soft transition-colors hover:bg-surface-muted hover:text-ink"
+          aria-label={unreadCount > 0 ? `Pesan belum dibaca: ${unreadCount}` : "Pesan"}
+        >
+          <Bell className="size-5" />
+          {unreadCount > 0 && (
+            <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold leading-none text-white">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </Link>
         {user && (
           <div className="flex items-center gap-2.5">
             <div className="brand-gradient flex size-9 items-center justify-center rounded-full text-xs font-bold text-white">

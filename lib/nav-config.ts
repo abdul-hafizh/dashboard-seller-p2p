@@ -24,6 +24,7 @@ import {
   Settings2,
   Sparkles,
   FilePlus2,
+  Percent,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -107,6 +108,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Administrasi",
     items: [
       { href: "/dashboard/users", label: "Pengguna", icon: Users, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/system-settings", label: "Pengaturan Sistem", icon: Settings2, roles: [ROLE.SUPER_ADMIN] },
     ],
   },

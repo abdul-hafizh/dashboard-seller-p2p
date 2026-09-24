@@ -193,7 +193,7 @@ export default function AiModelOrdersPage() {
         <h1 className="text-xl font-extrabold text-ink">Pesanan dari AI Model</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Buatkan pesanan cetak 3D untuk customer berdasarkan model AI yang sudah dibahas lewat chat — sistem otomatis
-          menghitung tarif mesin (FDM/SLA), material, PPN 11%, dan biaya aplikasi.
+          menghitung tarif mesin (FDM/SLA), material, biaya layanan, dan PPN (khusus merchant PKP).
         </p>
       </div>
 
