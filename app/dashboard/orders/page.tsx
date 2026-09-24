@@ -29,7 +29,7 @@ interface OrderRow {
     Company?: { Name: string | null } | null;
     Branch?: { Name: string | null } | null;
   } | null;
-  Shipments?: { CourierCompany: string | null; CourierServiceName: string | null }[] | null;
+  Shipments?: { ShipmentType: string | null; CourierCompany: string | null; CourierServiceName: string | null }[] | null;
 }
 
 /** Store/branch name takes precedence over the logged-in staff account's own name. */
@@ -119,9 +119,13 @@ export default function OrdersPage() {
                     <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-soft">
-                    {order.Shipments?.[0]?.CourierCompany
-                      ? `${order.Shipments[0].CourierCompany}${order.Shipments[0].CourierServiceName ? ` · ${order.Shipments[0].CourierServiceName}` : ""}`
-                      : "-"}
+                    {order.Shipments?.[0]?.ShipmentType === "PICKUP" ? (
+                      <Badge tone="brand">Ambil di Toko</Badge>
+                    ) : order.Shipments?.[0]?.CourierCompany ? (
+                      `${order.Shipments[0].CourierCompany}${order.Shipments[0].CourierServiceName ? ` · ${order.Shipments[0].CourierServiceName}` : ""}`
+                    ) : (
+                      "-"
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink">{formatCurrency(order.TotalAmount)}</td>
                   <td className="whitespace-nowrap px-4 py-3">

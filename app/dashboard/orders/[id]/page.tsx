@@ -123,6 +123,7 @@ interface ShipmentServiceInfo {
 
 interface ShipmentInfo {
   Id: string;
+  ShipmentType: string | null;
   CourierCompany: string | null;
   CourierType: string | null;
   CourierServiceName: string | null;
@@ -576,18 +577,28 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardBody className="flex flex-col gap-2 text-sm">
               {order.Shipments && order.Shipments.length > 0 ? (
-                order.Shipments.map((shipment) => (
+                order.Shipments.map((shipment) => {
+                  const isPickup = shipment.ShipmentType === "PICKUP";
+                  return (
                   <div key={shipment.Id} className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-ink">
-                        {shipment.CourierCompany || shipment.ShippingMethod?.Name || "-"}
-                        {shipment.CourierServiceName ? ` · ${shipment.CourierServiceName}` : ""}
+                        {isPickup
+                          ? "Ambil di Toko"
+                          : `${shipment.CourierCompany || shipment.ShippingMethod?.Name || "-"}${shipment.CourierServiceName ? ` · ${shipment.CourierServiceName}` : ""}`}
                       </p>
-                      <Badge tone="brand">{shippingCategoryLabel(shipment.ShippingMethod?.ShippingType)}</Badge>
+                      {isPickup ? (
+                        <Badge tone="brand">Pick Up</Badge>
+                      ) : (
+                        <Badge tone="brand">{shippingCategoryLabel(shipment.ShippingMethod?.ShippingType)}</Badge>
+                      )}
                     </div>
                     <p className="text-xs text-ink-soft">
-                      Ongkir: <span className="font-semibold text-ink">{formatCurrency(shipment.ShippingCost)}</span>
-                      {shipment.PackageWeight != null ? ` · ${shipment.PackageWeight} gram` : ""}
+                      Ongkir:{" "}
+                      <span className="font-semibold text-ink">
+                        {isPickup ? "Gratis (Ambil di Toko)" : formatCurrency(shipment.ShippingCost)}
+                      </span>
+                      {!isPickup && shipment.PackageWeight != null ? ` · ${shipment.PackageWeight} gram` : ""}
                     </p>
                     {shipment.TrackingNumber && (
                       <p className="text-xs text-ink-soft">No. Resi: {shipment.TrackingNumber}</p>
@@ -597,18 +608,20 @@ export default function OrderDetailPage() {
                     </Badge>
                     {isPaid && (shipment.Status ?? "PENDING") === "PENDING" && (
                       <Button size="sm" className="w-fit" onClick={markShipped} loading={shipping}>
-                        Tandai Sudah Dikirim
+                        {isPickup ? "Tandai Siap Diambil" : "Tandai Sudah Dikirim"}
                       </Button>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-fit"
-                      onClick={() => trackShipment(shipment.Id)}
-                      loading={trackingLoading[shipment.Id]}
-                    >
-                      <RefreshCw className="size-3.5" /> Lacak Pengiriman
-                    </Button>
+                    {!isPickup && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-fit"
+                        onClick={() => trackShipment(shipment.Id)}
+                        loading={trackingLoading[shipment.Id]}
+                      >
+                        <RefreshCw className="size-3.5" /> Lacak Pengiriman
+                      </Button>
+                    )}
                     {tracking[shipment.Id] && (
                       <div className="mt-1 flex flex-col gap-2 border-t border-border pt-2">
                         <p className="text-xs font-semibold text-ink-soft">
@@ -632,7 +645,8 @@ export default function OrderDetailPage() {
                       </div>
                     )}
                   </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-xs text-ink-faint">Pelanggan belum memilih jasa kirim.</p>
               )}
