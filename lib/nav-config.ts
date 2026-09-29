@@ -5,7 +5,6 @@ import {
   Cpu,
   SlidersHorizontal,
   Printer,
-  Building2,
   Building,
   Globe,
   Map,
@@ -91,7 +90,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Organisasi & Wilayah",
     items: [
-      { href: "/dashboard/companies", label: "Perusahaan", icon: Building2, roles: [ROLE.SUPER_ADMIN] },
+      // Hidden for now: Company is a legacy org entity not used by the P2P seller flow.
+      // { href: "/dashboard/companies", label: "Perusahaan", icon: Building2, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/branches", label: "Cabang", icon: Building, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/countries", label: "Negara", icon: Globe, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/provinces", label: "Provinsi", icon: Map, roles: [ROLE.SUPER_ADMIN] },
