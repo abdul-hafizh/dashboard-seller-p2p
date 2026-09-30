@@ -97,6 +97,13 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
       { name: "Description", label: "Deskripsi", type: "textarea" },
       { name: "Price", label: "Harga (Rp)", type: "number", placeholder: "150000" },
       { name: "Stock", label: "Stok", type: "number", placeholder: "10", defaultValue: 0 },
+      {
+        name: "Weight",
+        label: "Berat per Item (gram)",
+        type: "number",
+        placeholder: "250",
+        helpText: "Termasuk kemasan. Dipakai untuk menghitung ongkos kirim — pembeli tidak mengisi berat sendiri.",
+      },
       ...(isAdmin
         ? [
             {

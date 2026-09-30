@@ -52,6 +52,7 @@ interface OrderItem {
   UnitPrice: number | null;
   MaterialId: number | null;
   PrintProfileId: number | null;
+  ProductId?: string | null;
   AIModel?: AIModel | null;
 }
 
@@ -155,6 +156,8 @@ interface OrderDetail {
   StatusId: number | null;
   TotalAmount: number | null;
   SubtotalAmount?: number | null;
+  /** Whole-package grams, set here by the merchant — drives the courier quote. */
+  PackageWeight?: number | null;
   Notes: string | null;
   Rating: number | null;
   RatingNotes: string | null;
@@ -205,6 +208,7 @@ export default function OrderDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [expiredPreviews, setExpiredPreviews] = useState<Set<string>>(new Set());
   const [priceInput, setPriceInput] = useState<string>("");
+  const [weightInput, setWeightInput] = useState<string>("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [shipping, setShipping] = useState(false);
@@ -218,7 +222,9 @@ export default function OrderDetailPage() {
     // orders without a stored subtotal fall back to the total.
     const amount = data?.data.SubtotalAmount ?? data?.data.TotalAmount;
     setPriceInput(amount != null && amount > 0 ? String(amount) : "");
-  }, [data?.data.SubtotalAmount, data?.data.TotalAmount]);
+    const grams = data?.data.PackageWeight;
+    setWeightInput(grams != null && grams > 0 ? String(grams) : "");
+  }, [data?.data.SubtotalAmount, data?.data.TotalAmount, data?.data.PackageWeight]);
 
   if (isLoading || !data) return <FullPageSpinner />;
 
@@ -231,6 +237,9 @@ export default function OrderDetailPage() {
   // (see api-meshy's PaymentController.createSnapToken, which locks the
   // amount in at snap-token creation), so price editing is locked from here on.
   const isPaid = (order.Payments ?? []).some((p) => p.Status === "PAID");
+  // Marketplace-product orders already know their weight (product weight ×
+  // qty), so the merchant only has to fill it in for quote/custom orders.
+  const hasProductItems = (order.Items ?? []).some((item) => item.ProductId);
 
   const handleDownloadInvoice = async () => {
     setDownloadingInvoice(true);
@@ -264,9 +273,21 @@ export default function OrderDetailPage() {
       toast.error("Masukkan harga yang valid (lebih dari 0).");
       return;
     }
+    const grams = weightInput ? Number(weightInput) : null;
+    if (grams !== null && (Number.isNaN(grams) || grams <= 0)) {
+      toast.error("Berat paket harus berupa angka gram lebih dari 0.");
+      return;
+    }
+    if (grams === null && !hasProductItems) {
+      toast.error("Isi berat paket (gram) — dipakai untuk menghitung ongkos kirim pelanggan.");
+      return;
+    }
     setUpdatingPrice(true);
     try {
-      await apiFetch(`orders/${orderId}`, { method: "PUT", json: { SubtotalAmount: amount } });
+      await apiFetch(`orders/${orderId}`, {
+        method: "PUT",
+        json: { SubtotalAmount: amount, ...(grams !== null ? { PackageWeight: Math.round(grams) } : {}) },
+      });
       toast.success("Harga pesanan berhasil disimpan");
       mutate();
     } catch (error) {
@@ -663,6 +684,9 @@ export default function OrderDetailPage() {
               {isPaid ? (
                 <>
                   <p className="text-sm font-bold text-ink">{formatCurrency(order.TotalAmount)}</p>
+                  {order.PackageWeight ? (
+                    <p className="text-xs text-ink-soft">Berat paket: {order.PackageWeight} gram</p>
+                  ) : null}
                   <p className="text-xs text-ink-soft">
                     Pesanan ini sudah dibayar pelanggan sesuai harga di atas — harga tidak dapat diubah lagi.
                   </p>
@@ -683,6 +707,19 @@ export default function OrderDetailPage() {
                   />
                   <p className="text-xs text-ink-soft">
                     Isi harga barang saja — PPN, biaya layanan aplikasi, dan diskon tier pelanggan ditambahkan otomatis.
+                  </p>
+                  <label className="mt-1 text-xs font-semibold text-ink">
+                    Berat paket (gram){hasProductItems ? " — opsional" : ""}
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder={hasProductItems ? "Kosongkan untuk memakai berat produk" : "Contoh: 500"}
+                    value={weightInput}
+                    onChange={(e) => setWeightInput(e.target.value)}
+                  />
+                  <p className="text-xs text-ink-soft">
+                    Termasuk kemasan. Dipakai untuk menghitung ongkos kirim — pelanggan tidak mengisi berat sendiri.
                   </p>
                   <Button onClick={updatePrice} loading={updatingPrice} disabled={!priceInput}>
                     {(order.TotalAmount ?? 0) <= 0 ? "Kirim Harga" : "Simpan Perubahan"}

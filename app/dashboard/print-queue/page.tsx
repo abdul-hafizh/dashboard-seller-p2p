@@ -48,7 +48,14 @@ const STATUS_TONE: Record<string, "neutral" | "success" | "info" | "warning"> = 
 
 function formatEta(value: string | null) {
   if (!value) return "-";
-  return new Date(value).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const date = new Date(value);
+  const time = date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const dayDiff = Math.round(
+    (new Date(date.toDateString()).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000,
+  );
+  if (dayDiff === 0) return time;
+  if (dayDiff === 1) return `besok ${time}`;
+  return `${date.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} ${time}`;
 }
 
 export default function PrintQueuePage() {
@@ -124,6 +131,14 @@ export default function PrintQueuePage() {
     );
   }
 
+  // Every active item, grouped by what the merchant can do with it — the
+  // backend's offlineWaitingQueue/onlineInProgressQueue lists left out
+  // offline prints in progress and online orders still waiting.
+  const items = data?.data ?? [];
+  const byNumber = (a: QueueItem, b: QueueItem) => a.QueueNumber - b.QueueNumber;
+  const waitingItems = items.filter((q) => q.Status === "WAITING" || q.Status === "QUEUED").sort(byNumber);
+  const inProgressItems = items.filter((q) => q.Status === "IN_PROGRESS" || q.Status === "PRINTING").sort(byNumber);
+
   const renderQueueCard = (item: QueueItem) => (
     <Card key={item.Id} className="p-4">
       <div className="flex items-start justify-between gap-3">
@@ -165,7 +180,10 @@ export default function PrintQueuePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-ink">Antrian Cetak</h1>
-          <p className="text-sm text-ink-faint">Pantau antrian cetak offline (walk-in) dan online (dari pesanan).</p>
+          <p className="text-sm text-ink-faint">
+            Pantau antrian cetak offline (walk-in) dan online (dari pesanan). Pelanggan melihat jumlah antrian &amp;
+            perkiraan kapan kamu bisa mulai mencetak pesanan baru.
+          </p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus className="size-4" /> Tambah Antrian Offline
@@ -178,25 +196,21 @@ export default function PrintQueuePage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Menunggu (Offline) — {data?.summary.totalOfflineWaiting ?? 0}</CardTitle>
+              <CardTitle>Menunggu — {waitingItems.length}</CardTitle>
             </CardHeader>
             <CardBody className="space-y-3">
-              {!data?.offlineWaitingQueue.length && (
-                <p className="text-sm text-ink-faint">Tidak ada antrian offline yang menunggu.</p>
-              )}
-              {data?.offlineWaitingQueue.map(renderQueueCard)}
+              {!waitingItems.length && <p className="text-sm text-ink-faint">Tidak ada antrian yang menunggu.</p>}
+              {waitingItems.map(renderQueueCard)}
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Sedang Dicetak (Online) — {data?.summary.totalOnlineInProgress ?? 0}</CardTitle>
+              <CardTitle>Sedang Dicetak — {inProgressItems.length}</CardTitle>
             </CardHeader>
             <CardBody className="space-y-3">
-              {!data?.onlineInProgressQueue.length && (
-                <p className="text-sm text-ink-faint">Tidak ada pesanan online yang sedang dicetak.</p>
-              )}
-              {data?.onlineInProgressQueue.map(renderQueueCard)}
+              {!inProgressItems.length && <p className="text-sm text-ink-faint">Tidak ada yang sedang dicetak.</p>}
+              {inProgressItems.map(renderQueueCard)}
             </CardBody>
           </Card>
         </div>

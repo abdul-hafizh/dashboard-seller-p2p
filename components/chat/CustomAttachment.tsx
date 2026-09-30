@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImageOff, Package, Receipt } from "lucide-react";
+import useSWR from "swr";
+import { ChevronRight, ImageOff, Package, Receipt } from "lucide-react";
 import { Attachment as DefaultAttachment, type AttachmentProps } from "stream-chat-react";
 import type { Attachment as StreamAttachment } from "stream-chat";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { formatCurrency, toPublicAssetUrl } from "@/lib/resources/format";
+import { orderDisplay, type OrderDisplaySource } from "@/lib/order-display";
 import { Modal } from "@/components/ui/Modal";
 
 /** `stream-chat`'s `Attachment` type carries no custom fields by default
@@ -22,6 +24,9 @@ export type LinkAttachment = StreamAttachment & {
   orderId?: string;
   orderNumber?: string;
   totalAmount?: number;
+  /** ORDER_LINK only, on cards sent after they were added: the order's
+   * product/design name (the picture reuses `thumbnailPath`). */
+  title?: string;
 };
 
 /** Renders `PRODUCT_LINK`/`ORDER_LINK` attachments (sent from this dashboard's
@@ -145,19 +150,40 @@ function OrderLinkCard({ attachment }: { attachment: LinkAttachment }) {
   const orderNumber = attachment.orderNumber ?? "Pesanan";
   const totalAmount = attachment.totalAmount;
 
+  // Cards sent before title/thumbnailPath were added to ORDER_LINK carry
+  // neither, so look the order up to label them. Same SWR key as the order
+  // detail page, so opening the order afterwards reuses this fetch. A viewer
+  // who can't access the order (403) just keeps the number + icon.
+  const needsLookup = !!orderId && !attachment.title;
+  const { data } = useSWR(needsLookup ? ["orders", orderId] : null, () =>
+    apiFetch<OrderDisplaySource>(`orders/${orderId}`),
+  );
+  const looked = data?.data ? orderDisplay(data.data) : null;
+
+  const title = attachment.title?.trim() || looked?.title;
+  const thumbUrl = toPublicAssetUrl(attachment.thumbnailPath ?? looked?.thumbnailPath);
+
   return (
     <button
       type="button"
+      title="Lihat detail pesanan"
       onClick={() => orderId && router.push(`/dashboard/orders/${orderId}`)}
-      className="flex w-60 items-center gap-3 rounded-2xl border border-border bg-surface p-2.5 text-left transition-colors hover:bg-surface-muted"
+      className="flex w-60 cursor-pointer items-center gap-3 rounded-2xl border border-border bg-surface p-2.5 text-left transition-colors hover:bg-surface-muted"
     >
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-100">
-        <Receipt className="size-5 text-purple-600" />
+      <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-purple-100">
+        {thumbUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- externally-hosted upload
+          <img src={thumbUrl} alt="" className="size-full object-cover" />
+        ) : (
+          <Receipt className="size-5 text-purple-600" />
+        )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-ink">#{orderNumber}</p>
+        <p className="truncate text-sm font-bold text-ink">{title || `#${orderNumber}`}</p>
+        {title && <p className="truncate text-xs text-ink-soft">#{orderNumber}</p>}
         {totalAmount !== undefined && <p className="text-xs font-semibold text-orange-600">{formatCurrency(totalAmount)}</p>}
       </div>
+      <ChevronRight className="size-4 shrink-0 text-ink-faint" />
     </button>
   );
 }

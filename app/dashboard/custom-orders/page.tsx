@@ -53,6 +53,7 @@ export default function CustomOrdersPage() {
     itemName: "",
     quantity: "1",
     unitPrice: "",
+    packageWeight: "",
     courierCompany: "",
     courierType: "REG",
     shippingCost: "0",
@@ -112,6 +113,7 @@ export default function CustomOrdersPage() {
       itemName: "",
       quantity: "1",
       unitPrice: "",
+      packageWeight: "",
       courierCompany: "",
       courierType: "REG",
       shippingCost: "0",
@@ -121,7 +123,14 @@ export default function CustomOrdersPage() {
     });
   };
 
-  const canSubmit = !!selectedCustomer && form.itemName.trim().length > 0 && Number(form.unitPrice) > 0 && !submitting;
+  // Package weight is required: the customer's courier quote at checkout is
+  // based on it (customers never enter a weight themselves).
+  const canSubmit =
+    !!selectedCustomer &&
+    form.itemName.trim().length > 0 &&
+    Number(form.unitPrice) > 0 &&
+    Number(form.packageWeight) > 0 &&
+    !submitting;
 
   const handleSubmit = async () => {
     if (!selectedCustomer) return;
@@ -134,6 +143,7 @@ export default function CustomOrdersPage() {
           itemName: form.itemName,
           quantity: Number(form.quantity) || 1,
           unitPrice: Number(form.unitPrice),
+          packageWeight: Math.round(Number(form.packageWeight)),
           courierCompany: form.courierCompany || undefined,
           courierType: form.courierType || undefined,
           shippingCost: Number(form.shippingCost) || 0,
@@ -269,6 +279,17 @@ export default function CustomOrdersPage() {
                   onChange={(e) => setForm((f) => ({ ...f, unitPrice: e.target.value }))}
                   placeholder="15000"
                 />
+              </div>
+              <div>
+                <FieldLabel required>Berat Paket (gram)</FieldLabel>
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.packageWeight}
+                  onChange={(e) => setForm((f) => ({ ...f, packageWeight: e.target.value }))}
+                  placeholder="500"
+                />
+                <p className="mt-1 text-xs text-ink-faint">Total berat semua item termasuk kemasan — dipakai untuk ongkos kirim.</p>
               </div>
               <div>
                 <FieldLabel>Kurir</FieldLabel>

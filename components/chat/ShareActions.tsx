@@ -7,6 +7,7 @@ import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { formatCurrency, toPublicAssetUrl } from "@/lib/resources/format";
 import { Modal } from "@/components/ui/Modal";
+import { orderDisplay, type OrderDisplaySource } from "@/lib/order-display";
 import type { LinkAttachment } from "./CustomAttachment";
 
 interface ProductRow {
@@ -17,7 +18,7 @@ interface ProductRow {
   SellerId?: string | null;
 }
 
-interface OrderRow {
+interface OrderRow extends OrderDisplaySource {
   Id: string;
   OrderNumber?: string | null;
   TotalAmount?: number | null;
@@ -96,11 +97,16 @@ export function ShareActions() {
   const sendOrder = async (order: OrderRow) => {
     setSending(true);
     try {
+      // Title + picture are snapshotted into the message so both apps can
+      // render the card without fetching the order.
+      const display = orderDisplay(order);
       const attachment: LinkAttachment = {
         type: "ORDER_LINK",
         orderId: order.Id,
         orderNumber: order.OrderNumber ?? order.Id,
         totalAmount: order.TotalAmount ?? undefined,
+        title: display.title,
+        thumbnailPath: display.thumbnailPath,
       };
       await channel.sendMessage({ text: `🔗 Pesanan #${order.OrderNumber ?? order.Id}`, attachments: [attachment] });
       setPicker(null);
@@ -173,25 +179,35 @@ export function ShareActions() {
           <p className="text-sm text-ink-soft">Belum ada pesanan berharga dari customer ini.</p>
         ) : (
           <div className="flex max-h-96 flex-col gap-2 overflow-y-auto">
-            {orders.map((o) => (
-              <button
-                key={o.Id}
-                type="button"
-                disabled={sending}
-                onClick={() => sendOrder(o)}
-                className="flex items-center gap-3 rounded-xl border border-border p-2.5 text-left transition-colors hover:bg-surface-muted disabled:opacity-50"
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-purple-100">
-                  <Receipt className="size-4 text-purple-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-ink">#{o.OrderNumber ?? o.Id}</p>
-                  {o.TotalAmount !== undefined && o.TotalAmount !== null && (
-                    <p className="text-xs text-ink-soft">{formatCurrency(o.TotalAmount)}</p>
-                  )}
-                </div>
-              </button>
-            ))}
+            {orders.map((o) => {
+              const display = orderDisplay(o);
+              const thumbUrl = toPublicAssetUrl(display.thumbnailPath);
+              return (
+                <button
+                  key={o.Id}
+                  type="button"
+                  disabled={sending}
+                  onClick={() => sendOrder(o)}
+                  className="flex items-center gap-3 rounded-xl border border-border p-2.5 text-left transition-colors hover:bg-surface-muted disabled:opacity-50"
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-purple-100">
+                    {thumbUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- externally-hosted upload
+                      <img src={thumbUrl} alt="" className="size-full object-cover" />
+                    ) : (
+                      <Receipt className="size-4 text-purple-600" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{display.title}</p>
+                    <p className="truncate text-xs text-ink-soft">
+                      #{o.OrderNumber ?? o.Id}
+                      {o.TotalAmount !== undefined && o.TotalAmount !== null && ` · ${formatCurrency(o.TotalAmount)}`}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </Modal>
