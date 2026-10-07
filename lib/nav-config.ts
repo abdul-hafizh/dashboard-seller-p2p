@@ -18,7 +18,6 @@ import {
   MessageCircle,
   Home,
   ListOrdered,
-  Palette,
   UserCog,
   Settings2,
   Sparkles,
@@ -65,7 +64,9 @@ export const NAV_SECTIONS: NavSection[] = [
       },
       { href: "/dashboard/chat", label: "Pesan", icon: MessageCircle, roles: [ROLE.MERCHANT] },
       { href: "/dashboard/print-queue", label: "Antrian Cetak", icon: ListOrdered, roles: [ROLE.MERCHANT] },
-      { href: "/dashboard/canva", label: "Canva", icon: Palette, roles: [ROLE.MERCHANT] },
+      // Hidden for now: the page lives in app/dashboard/_canva (the "_" prefix keeps
+      // Next.js from routing it) — rename the folder back to restore /dashboard/canva.
+      // { href: "/dashboard/canva", label: "Canva", icon: Palette, roles: [ROLE.MERCHANT] },
       { href: "/dashboard/addresses", label: "Alamat", icon: Home },
     ],
   },

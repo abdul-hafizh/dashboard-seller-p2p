@@ -54,6 +54,9 @@ interface OrderItem {
   PrintProfileId: number | null;
   ProductId?: string | null;
   AIModel?: AIModel | null;
+  Product?: { ProductName: string | null } | null;
+  Material?: { Name: string | null } | null;
+  PrintProfile?: { Name: string | null } | null;
 }
 
 interface StatusHistoryEntry {
@@ -487,6 +490,7 @@ export default function OrderDetailPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
+                      <th className="px-4 py-2.5">Item</th>
                       <th className="px-4 py-2.5">Qty</th>
                       <th className="px-4 py-2.5">Harga Satuan</th>
                       <th className="px-4 py-2.5">Material</th>
@@ -494,14 +498,27 @@ export default function OrderDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {order.Items.map((item) => (
-                      <tr key={item.Id} className="border-b border-border last:border-0">
-                        <td className="px-4 py-2.5 text-ink">{item.Quantity ?? "-"}</td>
-                        <td className="px-4 py-2.5 text-ink">{formatCurrency(item.UnitPrice)}</td>
-                        <td className="px-4 py-2.5 text-ink-soft">{item.MaterialId ?? "-"}</td>
-                        <td className="px-4 py-2.5 text-ink-soft">{item.PrintProfileId ?? "-"}</td>
-                      </tr>
-                    ))}
+                    {order.Items.map((item) => {
+                      // Orders priced before the backend mirrored the merchant's
+                      // price onto their single item still have UnitPrice empty —
+                      // that price is the order's subtotal.
+                      const unitPrice =
+                        item.UnitPrice ??
+                        (order.Items!.length === 1 && order.SubtotalAmount != null
+                          ? Math.round(order.SubtotalAmount / Math.max(1, item.Quantity ?? 1))
+                          : null);
+                      return (
+                        <tr key={item.Id} className="border-b border-border last:border-0">
+                          <td className="px-4 py-2.5 font-semibold text-ink">
+                            {item.Product?.ProductName ?? item.AIModel?.ModelName ?? "-"}
+                          </td>
+                          <td className="px-4 py-2.5 text-ink">{item.Quantity ?? "-"}</td>
+                          <td className="px-4 py-2.5 text-ink">{unitPrice != null ? formatCurrency(unitPrice) : "-"}</td>
+                          <td className="px-4 py-2.5 text-ink-soft">{item.Material?.Name ?? "-"}</td>
+                          <td className="px-4 py-2.5 text-ink-soft">{item.PrintProfile?.Name ?? "-"}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
