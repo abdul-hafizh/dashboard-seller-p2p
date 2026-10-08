@@ -16,7 +16,10 @@
  * way to fix it short of editing the DB directly. Anchoring the lookup to a
  * fixed, known-reachable host means a bad value only ever breaks the *data*
  * calls that use it — the lookup, and thus recovery, keeps working. */
-const BOOTSTRAP_API_URL = process.env.API_BASE_URL ?? "http://localhost:3000";
+
+const BOOTSTRAP_API_URL = process.env.API_BASE_URL ?? "https://api.petope.id";
+
+const isLoopback = (url: string) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(url);
 
 const CACHE_TTL_MS = 60_000;
 
@@ -40,7 +43,15 @@ export async function getApiBaseUrl(): Promise<string> {
     const res = await fetch(`${BOOTSTRAP_API_URL}/api/system/base-url`, { cache: "no-store" });
     const payload = await res.json().catch(() => null);
     const baseUrl = payload?.data?.baseUrl;
-    if (res.ok && typeof baseUrl === "string" && /^https?:\/\//i.test(baseUrl)) {
+    // A loopback value (e.g. a SystemSettings row still on "http://localhost:3000")
+    // is ignored unless the bootstrap itself is local — on a real server it
+    // would point every proxied request at the dashboard host itself.
+    if (
+      res.ok &&
+      typeof baseUrl === "string" &&
+      /^https?:\/\//i.test(baseUrl) &&
+      (!isLoopback(baseUrl) || isLoopback(BOOTSTRAP_API_URL))
+    ) {
       cache = { url: baseUrl, fetchedAt: now };
       return baseUrl;
     }
