@@ -237,8 +237,8 @@ export default function OrderDetailPage() {
   const models = (order.Items ?? []).map((item) => item.AIModel).filter((m): m is AIModel => Boolean(m));
   // Once a payment is PAID, the customer already paid this exact amount —
   // changing it afterwards would no longer match what was actually charged
-  // (see api-meshy's PaymentController.createSnapToken, which locks the
-  // amount in at snap-token creation), so price editing is locked from here on.
+  // (see api-meshy's PaymentController.createCheckout, which locks the
+  // amount in when the DOKU checkout is created), so price editing is locked from here on.
   const isPaid = (order.Payments ?? []).some((p) => p.Status === "PAID");
   // Marketplace-product orders already know their weight (product weight ×
   // qty), so the merchant only has to fill it in for quote/custom orders.

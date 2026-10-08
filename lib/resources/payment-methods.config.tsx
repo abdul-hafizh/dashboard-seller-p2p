@@ -18,7 +18,7 @@ export const paymentMethodsConfig: ResourceConfig = {
   ],
   fields: [
     { name: "Name", label: "Nama Metode", type: "text", required: true, placeholder: "QRIS" },
-    { name: "Provider", label: "Provider", type: "text", placeholder: "Midtrans" },
+    { name: "Provider", label: "Provider", type: "text", placeholder: "DOKU" },
     { name: "IsActive", label: "Aktif", type: "boolean", defaultValue: true, intBoolean: true },
   ],
 };
