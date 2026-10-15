@@ -15,6 +15,7 @@ import {
   Package,
   ShoppingCart,
   Users,
+  Store,
   MessageCircle,
   Home,
   ListOrdered,
@@ -23,6 +24,8 @@ import {
   Sparkles,
   FilePlus2,
   Percent,
+  BarChart3,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -50,6 +53,10 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/products", label: "Produk", icon: Package },
       { href: "/dashboard/orders", label: "Pesanan", icon: ShoppingCart },
+      // Merchant: own sales · Super Admin: every seller (scoped server-side).
+      { href: "/dashboard/sales", label: "Laporan Penjualan", icon: BarChart3 },
+      // Merchant: "Penghasilan Saya" · Super Admin: Petope + sellers + Meshy balance.
+      { href: "/dashboard/finance", label: "Rekap Keuangan", icon: Wallet },
       {
         href: "/dashboard/ai-model-orders",
         label: "Pesanan dari AI Model",
@@ -109,6 +116,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Administrasi",
     items: [
       { href: "/dashboard/users", label: "Pengguna", icon: Users, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/merchants", label: "Merchant", icon: Store, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/system-settings", label: "Pengaturan Sistem", icon: Settings2, roles: [ROLE.SUPER_ADMIN] },
     ],

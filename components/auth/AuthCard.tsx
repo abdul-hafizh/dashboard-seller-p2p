@@ -6,11 +6,14 @@ interface AuthCardProps {
   title: string;
   subtitle: string;
   error?: string | null;
+  /** Neutral status message (e.g. "waiting for admin approval") — shown in
+   * amber instead of the red error style. */
+  notice?: string | null;
   children: ReactNode;
   footer: ReactNode;
 }
 
-export function AuthCard({ title, subtitle, error, children, footer }: AuthCardProps) {
+export function AuthCard({ title, subtitle, error, notice, children, footer }: AuthCardProps) {
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <div className="flex flex-1 items-center justify-center px-4 py-10">
@@ -26,6 +29,12 @@ export function AuthCard({ title, subtitle, error, children, footer }: AuthCardP
         {error && (
           <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-error/25 bg-error/10 px-3.5 py-3 text-xs font-semibold text-error">
             {error}
+          </div>
+        )}
+
+        {notice && (
+          <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-brand-orange/30 bg-brand-orange/10 px-3.5 py-3 text-xs font-semibold text-brand-orange-deep">
+            {notice}
           </div>
         )}
 

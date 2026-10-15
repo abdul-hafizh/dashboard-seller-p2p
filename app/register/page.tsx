@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, Lock, User, Phone, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, Phone, ArrowRight, Clock } from "lucide-react";
 import Link from "next/link";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
@@ -32,6 +32,9 @@ type FormValues = z.infer<typeof schema>;
 export default function RegisterPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  // Set once the sign-up went through: new merchants wait for an admin's
+  // approval, so instead of logging in we show that status.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -53,6 +56,10 @@ export default function RegisterPage() {
     const payload = await res.json().catch(() => null);
     if (!res.ok || !payload?.success) {
       setServerError(payload?.message || "Registrasi gagal. Coba lagi.");
+      return;
+    }
+    if (payload.data?.PendingApproval) {
+      setPendingEmail(values.Email);
       return;
     }
 
@@ -77,6 +84,10 @@ export default function RegisterPage() {
       body: JSON.stringify({ idToken, registerAsMerchant: true }),
     });
     const payload = await res.json().catch(() => null);
+    if (payload?.code === "PENDING_APPROVAL") {
+      setPendingEmail("Google");
+      return;
+    }
     if (!res.ok || !payload?.success) {
       setServerError(payload?.message || "Daftar dengan Google gagal. Coba lagi.");
       return;
@@ -84,6 +95,38 @@ export default function RegisterPage() {
     router.push("/dashboard");
     router.refresh();
   };
+
+  if (pendingEmail) {
+    return (
+      <AuthCard
+        title="Pendaftaran Terkirim"
+        subtitle="Akun merchant kamu sedang ditinjau admin"
+        footer={
+          <Link href="/login" className="font-bold text-brand-purple hover:underline">
+            Kembali ke halaman Masuk
+          </Link>
+        }
+      >
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex size-14 items-center justify-center rounded-full bg-brand-orange/10 text-brand-orange-deep">
+            <Clock className="size-7" />
+          </div>
+          <div className="rounded-2xl border border-brand-orange/30 bg-brand-orange/10 px-4 py-3 text-sm font-semibold text-brand-orange-deep">
+            Menunggu persetujuan admin
+          </div>
+          <p className="text-sm text-ink-soft">
+            Terima kasih sudah mendaftar
+            {pendingEmail !== "Google" ? (
+              <>
+                {" "}dengan <span className="font-semibold text-ink">{pendingEmail}</span>
+              </>
+            ) : null}
+            . Admin akan meninjau pendaftaranmu terlebih dahulu. Kamu baru bisa masuk ke dashboard setelah akun disetujui.
+          </p>
+        </div>
+      </AuthCard>
+    );
+  }
 
   return (
     <AuthCard

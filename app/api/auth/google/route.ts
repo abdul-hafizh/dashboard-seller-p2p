@@ -11,7 +11,7 @@ import { respondWithSession } from "@/lib/auth-response";
  * An email that already belongs to a Customer account still gets rejected by
  * respondWithSession below, same as password login. */
 export async function POST(request: NextRequest) {
-  let body: { idToken?: string; registerAsMerchant?: boolean };
+  let body: { idToken?: string; registerAsMerchant?: boolean; loginOnly?: boolean };
   try {
     body = await request.json();
   } catch {
@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     body: JSON.stringify({
       idToken: body.idToken,
       registerAsMerchant: body.registerAsMerchant === true,
+      // The login page never creates accounts — unknown emails are sent to register.
+      loginOnly: body.loginOnly === true,
     }),
   }).catch(() => null);
 
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
   const payload = await upstream.json().catch(() => null);
   if (!upstream.ok || !payload?.success) {
     return NextResponse.json(
-      { success: false, message: payload?.message || "Masuk dengan Google gagal." },
+      { success: false, message: payload?.message || "Masuk dengan Google gagal.", code: payload?.code },
       { status: upstream.status || 400 },
     );
   }

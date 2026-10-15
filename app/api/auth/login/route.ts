@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const payload = await upstream.json().catch(() => null);
   if (!upstream.ok || !payload?.success) {
     return NextResponse.json(
-      { success: false, message: payload?.message || "Email atau password salah." },
+      { success: false, message: payload?.message || "Email atau password salah.", code: payload?.code },
       { status: upstream.status || 400 },
     );
   }

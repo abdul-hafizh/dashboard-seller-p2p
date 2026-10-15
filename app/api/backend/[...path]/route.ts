@@ -53,10 +53,14 @@ async function proxy(request: NextRequest, path: string[]) {
   }
 
   const buffer = await upstream.arrayBuffer();
-  return new NextResponse(buffer, {
-    status: upstream.status,
-    headers: responseContentType ? { "Content-Type": responseContentType } : undefined,
-  });
+  const responseHeaders: Record<string, string> = {};
+  if (responseContentType) responseHeaders["Content-Type"] = responseContentType;
+  // Files (invoices, merchant documents) keep their name and caching rules.
+  for (const name of ["content-disposition", "cache-control", "x-content-type-options"]) {
+    const value = upstream.headers.get(name);
+    if (value) responseHeaders[name] = value;
+  }
+  return new NextResponse(buffer, { status: upstream.status, headers: responseHeaders });
 }
 
 type RouteContext = { params: Promise<{ path: string[] }> };

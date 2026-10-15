@@ -25,6 +25,17 @@ type FormValues = z.infer<typeof schema>;
 export default function LoginPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Accounts awaiting admin approval aren't an error on the user's side —
+  // show those as a status notice.
+  const showFailure = (payload: { message?: string; code?: string } | null, fallback: string) => {
+    if (payload?.code === "PENDING_APPROVAL") {
+      setNotice(payload.message || "Akun kamu masih menunggu persetujuan admin.");
+    } else {
+      setServerError(payload?.message || fallback);
+    }
+  };
   const {
     register,
     handleSubmit,
@@ -33,6 +44,7 @@ export default function LoginPage() {
 
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
+    setNotice(null);
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -40,7 +52,7 @@ export default function LoginPage() {
     });
     const payload = await res.json().catch(() => null);
     if (!res.ok || !payload?.success) {
-      setServerError(payload?.message || "Login gagal. Coba lagi.");
+      showFailure(payload, "Login gagal. Coba lagi.");
       return;
     }
     router.push("/dashboard");
@@ -49,14 +61,15 @@ export default function LoginPage() {
 
   const handleGoogleCredential = async (idToken: string) => {
     setServerError(null);
+    setNotice(null);
     const res = await fetch("/api/auth/google", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
+      body: JSON.stringify({ idToken, loginOnly: true }),
     });
     const payload = await res.json().catch(() => null);
     if (!res.ok || !payload?.success) {
-      setServerError(payload?.message || "Masuk dengan Google gagal. Coba lagi.");
+      showFailure(payload, "Masuk dengan Google gagal. Coba lagi.");
       return;
     }
     router.push("/dashboard");
@@ -68,6 +81,7 @@ export default function LoginPage() {
       title="Masuk ke Dashboard"
       subtitle={`Khusus untuk merchant & admin ${siteConfig.appName}`}
       error={serverError}
+      notice={notice}
       footer={
         <>
           Belum punya akun merchant?{" "}

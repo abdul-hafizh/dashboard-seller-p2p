@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { MerchantDocumentsCard } from "@/components/merchants/MerchantDocumentsCard";
+import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
 
 type TaxType = "PKP" | "NON_PKP";
 
@@ -36,7 +38,7 @@ const TAX_OPTIONS: { value: TaxType; label: string; description: string }[] = [
 ];
 
 export default function ProfileSettingsPage() {
-  const { user, loading, refresh } = useAuth();
+  const { user, loading, refresh, isMerchant } = useAuth();
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -185,6 +187,8 @@ export default function ProfileSettingsPage() {
           </form>
         </CardBody>
       </Card>
+      {isMerchant && <OperatingHoursCard />}
+      {isMerchant && <MerchantDocumentsCard />}
     </div>
   );
 }
