@@ -1,17 +1,15 @@
 import type { ResourceConfig } from "./types";
-import { formatCurrency } from "./format";
 import { Badge } from "@/components/ui/Badge";
 
 export const materialsConfig: ResourceConfig = {
   key: "materials",
   endpoint: "materials",
   title: "Material",
-  description: "Jenis material cetak beserta densitas dan harga per gram.",
+  description: "Bahan cetak yang tersedia di toko. Harga diatur admin di Master Harga.",
   searchPlaceholder: "Cari material...",
   columns: [
     { key: "Name", label: "Nama" },
     { key: "Density", label: "Densitas (g/cm³)", render: (r) => (r.Density != null ? String(r.Density) : "-") },
-    { key: "PricePerGram", label: "Harga / gram", render: (r) => formatCurrency(r.PricePerGram) },
     {
       key: "Status",
       label: "Status",
@@ -19,9 +17,17 @@ export const materialsConfig: ResourceConfig = {
     },
   ],
   fields: [
-    { name: "Name", label: "Nama Material", type: "text", required: true, placeholder: "PLA" },
+    {
+      name: "Name",
+      label: "Bahan",
+      type: "select",
+      required: true,
+      optionsEndpoint: "price-master/materials",
+      optionValueKey: "Name",
+      optionLabelKey: "Name",
+      helpText: "Dari daftar bahan Master Harga — customer hanya bisa memilih bahan yang ada di sini.",
+    },
     { name: "Density", label: "Densitas (g/cm³)", type: "number", placeholder: "1.24" },
-    { name: "PricePerGram", label: "Harga per Gram (Rp)", type: "number", placeholder: "500" },
     { name: "Description", label: "Deskripsi", type: "textarea", placeholder: "Catatan tambahan tentang material ini" },
     { name: "Status", label: "Aktif", type: "boolean", defaultValue: true },
   ],

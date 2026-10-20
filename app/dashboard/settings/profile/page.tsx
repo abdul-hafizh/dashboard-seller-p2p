@@ -11,6 +11,7 @@ import { FieldLabel } from "@/components/ui/FieldLabel";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { MerchantDocumentsCard } from "@/components/merchants/MerchantDocumentsCard";
 import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
+import { BankAccountCard } from "@/components/merchants/BankAccountCard";
 
 type TaxType = "PKP" | "NON_PKP";
 
@@ -188,6 +189,7 @@ export default function ProfileSettingsPage() {
         </CardBody>
       </Card>
       {isMerchant && <OperatingHoursCard />}
+      {isMerchant && <BankAccountCard />}
       {isMerchant && <MerchantDocumentsCard />}
     </div>
   );

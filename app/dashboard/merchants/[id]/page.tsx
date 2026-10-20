@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Package, ShieldAlert, ShoppingCart, Store, CalendarDays, LogIn, FolderOpen } from "lucide-react";
 import { DocumentRow, type MerchantDocument } from "@/components/merchants/MerchantDocumentsCard";
 import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
+import { MerchantBankInfo } from "@/components/merchants/BankAccountCard";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -36,6 +37,9 @@ interface MerchantProduct {
 interface MerchantDetail extends MerchantRow {
   Products: MerchantProduct[];
   Documents?: MerchantDocument[];
+  PayoutBankName?: string | null;
+  PayoutAccountNumber?: string | null;
+  PayoutAccountName?: string | null;
 }
 
 export default function MerchantDetailPage() {
@@ -119,6 +123,12 @@ export default function MerchantDetailPage() {
           </div>
         </CardBody>
       </Card>
+
+      <MerchantBankInfo
+        bankName={merchant.PayoutBankName}
+        accountNumber={merchant.PayoutAccountNumber}
+        accountName={merchant.PayoutAccountName}
+      />
 
       <OperatingHoursCard merchantId={id} />
 

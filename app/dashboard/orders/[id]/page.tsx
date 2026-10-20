@@ -16,6 +16,8 @@ import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
 import { downloadInvoice } from "@/lib/download-invoice";
+import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
+import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
 
 interface OrderStatus {
   Id: number;
@@ -57,6 +59,7 @@ interface OrderItem {
   Product?: { ProductName: string | null } | null;
   Material?: { Name: string | null } | null;
   PrintProfile?: { Name: string | null } | null;
+  WeightGrams?: number | null;
 }
 
 interface StatusHistoryEntry {
@@ -173,6 +176,15 @@ interface OrderDetail {
   ShippingAddress?: ShippingAddress | null;
   Payments?: PaymentSummary[];
   Shipments?: ShipmentInfo[];
+  /** Ready-to-print files the customer sent from the app's chat. */
+  PrintFiles?: {
+    Id: string;
+    FileName: string;
+    FileSize: number;
+    MaterialName: string | null;
+    Quantity: number;
+    Notes: string | null;
+  }[];
 }
 
 /** Mirrors flutter_meshy1's shippingCategoryLabel() so the merchant and
@@ -210,7 +222,9 @@ export default function OrderDetailPage() {
   const [nextStatusId, setNextStatusId] = useState<string>("");
   const [updating, setUpdating] = useState(false);
   const [expiredPreviews, setExpiredPreviews] = useState<Set<string>>(new Set());
-  const [priceInput, setPriceInput] = useState<string>("");
+  // Print weight per item + material → price from the admin's Master Harga.
+  const [itemWeightInput, setItemWeightInput] = useState<string>("");
+  const [materialInput, setMaterialInput] = useState<string>("");
   const [weightInput, setWeightInput] = useState<string>("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
@@ -218,16 +232,16 @@ export default function OrderDetailPage() {
   const [tracking, setTracking] = useState<Record<string, TrackingResult>>({});
   const [trackingLoading, setTrackingLoading] = useState<Record<string, boolean>>({});
 
-  // Keep the price field synced with the fetched order — re-runs after
-  // mutate() too, so a successful save shows the newly-saved value back.
+  // Keep the pricing fields synced with the fetched order — re-runs after
+  // mutate() too, so a successful save shows the newly-saved values back.
+  const firstItem = data?.data.Items?.length === 1 ? data.data.Items[0] : undefined;
   useEffect(() => {
-    // The input is the item price (before PPN / app fee / discount); older
-    // orders without a stored subtotal fall back to the total.
-    const amount = data?.data.SubtotalAmount ?? data?.data.TotalAmount;
-    setPriceInput(amount != null && amount > 0 ? String(amount) : "");
+    const itemGrams = firstItem?.WeightGrams;
+    setItemWeightInput(itemGrams != null && itemGrams > 0 ? String(itemGrams) : "");
+    setMaterialInput(firstItem?.Material?.Name ?? "");
     const grams = data?.data.PackageWeight;
     setWeightInput(grams != null && grams > 0 ? String(grams) : "");
-  }, [data?.data.SubtotalAmount, data?.data.TotalAmount, data?.data.PackageWeight]);
+  }, [firstItem?.WeightGrams, firstItem?.Material?.Name, data?.data.PackageWeight]);
 
   if (isLoading || !data) return <FullPageSpinner />;
 
@@ -271,9 +285,9 @@ export default function OrderDetailPage() {
   };
 
   const updatePrice = async () => {
-    const amount = Number(priceInput);
-    if (!priceInput || Number.isNaN(amount) || amount <= 0) {
-      toast.error("Masukkan harga yang valid (lebih dari 0).");
+    const itemGrams = Number(itemWeightInput);
+    if (!materialInput || !(itemGrams > 0)) {
+      toast.error("Pilih bahan dan isi berat cetak per item.");
       return;
     }
     const grams = weightInput ? Number(weightInput) : null;
@@ -289,7 +303,11 @@ export default function OrderDetailPage() {
     try {
       await apiFetch(`orders/${orderId}`, {
         method: "PUT",
-        json: { SubtotalAmount: amount, ...(grams !== null ? { PackageWeight: Math.round(grams) } : {}) },
+        json: {
+          ItemWeightGrams: itemGrams,
+          MaterialName: materialInput,
+          ...(grams !== null ? { PackageWeight: Math.round(grams) } : {}),
+        },
       });
       toast.success("Harga pesanan berhasil disimpan");
       mutate();
@@ -475,6 +493,31 @@ export default function OrderDetailPage() {
                     </div>
                   );
                 })}
+              </CardBody>
+            </Card>
+          )}
+
+          {(order.PrintFiles ?? []).length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Box className="size-4" /> File Cetak dari Customer
+                </CardTitle>
+              </CardHeader>
+              <CardBody className="grid gap-3 sm:grid-cols-2">
+                {order.PrintFiles!.map((f) => (
+                  <PrintFileCard
+                    key={f.Id}
+                    file={{
+                      id: f.Id,
+                      fileName: f.FileName,
+                      fileSize: f.FileSize,
+                      materialName: f.MaterialName,
+                      quantity: f.Quantity,
+                      notes: f.Notes,
+                    }}
+                  />
+                ))}
               </CardBody>
             </Card>
           )}
@@ -715,16 +758,23 @@ export default function OrderDetailPage() {
                       ? "Pelanggan menunggu harga ini sebelum bisa melanjutkan ke pembayaran & pengiriman."
                       : "Pelanggan sudah bisa melihat harga ini dan melanjutkan ke pembayaran."}
                   </p>
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="Contoh: 150000"
-                    value={priceInput}
-                    onChange={(e) => setPriceInput(e.target.value)}
-                  />
-                  <p className="text-xs text-ink-soft">
-                    Isi harga barang saja — PPN, biaya layanan aplikasi, dan diskon tier pelanggan ditambahkan otomatis.
-                  </p>
+                  {(order.Items ?? []).length === 1 ? (
+                    <>
+                      <MasterPriceFields
+                        idPrefix="order-price"
+                        material={materialInput}
+                        onMaterial={setMaterialInput}
+                        weight={itemWeightInput}
+                        onWeight={setItemWeightInput}
+                        quantity={Math.max(1, order.Items![0].Quantity ?? 1)}
+                      />
+                      <p className="text-xs text-ink-soft">
+                        Harga dihitung dari Master Harga admin. PPN, biaya layanan, dan diskon tier pelanggan ditambahkan otomatis.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-ink-soft">Harga pesanan berisi beberapa item mengikuti harga masing-masing item.</p>
+                  )}
                   <label className="mt-1 text-xs font-semibold text-ink">
                     Berat paket (gram){hasProductItems ? " — opsional" : ""}
                   </label>
@@ -738,7 +788,11 @@ export default function OrderDetailPage() {
                   <p className="text-xs text-ink-soft">
                     Termasuk kemasan. Dipakai untuk menghitung ongkos kirim — pelanggan tidak mengisi berat sendiri.
                   </p>
-                  <Button onClick={updatePrice} loading={updatingPrice} disabled={!priceInput}>
+                  <Button
+                    onClick={updatePrice}
+                    loading={updatingPrice}
+                    disabled={(order.Items ?? []).length !== 1 || !materialInput || !itemWeightInput}
+                  >
                     {(order.TotalAmount ?? 0) <= 0 ? "Kirim Harga" : "Simpan Perubahan"}
                   </Button>
                 </>

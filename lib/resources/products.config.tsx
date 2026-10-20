@@ -39,7 +39,17 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
           return category?.Name ?? "-";
         },
       },
-      { key: "Price", label: "Harga", render: (r) => formatCurrency(r.Price) },
+      { key: "MaterialName", label: "Bahan", render: (r) => (r.MaterialName as string | null) || "-" },
+      {
+        key: "Price",
+        label: "Harga",
+        render: (r) =>
+          r.Price != null ? (
+            formatCurrency(r.Price)
+          ) : (
+            <span className="text-xs font-semibold text-brand-orange-deep">Belum ada harga</span>
+          ),
+      },
       {
         key: "Stock",
         label: "Stok",
@@ -95,15 +105,23 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
         optionLabelKey: "Name",
       },
       { name: "Description", label: "Deskripsi", type: "textarea" },
-      { name: "Price", label: "Harga (Rp)", type: "number", placeholder: "150000" },
-      { name: "Stock", label: "Stok", type: "number", placeholder: "10", defaultValue: 0 },
+      {
+        name: "MaterialName",
+        label: "Bahan",
+        type: "select",
+        optionsEndpoint: "price-master/materials",
+        optionValueKey: "Name",
+        optionLabelKey: "Name",
+        helpText: "Harga dihitung otomatis: berat × harga per gram bahan ini di Master Harga admin.",
+      },
       {
         name: "Weight",
         label: "Berat per Item (gram)",
         type: "number",
         placeholder: "250",
-        helpText: "Termasuk kemasan. Dipakai untuk menghitung ongkos kirim — pembeli tidak mengisi berat sendiri.",
+        helpText: "Menentukan harga dan ongkos kirim. Produk baru bisa dipublikasikan setelah bahan & berat diisi dan admin sudah mengisi harganya.",
       },
+      { name: "Stock", label: "Stok", type: "number", placeholder: "10", defaultValue: 0 },
       ...(isAdmin
         ? [
             {

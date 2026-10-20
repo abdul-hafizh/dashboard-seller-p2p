@@ -15,12 +15,16 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 interface TaxAndFees {
   taxPercent: number;
   serviceFeePercent: number;
+  sellerFeePercent: number;
+  minPayoutAmount: number;
 }
 
 export default function TaxFeeSettingsPage() {
   const { isAdmin, loading: authLoading } = useAuth();
   const [taxPercentDraft, setTaxPercentDraft] = useState("");
   const [serviceFeePercentDraft, setServiceFeePercentDraft] = useState("");
+  const [sellerFeePercentDraft, setSellerFeePercentDraft] = useState("");
+  const [minPayoutDraft, setMinPayoutDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -30,6 +34,8 @@ export default function TaxFeeSettingsPage() {
       const res = await apiFetch<TaxAndFees>("system-settings/tax-and-fees");
       setTaxPercentDraft(String(res.data.taxPercent));
       setServiceFeePercentDraft(String(res.data.serviceFeePercent));
+      setSellerFeePercentDraft(String(res.data.sellerFeePercent ?? 0));
+      setMinPayoutDraft(String(res.data.minPayoutAmount ?? 50000));
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Gagal memuat pengaturan pajak & biaya layanan.");
     } finally {
@@ -54,10 +60,20 @@ export default function TaxFeeSettingsPage() {
       toast.error("Persentase biaya layanan harus antara 0 - 100.");
       return;
     }
+    const sellerFeePercent = Number(sellerFeePercentDraft);
+    if (!Number.isFinite(sellerFeePercent) || sellerFeePercent < 0 || sellerFeePercent > 100) {
+      toast.error("Fee transaksi seller harus antara 0 - 100.");
+      return;
+    }
+    const minPayoutAmount = Number(minPayoutDraft);
+    if (!Number.isFinite(minPayoutAmount) || minPayoutAmount < 0) {
+      toast.error("Minimal pencairan tidak valid.");
+      return;
+    }
 
     setSaving(true);
     try {
-      await apiFetch("system-settings/tax-and-fees", { method: "PUT", json: { taxPercent, serviceFeePercent } });
+      await apiFetch("system-settings/tax-and-fees", { method: "PUT", json: { taxPercent, serviceFeePercent, sellerFeePercent, minPayoutAmount } });
       toast.success("Pengaturan pajak & biaya layanan berhasil disimpan.");
       await load();
     } catch (error) {
@@ -129,6 +145,35 @@ export default function TaxFeeSettingsPage() {
                   step="0.1"
                   value={taxPercentDraft}
                   onChange={(e) => setTaxPercentDraft(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-2 border-t border-border pt-5">
+                <FieldLabel>Fee Transaksi Seller (%)</FieldLabel>
+                <p className="text-xs text-ink-soft">
+                  Dibayar <b>seller kepada Petope</b> dari setiap penjualan — berbeda dari biaya layanan yang dibayar customer.
+                  Dihitung dari Harga Dasar dan dipotong dari saldo hasil jualan seller. Contoh: harga dasar Rp 300.000 dan fee
+                  5% = Rp 15.000. Perubahan berlaku untuk pesanan baru (pesanan lama memakai fee saat dibuat).
+                </p>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.1"
+                  value={sellerFeePercentDraft}
+                  onChange={(e) => setSellerFeePercentDraft(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <FieldLabel>Minimal Pencairan Dana Seller (Rp)</FieldLabel>
+                <p className="text-xs text-ink-soft">Nominal terkecil yang bisa diajukan seller saat menarik saldo.</p>
+                <Input
+                  type="number"
+                  min={0}
+                  step="1000"
+                  value={minPayoutDraft}
+                  onChange={(e) => setMinPayoutDraft(e.target.value)}
                   className="max-w-xs"
                 />
               </div>

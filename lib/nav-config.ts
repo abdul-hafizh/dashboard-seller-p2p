@@ -26,6 +26,8 @@ import {
   Percent,
   BarChart3,
   Wallet,
+  Banknote,
+  Contact,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -56,7 +58,11 @@ export const NAV_SECTIONS: NavSection[] = [
       // Merchant: own sales · Super Admin: every seller (scoped server-side).
       { href: "/dashboard/sales", label: "Laporan Penjualan", icon: BarChart3 },
       // Merchant: "Penghasilan Saya" · Super Admin: Petope + sellers + Meshy balance.
+      { href: "/dashboard/customers", label: "Customer", icon: Contact, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/finance", label: "Rekap Keuangan", icon: Wallet },
+      // Merchant: own balance + withdrawals · Super Admin: process them.
+      { href: "/dashboard/payouts", label: "Pencairan Dana", icon: Banknote },
+      { href: "/dashboard/shipping-ledger", label: "Keuangan Ongkir", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
       {
         href: "/dashboard/ai-model-orders",
         label: "Pesanan dari AI Model",
@@ -117,6 +123,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/users", label: "Pengguna", icon: Users, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/merchants", label: "Merchant", icon: Store, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/price-master", label: "Master Harga", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/system-settings", label: "Pengaturan Sistem", icon: Settings2, roles: [ROLE.SUPER_ADMIN] },
     ],

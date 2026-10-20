@@ -24,6 +24,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
+import Link from "next/link";
 
 interface SellerFinance {
   MerchantId: string;
@@ -36,6 +37,7 @@ interface SellerFinance {
   BasePrice: number;
   Tax: number;
   ServiceFee: number;
+  SellerFee: number;
   Earnings: number;
   EarningsCompleted: number;
   EarningsInProgress: number;
@@ -53,12 +55,16 @@ interface FinanceReport {
     TokenNetSales: number;
     TokenTax: number;
     ProductSales: number;
+    SellerFee: number;
+    OwedToSellers: number;
     SellerTax: number;
     TaxToRemit: number;
     Income: number;
     TotalCollected: number;
     GatewayIncoming: number;
   };
+  Payouts?: { Earned: number; PaidOut: number; Pending: number; Available: number; InProgress: number };
+  Shipping?: { CustomerPayments: number; TopUps: number; CourierCharges: number; BiteshipBalance: number; Margin: number };
   Tokens?: {
     Orders: number;
     Tokens: number;
@@ -204,8 +210,8 @@ export default function FinancePage() {
             <h1 className="text-base font-extrabold text-ink">{isAdmin ? "Rekap Keuangan" : "Rekap Penjualan Toko"}</h1>
             <p className="mt-0.5 text-xs text-ink-soft">
               {isAdmin
-                ? "Semua pembayaran masuk ke rekening DOKU pusat. Rincian pendapatan, token, PPN, ongkir, dan penjualan per seller."
-                : "Penjualan toko kamu dari pesanan yang sudah dibayar."}
+                ? "Semua pembayaran masuk ke rekening DOKU pusat; hak seller dicairkan lewat menu Pencairan Dana."
+                : "Hasil jualan toko kamu dari pesanan yang sudah dibayar."}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:w-80">
@@ -252,14 +258,14 @@ export default function FinancePage() {
                     icon={Landmark}
                     label="Pendapatan Petope"
                     value={formatCurrency(platform.Income)}
-                    hint="Penjualan produk + biaya layanan + token, tanpa PPN & ongkir, sebelum potongan DOKU / Google"
+                    hint="Biaya layanan + fee transaksi seller + token, sebelum potongan DOKU / Google"
                     emphasis
                   />
                   <Stat
                     icon={HandCoins}
-                    label="PPN Wajib Disetor"
-                    value={formatCurrency(platform.TaxToRemit)}
-                    hint={`Produk ${formatCurrency(platform.SellerTax)} · Token ${formatCurrency(platform.TokenTax)}`}
+                    label="Hak Seller"
+                    value={formatCurrency(platform.OwedToSellers)}
+                    hint="Harga dasar + PPN seller − fee transaksi; dicairkan lewat menu Pencairan Dana"
                   />
                   <Stat
                     icon={Truck}
@@ -274,8 +280,8 @@ export default function FinancePage() {
                     <p className="mb-2 font-bold text-ink">Rincian Pendapatan</p>
                     <dl className="space-y-1.5">
                       <div className="flex justify-between">
-                        <dt className="text-ink-soft">Penjualan produk seller ({totals.Orders ?? 0} pesanan)</dt>
-                        <dd className="font-semibold text-ink">{formatCurrency(platform.ProductSales)}</dd>
+                        <dt className="text-ink-soft">Fee transaksi seller ({totals.Orders ?? 0} pesanan)</dt>
+                        <dd className="font-semibold text-ink">{formatCurrency(platform.SellerFee)}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-ink-soft">Biaya layanan</dt>
@@ -305,10 +311,36 @@ export default function FinancePage() {
                         <dd className="text-ink">− {formatCurrency(platform.ShippingCollected)}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-ink-soft">PPN untuk disetor</dt>
+                        <dt className="text-ink-soft">Hak seller (periode ini)</dt>
+                        <dd className="text-ink">− {formatCurrency(platform.OwedToSellers)}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-ink-soft">PPN token untuk disetor</dt>
                         <dd className="text-ink">− {formatCurrency(platform.TaxToRemit)}</dd>
                       </div>
                     </dl>
+                    {report.Payouts && (
+                      <div className="mt-3 border-t border-border pt-3">
+                        <p className="mb-1.5 font-bold text-ink">Pencairan Seller (sepanjang waktu)</p>
+                        <dl className="space-y-1.5">
+                          <div className="flex justify-between"><dt className="text-ink-soft">Sudah ditransfer</dt><dd className="text-ink">{formatCurrency(report.Payouts.PaidOut)}</dd></div>
+                          <div className="flex justify-between"><dt className="text-ink-soft">Menunggu transfer</dt><dd className="text-brand-orange-deep">{formatCurrency(report.Payouts.Pending)}</dd></div>
+                          <div className="flex justify-between"><dt className="text-ink-soft">Saldo seller belum diajukan</dt><dd className="text-ink">{formatCurrency(report.Payouts.Available)}</dd></div>
+                        </dl>
+                        <Link href="/dashboard/payouts" className="mt-1 inline-block text-xs font-semibold text-brand-purple">Buka Pencairan Dana →</Link>
+                      </div>
+                    )}
+                    {report.Shipping && (
+                      <div className="mt-3 border-t border-border pt-3">
+                        <p className="mb-1.5 font-bold text-ink">Ongkir (sepanjang waktu)</p>
+                        <dl className="space-y-1.5">
+                          <div className="flex justify-between"><dt className="text-ink-soft">Ongkir masuk dari customer</dt><dd className="text-ink">{formatCurrency(report.Shipping.CustomerPayments)}</dd></div>
+                          <div className="flex justify-between"><dt className="text-ink-soft">Biaya kurir Biteship</dt><dd className="text-ink">− {formatCurrency(report.Shipping.CourierCharges)}</dd></div>
+                          <div className="flex justify-between"><dt className="text-ink-soft">Perkiraan saldo Biteship</dt><dd className="text-ink">{formatCurrency(report.Shipping.BiteshipBalance)}</dd></div>
+                        </dl>
+                        <Link href="/dashboard/shipping-ledger" className="mt-1 inline-block text-xs font-semibold text-brand-purple">Buka Keuangan Ongkir →</Link>
+                      </div>
+                    )}
                     {platform.OrdersWithoutGatewayPayment > 0 && (
                       <p className="mt-2 text-[11px] text-brand-orange-deep">
                         {platform.OrdersWithoutGatewayPayment} pesanan seller berstatus lunas tanpa catatan pembayaran DOKU
@@ -343,9 +375,9 @@ export default function FinancePage() {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Stat
                   icon={Wallet}
-                  label="Penjualan Bersih"
+                  label="Hak Seller"
                   value={formatCurrency(totals.Earnings ?? 0)}
-                  hint="Harga produk setelah diskon, tanpa PPN & ongkir"
+                  hint={`Harga dasar + PPN − fee transaksi ${formatCurrency(totals.SellerFee ?? 0)}`}
                   emphasis
                 />
                 <Stat
@@ -381,7 +413,7 @@ export default function FinancePage() {
                           <th className="whitespace-nowrap px-4 py-3 text-right">Penjualan Kotor</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Diskon</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">PPN</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Penjualan Bersih</th>
+                          <th className="whitespace-nowrap px-4 py-3 text-right">Hak Seller</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Pesanan Selesai</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Masih Diproses</th>
                         </tr>

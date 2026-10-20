@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { toast } from "sonner";
-import { Search, FilePlus2, User, CheckCircle2, RotateCcw } from "lucide-react";
+import { Search, FilePlus2, User, CheckCircle2, RotateCcw, Box, Download } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +15,21 @@ import { FieldLabel } from "@/components/ui/FieldLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency } from "@/lib/resources/format";
+import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
+import { printFileUrl } from "@/components/printfiles/PrintFileCard";
+import { formatFileSize } from "@/components/merchants/MerchantDocumentsCard";
+
+interface PrintFileRow {
+  Id: string;
+  CustomerUserId: string;
+  FileName: string;
+  FileSize: number;
+  MaterialName: string | null;
+  Quantity: number;
+  Notes: string | null;
+  CreatedAt: string;
+  Customer?: CustomerUser | null;
+}
 
 interface CustomerUser {
   Id: string;
@@ -52,7 +68,8 @@ export default function CustomOrdersPage() {
   const [form, setForm] = useState({
     itemName: "",
     quantity: "1",
-    unitPrice: "",
+    materialName: "",
+    itemWeight: "",
     packageWeight: "",
     courierCompany: "",
     courierType: "REG",
@@ -63,6 +80,36 @@ export default function CustomOrdersPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<CreatedOrderSummary | null>(null);
+  // Ready-to-print files this customer sent from the app (not yet in an order).
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  const { data: filesData } = useSWR(
+    selectedCustomer ? ["print-files", selectedCustomer.Id] : null,
+    () => apiFetch<PrintFileRow[]>("print-files", { query: { customerUserId: selectedCustomer!.Id, unlinked: 1 } }),
+  );
+  const customerFiles = filesData?.data ?? [];
+
+  // Opened from a chat's "Buat Pesanan Manual" (?printFileId=): preselect
+  // that customer and file, and prefill item, quantity and material.
+  useEffect(() => {
+    const printFileId = new URLSearchParams(window.location.search).get("printFileId");
+    if (!printFileId) return;
+    apiFetch<PrintFileRow>(`print-files/${printFileId}`)
+      .then(async (res) => {
+        const f = res.data;
+        if (!f.Customer) return;
+        await pickCustomer(f.Customer);
+        setSelectedFileIds([f.Id]);
+        setForm((prev) => ({
+          ...prev,
+          itemName: prev.itemName || f.FileName.replace(/\.[^.]+$/, ""),
+          quantity: String(f.Quantity || 1),
+          materialName: f.MaterialName || prev.materialName,
+          notes: prev.notes || f.Notes || "",
+        }));
+      })
+      .catch((error) => toast.error(error instanceof ApiError ? error.message : "File cetak tidak ditemukan."));
+    // Runs once, on arrival from the chat link.
+  }, []);
 
   // A stale `customers` list from a previous query is harmless once search
   // is cleared — every read below is gated on `search.trim()` too.
@@ -85,8 +132,9 @@ export default function CustomOrdersPage() {
 
   // Picking a customer loads their saved addresses so the merchant can choose
   // where this order ships (the default address is preselected).
-  const pickCustomer = async (customer: CustomerUser) => {
+  async function pickCustomer(customer: CustomerUser) {
     setSelectedCustomer(customer);
+    setSelectedFileIds([]);
     setCreatedOrder(null);
     setForm((f) => ({ ...f, shippingAddressId: "" }));
     setAddresses([]);
@@ -101,9 +149,10 @@ export default function CustomOrdersPage() {
     } finally {
       setLoadingAddresses(false);
     }
-  };
+  }
 
   const resetAll = () => {
+    setSelectedFileIds([]);
     setSelectedCustomer(null);
     setAddresses([]);
     setCreatedOrder(null);
@@ -112,7 +161,8 @@ export default function CustomOrdersPage() {
     setForm({
       itemName: "",
       quantity: "1",
-      unitPrice: "",
+      materialName: "",
+      itemWeight: "",
       packageWeight: "",
       courierCompany: "",
       courierType: "REG",
@@ -128,7 +178,8 @@ export default function CustomOrdersPage() {
   const canSubmit =
     !!selectedCustomer &&
     form.itemName.trim().length > 0 &&
-    Number(form.unitPrice) > 0 &&
+    form.materialName.length > 0 &&
+    Number(form.itemWeight) > 0 &&
     Number(form.packageWeight) > 0 &&
     !submitting;
 
@@ -142,7 +193,8 @@ export default function CustomOrdersPage() {
           customerUserId: selectedCustomer.Id,
           itemName: form.itemName,
           quantity: Number(form.quantity) || 1,
-          unitPrice: Number(form.unitPrice),
+          materialName: form.materialName,
+          itemWeight: Number(form.itemWeight),
           packageWeight: Math.round(Number(form.packageWeight)),
           courierCompany: form.courierCompany || undefined,
           courierType: form.courierType || undefined,
@@ -150,6 +202,7 @@ export default function CustomOrdersPage() {
           shippingAddressId: form.shippingAddressId || undefined,
           notes: form.notes || undefined,
           sendToChat: form.sendToChat,
+          printFileIds: selectedFileIds,
         },
       });
       setCreatedOrder(res.data);
@@ -252,6 +305,42 @@ export default function CustomOrdersPage() {
               </Button>
             </div>
 
+            {customerFiles.length > 0 && (
+              <div className="rounded-xl border border-border p-3">
+                <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <Box className="size-4 text-brand-purple" /> File cetak dari customer
+                </p>
+                <p className="mb-2 text-xs text-ink-soft">
+                  Centang file yang dibuat untuk pesanan ini — file akan tersimpan bersama pesanan.
+                </p>
+                <ul className="space-y-2">
+                  {customerFiles.map((f) => (
+                    <li key={f.Id} className="flex items-center gap-3 rounded-lg bg-surface-muted/60 px-3 py-2">
+                      <Checkbox
+                        checked={selectedFileIds.includes(f.Id)}
+                        onChange={(e) =>
+                          setSelectedFileIds((ids) => (e.target.checked ? [...ids, f.Id] : ids.filter((x) => x !== f.Id)))
+                        }
+                        aria-label={`Pakai ${f.FileName}`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-ink">{f.FileName}</p>
+                        <p className="text-xs text-ink-soft">
+                          {formatFileSize(f.FileSize)} · {f.MaterialName ? `Bahan ${f.MaterialName}` : "Bahan belum dipilih"} ·{" "}
+                          {f.Quantity} pcs{f.Notes ? ` · “${f.Notes}”` : ""}
+                        </p>
+                      </div>
+                      <a href={printFileUrl(f.Id)} download aria-label={`Unduh ${f.FileName}`}>
+                        <Button type="button" size="icon" variant="ghost">
+                          <Download className="size-4" />
+                        </Button>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <FieldLabel required>Nama Item</FieldLabel>
@@ -270,14 +359,14 @@ export default function CustomOrdersPage() {
                   onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
                 />
               </div>
-              <div>
-                <FieldLabel required>Harga Satuan (Rp)</FieldLabel>
-                <Input
-                  type="number"
-                  min={0}
-                  value={form.unitPrice}
-                  onChange={(e) => setForm((f) => ({ ...f, unitPrice: e.target.value }))}
-                  placeholder="15000"
+              <div className="sm:col-span-2">
+                <MasterPriceFields
+                  idPrefix="custom-order"
+                  material={form.materialName}
+                  onMaterial={(v) => setForm((f) => ({ ...f, materialName: v }))}
+                  weight={form.itemWeight}
+                  onWeight={(v) => setForm((f) => ({ ...f, itemWeight: v }))}
+                  quantity={Math.max(1, Number(form.quantity) || 1)}
                 />
               </div>
               <div>

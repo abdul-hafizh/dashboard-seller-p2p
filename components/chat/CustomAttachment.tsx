@@ -10,6 +10,7 @@ import { apiFetch, ApiError } from "@/lib/api-client";
 import { formatCurrency, toPublicAssetUrl } from "@/lib/resources/format";
 import { orderDisplay, type OrderDisplaySource } from "@/lib/order-display";
 import { Modal } from "@/components/ui/Modal";
+import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
 
 /** `stream-chat`'s `Attachment` type carries no custom fields by default
  * (`CustomAttachmentData` is an empty interface) — this widens it locally for
@@ -27,6 +28,14 @@ export type LinkAttachment = StreamAttachment & {
   /** ORDER_LINK only, on cards sent after they were added: the order's
    * product/design name (the picture reuses `thumbnailPath`). */
   title?: string;
+  /** PRINT_FILE (a ready-to-print file sent from the app — stored on our
+   * API server, not on Stream). */
+  printFileId?: string;
+  fileName?: string;
+  fileSize?: number;
+  materialName?: string | null;
+  quantity?: number;
+  notes?: string | null;
 };
 
 /** Renders `PRODUCT_LINK`/`ORDER_LINK` attachments (sent from this dashboard's
@@ -34,9 +43,11 @@ export type LinkAttachment = StreamAttachment & {
  * falls back to the SDK's own `Attachment` for everything else (images,
  * files, link previews, ...). Installed via `ComponentProvider` in
  * `app/dashboard/chat/page.tsx`. */
+const CUSTOM_TYPES = new Set(["PRODUCT_LINK", "ORDER_LINK", "PRINT_FILE"]);
+
 export function CustomAttachment(props: AttachmentProps) {
-  const linkAttachments = props.attachments.filter(
-    (a): a is LinkAttachment => (a as StreamAttachment).type === "PRODUCT_LINK" || (a as StreamAttachment).type === "ORDER_LINK",
+  const linkAttachments = props.attachments.filter((a): a is LinkAttachment =>
+    CUSTOM_TYPES.has(String((a as StreamAttachment).type)),
   );
   const rest = props.attachments.filter((a) => !linkAttachments.includes(a as LinkAttachment));
 
@@ -47,6 +58,21 @@ export function CustomAttachment(props: AttachmentProps) {
       {linkAttachments.map((a, i) =>
         a.type === "PRODUCT_LINK" ? (
           <ProductLinkCard key={i} attachment={a} />
+        ) : a.type === "PRINT_FILE" ? (
+          a.printFileId ? (
+            <PrintFileCard
+              key={i}
+              showCreateOrder
+              file={{
+                id: a.printFileId,
+                fileName: a.fileName ?? "File cetak",
+                fileSize: a.fileSize,
+                materialName: a.materialName,
+                quantity: a.quantity,
+                notes: a.notes,
+              }}
+            />
+          ) : null
         ) : (
           <OrderLinkCard key={i} attachment={a} />
         ),
