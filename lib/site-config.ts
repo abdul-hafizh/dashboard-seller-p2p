@@ -10,7 +10,7 @@ export const siteConfig = {
   tagline: "Cetak 3D dari prompt AI atau file 3D milikmu, langsung ke merchant terdekat.",
   contactEmail: "petope@gmail.com",
   /** Shown as "Terakhir diperbarui" on the legal pages. Update when their content changes. */
-  legalLastUpdated: "21 September 2026",
+  legalLastUpdated: "21 Oktober 2026",
 } as const;
 
 /** Public pages linked from the footer. Reachable without logging in. */

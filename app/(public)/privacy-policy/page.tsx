@@ -27,12 +27,20 @@ export default function PrivacyPolicyPage() {
             Google tersebut.
           </li>
           <li>
-            <strong>Lokasi:</strong> lokasi perangkat, hanya ketika Anda mengizinkan, untuk mencari
-            merchant terdekat.
+            <strong>Data profil:</strong> nomor telepon/WhatsApp, foto profil, jenis kelamin, dan
+            tanggal lahir yang Anda isi di aplikasi.
           </li>
           <li>
-            <strong>Alamat:</strong> alamat pengiriman dan informasi kontak yang Anda simpan untuk
-            pesanan.
+            <strong>Lokasi:</strong> aplikasi seluler <strong>mewajibkan</strong> layanan lokasi
+            (GPS) dan izin lokasi aktif agar dapat digunakan. Lokasi perangkat (presisi dan
+            perkiraan) dipakai untuk menampilkan toko terdekat dan untuk mengisi titik peta alamat
+            pengiriman. Lokasi hanya diakses ketika aplikasi sedang digunakan — tidak pernah di latar
+            belakang — dan posisi perangkat Anda tidak dilacak atau direkam terus-menerus.
+          </li>
+          <li>
+            <strong>Alamat:</strong> alamat pengiriman, informasi kontak penerima, dan titik lokasi
+            (koordinat) alamat yang Anda pilih di peta, disimpan untuk menghitung jarak ke toko,
+            ongkos kirim, dan mengirim pesanan.
           </li>
           <li>
             <strong>Konten buatan pengguna:</strong> prompt AI, foto atau gambar yang Anda pilih, file
@@ -45,13 +53,21 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Pesan chat:</strong> percakapan antara pelanggan dan merchant, termasuk lampiran.
           </li>
+          <li>
+            <strong>Data merchant (dashboard):</strong> data toko, foto toko, jam operasional, lokasi
+            toko, dokumen pendaftaran, data pajak (NPWP), dan rekening bank untuk pencairan dana.
+          </li>
         </ul>
       </LegalSection>
 
       <LegalSection title="2. Cara kami menggunakan data">
         <ul>
           <li>Membuat dan mengelola akun serta memverifikasi identitas saat masuk.</li>
-          <li>Menampilkan merchant terdekat dan memfasilitasi chat serta pesanan.</li>
+          <li>
+            Menampilkan toko terdekat dari alamat pengiriman Anda dan memfasilitasi chat serta
+            pesanan.
+          </li>
+          <li>Menghitung ongkos kirim berdasarkan alamat dan titik lokasinya.</li>
           <li>Membuat model 3D dari prompt atau gambar Anda.</li>
           <li>Memproses pesanan, pengiriman, dan pelacakan.</li>
           <li>Menjaga keamanan layanan dan mencegah penyalahgunaan.</li>
@@ -69,6 +85,10 @@ export default function PrivacyPolicyPage() {
             <strong>Penyedia layanan:</strong> kami memakai layanan pihak ketiga untuk masuk dengan
             Google, chat, pembuatan model 3D berbasis AI, pembayaran, dan pengiriman. Data dibagikan
             hanya sebatas yang diperlukan untuk layanan tersebut.
+          </li>
+          <li>
+            <strong>Mitra pengiriman:</strong> alamat, kontak penerima, dan titik lokasi alamat
+            dikirim ke mitra kurir untuk menghitung ongkos kirim dan mengantarkan pesanan.
           </li>
           <li>
             <strong>Kewajiban hukum:</strong> bila diwajibkan oleh hukum atau permintaan resmi
@@ -89,7 +109,11 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="5. Hak dan pilihan Anda">
         <ul>
           <li>Mengakses dan memperbarui data profil serta alamat Anda di dalam aplikasi.</li>
-          <li>Mencabut izin lokasi kapan saja melalui pengaturan perangkat.</li>
+          <li>
+            Mencabut izin lokasi kapan saja melalui pengaturan perangkat. Karena lokasi diperlukan
+            untuk menampilkan toko terdekat dan alamat pengiriman, aplikasi seluler tidak dapat
+            digunakan sampai lokasi diaktifkan kembali.
+          </li>
           <li>
             Meminta penghapusan akun dan data terkait melalui halaman{" "}
             <a href="/delete-account">Hapus Akun</a> atau email ke{" "}

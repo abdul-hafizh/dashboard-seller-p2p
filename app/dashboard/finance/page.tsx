@@ -340,9 +340,7 @@ export default function FinancePage() {
                         <p className="mb-1.5 font-bold text-ink">Ongkir (sepanjang waktu)</p>
                         <dl className="space-y-1.5">
                           <div className="flex justify-between"><dt className="text-ink-soft">Ongkir masuk dari customer</dt><dd className="text-ink">{formatCurrency(report.Shipping.CustomerPayments)}</dd></div>
-                          <div className="flex justify-between"><dt className="text-ink-soft">Biaya kurir Biteship</dt><dd className="text-ink">− {formatCurrency(report.Shipping.CourierCharges)}</dd></div>
-                          <div className="flex justify-between"><dt className="text-ink-soft">Perkiraan saldo Biteship</dt><dd className="text-ink">{formatCurrency(report.Shipping.BiteshipBalance)}</dd></div>
-                        </dl>
+                          <div className="flex justify-between"><dt className="text-ink-soft">Biaya kurir Biteship</dt><dd className="text-ink">− {formatCurrency(report.Shipping.CourierCharges)}</dd></div>                        </dl>
                         <Link href="/dashboard/shipping-ledger" className="mt-1 inline-block text-xs font-semibold text-brand-purple">Buka Keuangan Ongkir →</Link>
                       </div>
                     )}
@@ -380,16 +378,16 @@ export default function FinancePage() {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Stat
                   icon={Wallet}
-                  label="Hak Seller"
+                  label="Total Hak Seller"
                   value={formatCurrency(totals.Earnings ?? 0)}
-                  hint={`Harga dasar − potongan ${formatCurrency(
+                  hint={`Pesanan selesai + masih diproses, setelah potongan ${formatCurrency(
                     (totals.SellerFee ?? 0) + (totals.MerchantServiceFee ?? 0) + (totals.MerchantTax ?? 0),
-                  )} (fee transaksi, biaya layanan, PPN)`}
+                  )}. Bisa dicairkan setelah pesanan selesai.`}
                   emphasis
                 />
                 <Stat
                   icon={HandCoins}
-                  label="Dari Pesanan Selesai"
+                  label="Bisa Dicairkan (Selesai)"
                   value={formatCurrency(totals.EarningsCompleted ?? 0)}
                   hint={`${totals.CompletedOrders ?? 0} pesanan sudah diterima customer`}
                 />
@@ -416,12 +414,12 @@ export default function FinancePage() {
                       <thead>
                         <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
                           <th className="whitespace-nowrap px-4 py-3">Seller</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Pesanan</th>
+                          <th className="whitespace-nowrap px-4 py-3 text-right">Selesai / Pesanan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Penjualan Kotor</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Diskon</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Potongan</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Hak Seller</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Pesanan Selesai</th>
+                          <th className="whitespace-nowrap px-4 py-3 text-right">Total Hak Seller</th>
+                          <th className="whitespace-nowrap px-4 py-3 text-right">Bisa Dicairkan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Masih Diproses</th>
                         </tr>
                       </thead>

@@ -128,18 +128,7 @@ export default function ShippingLedgerPage() {
       </Card>
 
       {allTime && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Stat
-            icon={Wallet}
-            label="Perkiraan Saldo Biteship"
-            value={formatCurrency(allTime.BiteshipBalance)}
-            tone={allTime.BiteshipBalance < 0 ? "error" : undefined}
-            hint={
-              allTime.BiteshipBalance < 0
-                ? "Minus: catat saldo awal / top-up Biteship lewat tombol di atas, lalu cocokkan dengan dashboard Biteship."
-                : "Total top-up − biaya kurir (sepanjang waktu). Cocokkan dengan dashboard Biteship."
-            }
-          />
+        <div className="grid gap-3 sm:grid-cols-2">
           <Stat icon={ArrowDownLeft} label="Kas Ongkir Petope" value={formatCurrency(allTime.PetopeShippingCash)} hint="Ongkir diterima − top-up ke Biteship (sepanjang waktu)" />
           <Stat icon={Scale} label="Selisih Ongkir" value={formatCurrency(allTime.Margin)} hint="Ongkir dari customer − biaya kurir (sepanjang waktu)" />
         </div>
