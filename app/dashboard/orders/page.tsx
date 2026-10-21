@@ -23,6 +23,7 @@ interface OrderRow {
   Rating: number | null;
   RatingNotes: string | null;
   Status: { Id: number; Name: string; ColorCode: string | null } | null;
+  AwaitingMerchantConfirmation?: boolean | null;
   Customer?: { User?: { FullName: string | null; Phone: string | null; UserLevel?: string | null } | null } | null;
   Merchant?: {
     FullName: string | null;
@@ -116,7 +117,11 @@ export default function OrdersPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-ink-soft">{merchantLabel(order.Merchant)}</td>
                   )}
                   <td className="whitespace-nowrap px-4 py-3">
-                    <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
+                    {order.AwaitingMerchantConfirmation ? (
+                      <Badge tone="warning">Perlu konfirmasi berat</Badge>
+                    ) : (
+                      <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-soft">
                     {order.Shipments?.[0]?.ShipmentType === "PICKUP" ? (

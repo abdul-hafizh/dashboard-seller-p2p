@@ -125,8 +125,8 @@ export default function PrintQueuePage() {
     return (
       <EmptyState
         icon={PackageSearch}
-        title="Akun belum terhubung ke Cabang"
-        description="Antrian cetak dikelola per cabang. Hubungi Super Admin untuk menautkan akun Anda ke sebuah Cabang di menu Pengguna."
+        title="Antrian cetak belum tersedia"
+        description="Muat ulang halaman ini. Jika masih muncul, keluar lalu masuk kembali."
       />
     );
   }

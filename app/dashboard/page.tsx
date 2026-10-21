@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, ShoppingCart, Layers, Printer, Building } from "lucide-react";
+import { Package, ShoppingCart, Layers, Printer } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { siteConfig } from "@/lib/site-config";
@@ -18,7 +18,6 @@ const STATS: StatDef[] = [
   { label: "Pesanan", endpoint: "orders", icon: ShoppingCart },
   { label: "Material", endpoint: "materials", icon: Layers },
   { label: "Printer", endpoint: "printers", icon: Printer },
-  { label: "Cabang", endpoint: "branches", icon: Building },
 ];
 
 function StatCard({ label, endpoint, icon: Icon }: StatDef) {
@@ -54,7 +53,7 @@ export default function DashboardHomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {STATS.map((stat) => (
           <StatCard key={stat.endpoint} {...stat} />
         ))}

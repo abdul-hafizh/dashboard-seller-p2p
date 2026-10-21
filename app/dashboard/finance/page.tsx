@@ -38,6 +38,8 @@ interface SellerFinance {
   Tax: number;
   ServiceFee: number;
   SellerFee: number;
+  MerchantServiceFee?: number;
+  MerchantTax?: number;
   Earnings: number;
   EarningsCompleted: number;
   EarningsInProgress: number;
@@ -56,6 +58,9 @@ interface FinanceReport {
     TokenTax: number;
     ProductSales: number;
     SellerFee: number;
+    MerchantServiceFee?: number;
+    CustomerServiceFee?: number;
+    MerchantTax?: number;
     OwedToSellers: number;
     SellerTax: number;
     TaxToRemit: number;
@@ -252,20 +257,20 @@ export default function FinancePage() {
                     icon={Wallet}
                     label="Total Dibayar Customer"
                     value={formatCurrency(platform.TotalCollected)}
-                    hint="Semua masuk ke rekening DOKU pusat (termasuk PPN & ongkir)"
+                    hint="Harga produk + ongkir; semua masuk ke rekening DOKU pusat"
                   />
                   <Stat
                     icon={Landmark}
                     label="Pendapatan Petope"
                     value={formatCurrency(platform.Income)}
-                    hint="Biaya layanan + fee transaksi seller + token, sebelum potongan DOKU / Google"
+                    hint="Biaya layanan + fee transaksi dari seller + token, sebelum potongan DOKU / Google"
                     emphasis
                   />
                   <Stat
                     icon={HandCoins}
                     label="Hak Seller"
                     value={formatCurrency(platform.OwedToSellers)}
-                    hint="Harga dasar + PPN seller − fee transaksi; dicairkan lewat menu Pencairan Dana"
+                    hint="Harga dasar − fee transaksi − biaya layanan − PPN; dicairkan lewat menu Pencairan Dana"
                   />
                   <Stat
                     icon={Truck}
@@ -284,7 +289,7 @@ export default function FinancePage() {
                         <dd className="font-semibold text-ink">{formatCurrency(platform.SellerFee)}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-ink-soft">Biaya layanan</dt>
+                        <dt className="text-ink-soft">Biaya layanan dari seller</dt>
                         <dd className="font-semibold text-ink">{formatCurrency(platform.ServiceFee)}</dd>
                       </div>
                       <div className="flex justify-between">
@@ -315,7 +320,7 @@ export default function FinancePage() {
                         <dd className="text-ink">− {formatCurrency(platform.OwedToSellers)}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-ink-soft">PPN token untuk disetor</dt>
+                        <dt className="text-ink-soft">PPN untuk disetor (seller PKP & token)</dt>
                         <dd className="text-ink">− {formatCurrency(platform.TaxToRemit)}</dd>
                       </div>
                     </dl>
@@ -377,7 +382,9 @@ export default function FinancePage() {
                   icon={Wallet}
                   label="Hak Seller"
                   value={formatCurrency(totals.Earnings ?? 0)}
-                  hint={`Harga dasar + PPN − fee transaksi ${formatCurrency(totals.SellerFee ?? 0)}`}
+                  hint={`Harga dasar − potongan ${formatCurrency(
+                    (totals.SellerFee ?? 0) + (totals.MerchantServiceFee ?? 0) + (totals.MerchantTax ?? 0),
+                  )} (fee transaksi, biaya layanan, PPN)`}
                   emphasis
                 />
                 <Stat
@@ -412,7 +419,7 @@ export default function FinancePage() {
                           <th className="whitespace-nowrap px-4 py-3 text-right">Pesanan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Penjualan Kotor</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Diskon</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">PPN</th>
+                          <th className="whitespace-nowrap px-4 py-3 text-right">Potongan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Hak Seller</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Pesanan Selesai</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Masih Diproses</th>
@@ -430,7 +437,12 @@ export default function FinancePage() {
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-ink">{formatCurrency(s.GrossSales)}</td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-ink-soft">{formatCurrency(s.Discount)}</td>
-                            <td className="whitespace-nowrap px-4 py-3 text-right text-ink-soft">{formatCurrency(s.Tax)}</td>
+                            <td
+                              className="whitespace-nowrap px-4 py-3 text-right text-error"
+                              title={`Fee transaksi ${formatCurrency(s.SellerFee)} · Biaya layanan ${formatCurrency(s.MerchantServiceFee ?? 0)} · PPN ${formatCurrency(s.MerchantTax ?? 0)}`}
+                            >
+                              − {formatCurrency(s.SellerFee + (s.MerchantServiceFee ?? 0) + (s.MerchantTax ?? 0))}
+                            </td>
                             <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-ink">{formatCurrency(s.Earnings)}</td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-success">{formatCurrency(s.EarningsCompleted)}</td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-ink-soft">{formatCurrency(s.EarningsInProgress)}</td>
@@ -443,8 +455,8 @@ export default function FinancePage() {
 
               <Note>
                 <p>
-                  Penjualan bersih = harga produk setelah diskon tier. Pembayarannya masuk ke rekening DOKU pusat; PPN, biaya layanan,
-                  dan ongkir tidak termasuk.
+                  Penjualan bersih = harga produk setelah diskon tier (yang dibayar customer, tanpa ongkir). Pembayarannya masuk ke
+                  rekening DOKU pusat. Potongan = fee transaksi + biaya layanan + PPN (seller PKP) yang dibayar seller ke Petope.
                 </p>
                 <p>Periode dihitung dari tanggal pembayaran pesanan.</p>
               </Note>

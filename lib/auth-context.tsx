@@ -28,6 +28,8 @@ export interface CurrentUser {
   Phone: string | null;
   WhatsappNumber: string | null;
   Avatar: string | null;
+  /** Merchant store photo ("/uploads/stores/..."). */
+  StorePhoto?: string | null;
   RoleId: number;
   Role: CurrentUserRole | null;
   IsActive: boolean;

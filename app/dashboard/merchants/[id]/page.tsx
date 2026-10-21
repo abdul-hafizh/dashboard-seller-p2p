@@ -74,6 +74,14 @@ export default function MerchantDetailPage() {
       </Link>
 
       <Card>
+        {toPublicAssetUrl(merchant.StorePhoto) && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={toPublicAssetUrl(merchant.StorePhoto)!}
+            alt="Foto toko"
+            className="aspect-[16/5] w-full rounded-t-2xl object-cover"
+          />
+        )}
         <CardBody className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <MerchantAvatar merchant={merchant} size="size-16" />
           <div className="min-w-0 flex-1">

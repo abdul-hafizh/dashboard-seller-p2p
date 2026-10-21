@@ -12,6 +12,7 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 import { MerchantDocumentsCard } from "@/components/merchants/MerchantDocumentsCard";
 import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
 import { BankAccountCard } from "@/components/merchants/BankAccountCard";
+import { ProfilePhotosCard } from "@/components/merchants/ProfilePhotosCard";
 
 type TaxType = "PKP" | "NON_PKP";
 
@@ -34,8 +35,8 @@ const EMPTY_FORM: ProfileForm = {
 };
 
 const TAX_OPTIONS: { value: TaxType; label: string; description: string }[] = [
-  { value: "NON_PKP", label: "Non-PKP", description: "Belum dikukuhkan sebagai Pengusaha Kena Pajak. Pesanan tidak dikenakan PPN." },
-  { value: "PKP", label: "PKP", description: "Pengusaha Kena Pajak. PPN dikenakan pada pesanan dan tampil di invoice beserta NPWP." },
+  { value: "NON_PKP", label: "Non-PKP", description: "Belum dikukuhkan sebagai Pengusaha Kena Pajak. Tidak ada potongan PPN." },
+  { value: "PKP", label: "PKP", description: "Pengusaha Kena Pajak. PPN dipotong dari hasil jualan Anda (tidak ditagihkan ke customer)." },
 ];
 
 export default function ProfileSettingsPage() {
@@ -89,6 +90,7 @@ export default function ProfileSettingsPage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
+      <ProfilePhotosCard />
       <Card>
         <CardHeader>
           <CardTitle>Profil Saya</CardTitle>
@@ -139,11 +141,6 @@ export default function ProfileSettingsPage() {
                   <FieldLabel>Jenis Pajak Merchant</FieldLabel>
                   <p className="text-xs text-ink-faint">Berlaku untuk merchant di Indonesia.</p>
                 </div>
-                {!canEditTax && (
-                  <p className="rounded-xl border border-border bg-surface-muted px-3.5 py-2.5 text-xs text-ink-soft">
-                    Akun Anda belum terhubung ke perusahaan/cabang. Hubungi admin untuk mengatur jenis pajak.
-                  </p>
-                )}
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   {TAX_OPTIONS.map((opt) => (
                     <label

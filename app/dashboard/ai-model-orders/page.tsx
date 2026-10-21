@@ -193,7 +193,7 @@ export default function AiModelOrdersPage() {
         <h1 className="text-xl font-extrabold text-ink">Pesanan dari AI Model</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Buatkan pesanan cetak 3D untuk customer berdasarkan model AI yang sudah dibahas lewat chat — sistem otomatis
-          menghitung tarif mesin (FDM/SLA), material, biaya layanan, dan PPN (khusus merchant PKP).
+          menghitung harga dari Master Harga. Customer membayar harga + ongkir saja; fee transaksi, biaya layanan, dan PPN dipotong dari hasil jualan Anda.
         </p>
       </div>
 
@@ -207,8 +207,7 @@ export default function AiModelOrdersPage() {
             </p>
             <p className="text-2xl font-extrabold text-ink">{formatCurrency(createdOrder.TotalAmount)}</p>
             <p className="text-xs text-ink-faint">
-              Subtotal {formatCurrency(createdOrder.SubtotalAmount)} · PPN {formatCurrency(createdOrder.TaxAmount)} ·
-              Biaya Aplikasi {formatCurrency(createdOrder.AppFeeAmount)}
+              Subtotal {formatCurrency(createdOrder.SubtotalAmount)}
             </p>
             <Button variant="outline" className="mt-2" onClick={resetAll}>
               <RotateCcw className="size-4" /> Buat Pesanan Lain

@@ -17,6 +17,7 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
 import { downloadInvoice } from "@/lib/download-invoice";
 import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
+import { DesignConfirmCard } from "@/components/orders/DesignConfirmCard";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
 
 interface OrderStatus {
@@ -164,6 +165,8 @@ interface OrderDetail {
   SubtotalAmount?: number | null;
   /** Whole-package grams, set here by the merchant — drives the courier quote. */
   PackageWeight?: number | null;
+  /** AI-design order from the cart waiting for the store to confirm its weight/price. */
+  AwaitingMerchantConfirmation?: boolean | null;
   Notes: string | null;
   Rating: number | null;
   RatingNotes: string | null;
@@ -734,6 +737,9 @@ export default function OrderDetailPage() {
             </CardBody>
           </Card>
 
+          {order.AwaitingMerchantConfirmation && !isPaid ? (
+            <DesignConfirmCard orderId={order.Id} items={order.Items ?? []} onConfirmed={() => mutate()} />
+          ) : (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -769,7 +775,7 @@ export default function OrderDetailPage() {
                         quantity={Math.max(1, order.Items![0].Quantity ?? 1)}
                       />
                       <p className="text-xs text-ink-soft">
-                        Harga dihitung dari Master Harga admin. PPN, biaya layanan, dan diskon tier pelanggan ditambahkan otomatis.
+                        Harga dihitung dari Master Harga admin; diskon tier pelanggan dipotong otomatis. Fee transaksi, biaya layanan, dan PPN dipotong dari hasil jualan Anda, bukan ditagihkan ke customer.
                       </p>
                     </>
                   ) : (
@@ -799,6 +805,7 @@ export default function OrderDetailPage() {
               )}
             </CardBody>
           </Card>
+          )}
 
           <Card>
             <CardHeader>

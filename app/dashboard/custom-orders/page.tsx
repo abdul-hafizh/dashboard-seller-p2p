@@ -222,7 +222,7 @@ export default function CustomOrdersPage() {
         <h1 className="text-xl font-extrabold text-ink">Pesanan Custom (Ready to Print)</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Buat pesanan produk manual/custom (Gantungan Kunci, Plakat, Stiker, dll) untuk customer setelah harga & ongkir
-          disepakati lewat chat — sistem otomatis menghitung PPN (khusus merchant PKP), biaya aplikasi, dan mengirim kartu tagihan ke chat.
+          disepakati lewat chat — sistem otomatis menghitung harga dan mengirim kartu tagihan ke chat. Customer membayar harga + ongkir saja; fee transaksi, biaya layanan, dan PPN dipotong dari hasil jualan Anda.
         </p>
       </div>
 
@@ -236,8 +236,7 @@ export default function CustomOrdersPage() {
             </p>
             <p className="text-2xl font-extrabold text-ink">{formatCurrency(createdOrder.TotalAmount)}</p>
             <p className="text-xs text-ink-faint">
-              Subtotal {formatCurrency(createdOrder.SubtotalAmount)} · PPN {formatCurrency(createdOrder.TaxAmount)} ·
-              Biaya Aplikasi {formatCurrency(createdOrder.AppFeeAmount)}
+              Subtotal {formatCurrency(createdOrder.SubtotalAmount)}
             </p>
             <Button variant="outline" className="mt-2" onClick={resetAll}>
               <RotateCcw className="size-4" /> Buat Pesanan Lain

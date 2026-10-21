@@ -17,6 +17,7 @@ export interface MerchantRow {
   Phone: string | null;
   WhatsappNumber: string | null;
   Avatar: string | null;
+  StorePhoto?: string | null;
   IsActive: number | boolean | null;
   LastLogin: string | null;
   /** 'PENDING' | 'APPROVED' | 'REJECTED' — null = approved (older accounts). */

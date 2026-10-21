@@ -100,15 +100,16 @@ export default function TaxFeeSettingsPage() {
       <div>
         <h1 className="text-xl font-extrabold text-ink">Pajak & Biaya Layanan</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Nilai ini dipakai untuk menghitung harga setiap pesanan di seluruh aplikasi — perubahan berlaku langsung
-          tanpa deploy ulang backend.
+          Semua biaya di halaman ini <b>dibayar merchant kepada Petope</b> dan dipotong dari hasil jualan merchant.
+          Customer hanya membayar harga dari Master Harga (dikurangi diskon tier) ditambah ongkir — tanpa PPN atau biaya
+          layanan. Perubahan berlaku untuk pesanan baru; pesanan lama memakai tarif saat dibuat.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Percent className="size-4" /> Pajak PPN & Biaya Layanan Aplikasi
+            <Percent className="size-4" /> Potongan Merchant
           </CardTitle>
         </CardHeader>
         <CardBody className="flex flex-col gap-5">
@@ -119,8 +120,8 @@ export default function TaxFeeSettingsPage() {
               <div className="flex flex-col gap-2">
                 <FieldLabel>Persentase Biaya Layanan (%)</FieldLabel>
                 <p className="text-xs text-ink-soft">
-                  Dihitung dari Harga Dasar, berlaku untuk semua merchant (PKP maupun Non-PKP). Contoh: harga dasar Rp
-                  300.000 dan biaya layanan 1,5% = Rp 4.500.
+                  Dibayar merchant, dihitung dari Harga Dasar, berlaku untuk semua merchant (PKP maupun Non-PKP). Contoh:
+                  harga dasar Rp 300.000 dan biaya layanan 1,5% = Rp 4.500 dipotong dari hasil jualan merchant.
                 </p>
                 <Input
                   type="number"
@@ -135,8 +136,8 @@ export default function TaxFeeSettingsPage() {
               <div className="flex flex-col gap-2">
                 <FieldLabel>Persentase Pajak PPN (%)</FieldLabel>
                 <p className="text-xs text-ink-soft">
-                  Hanya diterapkan ke pesanan merchant PKP — merchant Non-PKP otomatis 0% tanpa mengubah angka ini.
-                  Dihitung dari (Harga Dasar + Biaya Layanan), bukan Harga Dasar saja.
+                  Dibayar merchant PKP saja — merchant Non-PKP otomatis 0% tanpa mengubah angka ini. Dihitung dari Harga
+                  Dasar dan dipotong dari hasil jualan merchant; tidak ditagihkan ke customer.
                 </p>
                 <Input
                   type="number"
@@ -151,9 +152,8 @@ export default function TaxFeeSettingsPage() {
               <div className="flex flex-col gap-2 border-t border-border pt-5">
                 <FieldLabel>Fee Transaksi Seller (%)</FieldLabel>
                 <p className="text-xs text-ink-soft">
-                  Dibayar <b>seller kepada Petope</b> dari setiap penjualan — berbeda dari biaya layanan yang dibayar customer.
-                  Dihitung dari Harga Dasar dan dipotong dari saldo hasil jualan seller. Contoh: harga dasar Rp 300.000 dan fee
-                  5% = Rp 15.000. Perubahan berlaku untuk pesanan baru (pesanan lama memakai fee saat dibuat).
+                  Dibayar <b>seller kepada Petope</b> dari setiap penjualan, di luar biaya layanan dan PPN. Dihitung dari Harga
+                  Dasar dan dipotong dari saldo hasil jualan seller. Contoh: harga dasar Rp 300.000 dan fee 5% = Rp 15.000.
                 </p>
                 <Input
                   type="number"

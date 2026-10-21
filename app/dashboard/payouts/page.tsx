@@ -23,6 +23,8 @@ interface Balance {
   BaseSales: number;
   Tax: number;
   SellerFee: number;
+  ServiceFee?: number;
+  MerchantTax?: number;
   Earned: number;
   InProgressOrders: number;
   InProgress: number;
@@ -31,6 +33,8 @@ interface Balance {
   Available: number;
   MinPayout?: number;
   SellerFeePercent?: number;
+  ServiceFeePercent?: number;
+  TaxPercent?: number;
 }
 
 
@@ -231,8 +235,14 @@ function MerchantPayouts() {
             <p className="mb-2 font-bold text-ink">Rincian Hasil Jualan ({b.CompletedOrders} pesanan selesai)</p>
             <dl className="grid gap-1.5 sm:max-w-md">
               <div className="flex justify-between"><dt className="text-ink-soft">Penjualan (setelah diskon)</dt><dd className="text-ink">{formatCurrency(b.BaseSales)}</dd></div>
-              <div className="flex justify-between"><dt className="text-ink-soft">PPN (seller PKP)</dt><dd className="text-ink">{formatCurrency(b.Tax)}</dd></div>
+              {b.Tax > 0 && (
+                <div className="flex justify-between"><dt className="text-ink-soft">PPN dibayar customer (pesanan lama)</dt><dd className="text-ink">{formatCurrency(b.Tax)}</dd></div>
+              )}
               <div className="flex justify-between"><dt className="text-ink-soft">Fee transaksi Petope{b.SellerFeePercent ? ` (saat ini ${b.SellerFeePercent}%)` : ""}</dt><dd className="text-error">− {formatCurrency(b.SellerFee)}</dd></div>
+              <div className="flex justify-between"><dt className="text-ink-soft">Biaya layanan{b.ServiceFeePercent ? ` (saat ini ${b.ServiceFeePercent}%)` : ""}</dt><dd className="text-error">− {formatCurrency(b.ServiceFee ?? 0)}</dd></div>
+              {((b.MerchantTax ?? 0) > 0 || (b.TaxPercent ?? 0) > 0) && (
+                <div className="flex justify-between"><dt className="text-ink-soft">PPN (seller PKP{b.TaxPercent ? `, saat ini ${b.TaxPercent}%` : ""})</dt><dd className="text-error">− {formatCurrency(b.MerchantTax ?? 0)}</dd></div>
+              )}
               <div className="flex justify-between border-t border-border pt-1.5 font-bold"><dt className="text-ink">Total hasil jualan</dt><dd className="text-ink">{formatCurrency(b.Earned)}</dd></div>
             </dl>
           </CardBody>

@@ -1,11 +1,21 @@
 /** Backend-served static files (e.g. an uploaded product image's `/uploads/xxx.jpg`
- * ThumbnailPath) live outside `/api`, so they can't go through the `/api/backend/*`
- * proxy — render them directly against the public API origin instead. */
+ * ThumbnailPath) go through this dashboard's `/api/asset/*` proxy, which resolves
+ * the active API domain at runtime. A full URL stays as is, except one saved
+ * against localhost — only its path is kept so it follows the active domain too. */
 export function toPublicAssetUrl(path: unknown): string | null {
   if (!path || typeof path !== "string") return null;
-  if (/^https?:\/\//i.test(path)) return path;
-  const origin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "";
-  return `${origin}${path.startsWith("/") ? "" : "/"}${path}`;
+  let p = path.trim();
+  if (/^https?:\/\//i.test(p)) {
+    try {
+      const url = new URL(p);
+      if (!/^(localhost|127\.0\.0\.1)$/i.test(url.hostname)) return p;
+      p = url.pathname + url.search;
+    } catch {
+      return p;
+    }
+  }
+  if (/^(data|blob):/i.test(p)) return p;
+  return `/api/asset${p.startsWith("/") ? "" : "/"}${p}`;
 }
 
 export function formatCurrency(value: unknown) {
