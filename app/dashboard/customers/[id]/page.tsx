@@ -36,6 +36,7 @@ interface OrderItem {
   Quantity: number;
   UnitPrice: number | null;
   WeightGrams: number | null;
+  Notes?: string | null;
   ThumbnailPath: string | null;
 }
 
@@ -145,6 +146,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
                         {it.Material ? ` · ${it.Material}` : ""}
                         {it.WeightGrams ? ` · ${Math.round(it.WeightGrams)} g` : ""}
                       </p>
+                      {it.Notes && <p className="mt-0.5 whitespace-pre-line text-xs italic text-ink-soft">“{it.Notes}”</p>}
                     </div>
                     <p className="whitespace-nowrap text-ink">{formatCurrency((it.UnitPrice ?? 0) * it.Quantity)}</p>
                   </li>

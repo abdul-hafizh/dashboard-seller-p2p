@@ -15,6 +15,7 @@ export interface DesignLine {
   WeightGrams?: number | null;
   ProductId?: string | null;
   UnitPrice?: number | null;
+  Notes?: string | null;
   Material?: { Name: string | null } | null;
   AIModel?: { ModelName: string | null } | null;
 }
@@ -87,6 +88,11 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
               {d.AIModel?.ModelName || `Desain AI ${i + 1}`}
               <span className="font-normal text-ink-soft"> · {Math.max(1, d.Quantity ?? 1)} pcs</span>
             </p>
+            {d.Notes && (
+              <p className="whitespace-pre-line rounded-lg bg-surface-muted px-2.5 py-1.5 text-xs text-ink-soft">
+                <span className="font-semibold text-ink">Deskripsi customer:</span> {d.Notes}
+              </p>
+            )}
             <MasterPriceFields
               idPrefix={`confirm-${d.Id}`}
               material={values[d.Id]?.material ?? ""}

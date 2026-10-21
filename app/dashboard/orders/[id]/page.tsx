@@ -61,6 +61,8 @@ interface OrderItem {
   Material?: { Name: string | null } | null;
   PrintProfile?: { Name: string | null } | null;
   WeightGrams?: number | null;
+  /** The customer's description for this item (AI designs, from the cart). */
+  Notes?: string | null;
 }
 
 interface StatusHistoryEntry {
@@ -557,6 +559,11 @@ export default function OrderDetailPage() {
                         <tr key={item.Id} className="border-b border-border last:border-0">
                           <td className="px-4 py-2.5 font-semibold text-ink">
                             {item.Product?.ProductName ?? item.AIModel?.ModelName ?? "-"}
+                            {item.Notes && (
+                              <p className="mt-1 max-w-sm whitespace-pre-line rounded-lg bg-surface-muted px-2.5 py-1.5 text-xs font-normal text-ink-soft">
+                                <span className="font-semibold text-ink">Deskripsi customer:</span> {item.Notes}
+                              </p>
+                            )}
                           </td>
                           <td className="px-4 py-2.5 text-ink">{item.Quantity ?? "-"}</td>
                           <td className="px-4 py-2.5 text-ink">{unitPrice != null ? formatCurrency(unitPrice) : "-"}</td>
