@@ -79,12 +79,12 @@ export default function LoginPage() {
   return (
     <AuthCard
       title="Masuk ke Dashboard"
-      subtitle={`Khusus untuk merchant & admin ${siteConfig.appName}`}
+      subtitle={`Khusus untuk seller & admin ${siteConfig.appName}`}
       error={serverError}
       notice={notice}
       footer={
         <>
-          Belum punya akun merchant?{" "}
+          Belum punya akun seller?{" "}
           <Link href="/register" className="font-bold text-brand-purple hover:underline">
             Daftar
           </Link>

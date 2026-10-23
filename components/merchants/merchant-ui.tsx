@@ -68,17 +68,17 @@ export function MerchantApprovalActions({
     setBusy(action);
     try {
       const res = await apiFetch(`admin/merchants/${merchant.Id}/${action}`, { method: "POST" });
-      toast.success(res.message || (action === "approve" ? "Merchant disetujui." : "Pendaftaran ditolak."));
+      toast.success(res.message || (action === "approve" ? "Seller disetujui." : "Pendaftaran ditolak."));
       setConfirmReject(false);
       onChanged();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Gagal memperbarui status merchant.");
+      toast.error(error instanceof ApiError ? error.message : "Gagal memperbarui status seller.");
     } finally {
       setBusy(null);
     }
   };
 
-  const name = storeName(merchant) || merchant.FullName || merchant.Email || "merchant ini";
+  const name = storeName(merchant) || merchant.FullName || merchant.Email || "seller ini";
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -92,7 +92,7 @@ export function MerchantApprovalActions({
       )}
       <ConfirmDialog
         open={confirmReject}
-        title="Tolak pendaftaran merchant?"
+        title="Tolak pendaftaran seller?"
         description={`${name} tidak akan bisa masuk ke dashboard. Kamu masih bisa menyetujuinya nanti dari tab Ditolak.`}
         confirmLabel="Tolak"
         loading={busy === "reject"}

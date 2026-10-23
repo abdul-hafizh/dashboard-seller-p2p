@@ -52,6 +52,8 @@ export interface ResourceConfig<T = Record<string, unknown>> {
   description?: string;
   idKey?: string;
   searchable?: boolean;
+  /** Shows a "Periode" filter (?from=&to=); the text says what it's measured on, e.g. "Tanggal ditambahkan". */
+  periodFilter?: string;
   searchPlaceholder?: string;
   columns: ColumnConfig<T>[];
   fields: FieldConfig[];

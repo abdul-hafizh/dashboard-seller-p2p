@@ -14,6 +14,7 @@ import { FieldLabel } from "@/components/ui/FieldLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, toPublicAssetUrl } from "@/lib/resources/format";
+import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 
 interface AIJobUser {
   Id: string;
@@ -73,6 +74,7 @@ interface CreatedOrderSummary {
 
 export default function AiModelOrdersPage() {
   const [search, setSearch] = useState("");
+  const [period, setPeriod] = useState<Period>(ALL_TIME);
   const [jobs, setJobs] = useState<AIJobResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [selectedJob, setSelectedJob] = useState<AIJobResult | null>(null);
@@ -121,7 +123,7 @@ export default function AiModelOrdersPage() {
     const handle = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await apiFetch<AIJobResult[]>("ai/jobs", { query: { search: term, onlyWithModel: true } });
+        const res = await apiFetch<AIJobResult[]>("ai/jobs", { query: { search: term, onlyWithModel: true, ...periodQuery(period) } });
         setJobs(res.data);
       } catch (error) {
         toast.error(error instanceof ApiError ? error.message : "Gagal mencari AI Model.");
@@ -130,7 +132,7 @@ export default function AiModelOrdersPage() {
       }
     }, 400);
     return () => clearTimeout(handle);
-  }, [search]);
+  }, [search, period]);
 
   const pickJob = async (job: AIJobResult) => {
     setSelectedJob(job);
@@ -193,7 +195,7 @@ export default function AiModelOrdersPage() {
         <h1 className="text-xl font-extrabold text-ink">Pesanan dari AI Model</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Buatkan pesanan cetak 3D untuk customer berdasarkan model AI yang sudah dibahas lewat chat — sistem otomatis
-          menghitung harga dari Master Harga. Customer membayar harga + ongkir saja; fee transaksi, biaya layanan, dan PPN dipotong dari hasil jualan Anda.
+          menghitung harga dari Master Harga. Customer membayar harga + PPN + ongkir; fee transaksi dan admin fee dipotong dari hasil jualan Anda.
         </p>
       </div>
 
@@ -222,11 +224,14 @@ export default function AiModelOrdersPage() {
             </CardTitle>
           </CardHeader>
           <CardBody className="flex flex-col gap-4">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama customer, email, atau deskripsi model..."
-            />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama customer, email, atau deskripsi model..."
+              />
+              <PeriodFilter label="Tanggal model dibuat" value={period} onChange={setPeriod} />
+            </div>
             {searching && <FullPageSpinner />}
             {!searching && search.trim() && jobs?.length === 0 && (
               <EmptyState icon={Sparkles} title="Tidak ditemukan" description="Tidak ada model AI yang cocok dengan pencarian ini." />

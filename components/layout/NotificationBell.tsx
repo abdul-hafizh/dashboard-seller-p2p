@@ -169,7 +169,7 @@ export function NotificationBell() {
               onClick={() => go("/dashboard/merchants")}
               className="block w-full border-t border-border px-4 py-2.5 text-center text-xs font-semibold text-brand-purple hover:bg-surface-muted"
             >
-              Lihat semua merchant
+              Lihat semua seller
             </button>
           )}
         </div>

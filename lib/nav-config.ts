@@ -1,9 +1,7 @@
 import {
   LayoutDashboard,
-  Layers,
   Tags,
   Cpu,
-  SlidersHorizontal,
   Printer,
   Globe,
   Map,
@@ -16,7 +14,6 @@ import {
   Users,
   Store,
   MessageCircle,
-  Home,
   ListOrdered,
   UserCog,
   Settings2,
@@ -56,12 +53,14 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/orders", label: "Pesanan", icon: ShoppingCart },
       // Merchant: own sales · Super Admin: every seller (scoped server-side).
       { href: "/dashboard/sales", label: "Laporan Penjualan", icon: BarChart3 },
-      // Merchant: "Penghasilan Saya" · Super Admin: Petope + sellers + Meshy balance.
+      // Merchant: "Penghasilan Saya" · Super Admin: Petope + sellers.
       { href: "/dashboard/customers", label: "Customer", icon: Contact, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/finance", label: "Rekap Keuangan", icon: Wallet },
       // Merchant: own balance + withdrawals · Super Admin: process them.
       { href: "/dashboard/payouts", label: "Pencairan Dana", icon: Banknote },
       { href: "/dashboard/shipping-ledger", label: "Keuangan Ongkir", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
+      // Meshy credit balance + every 3D generation.
+      { href: "/dashboard/meshy", label: "Aktivitas Meshy", icon: Sparkles, roles: [ROLE.SUPER_ADMIN] },
       {
         href: "/dashboard/ai-model-orders",
         label: "Pesanan dari AI Model",
@@ -79,7 +78,6 @@ export const NAV_SECTIONS: NavSection[] = [
       // Hidden for now: the page lives in app/dashboard/_canva (the "_" prefix keeps
       // Next.js from routing it) — rename the folder back to restore /dashboard/canva.
       // { href: "/dashboard/canva", label: "Canva", icon: Palette, roles: [ROLE.MERCHANT] },
-      { href: "/dashboard/addresses", label: "Alamat", icon: Home },
     ],
   },
   {
@@ -87,13 +85,11 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       // Materials & Printers are merchant-owned data (scoped server-side to
       // the merchant's own MerchantId/Branch) — both roles see them.
-      { href: "/dashboard/materials", label: "Material", icon: Layers },
       { href: "/dashboard/printers", label: "Printer", icon: Printer },
       // Everything below is global reference data the backend now
       // restricts to Super Admin for create/update/delete.
       { href: "/dashboard/product-categories", label: "Kategori Produk", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/printer-types", label: "Tipe Printer", icon: Cpu, roles: [ROLE.SUPER_ADMIN] },
-      { href: "/dashboard/print-profiles", label: "Profil Cetak", icon: SlidersHorizontal, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/payment-methods", label: "Metode Pembayaran", icon: CreditCard, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/shipping-methods", label: "Metode Pengiriman", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/shipping-services", label: "Layanan Pengiriman", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
@@ -120,7 +116,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Administrasi",
     items: [
       { href: "/dashboard/users", label: "Pengguna", icon: Users, roles: [ROLE.SUPER_ADMIN] },
-      { href: "/dashboard/merchants", label: "Merchant", icon: Store, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/merchants", label: "Seller", icon: Store, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/price-master", label: "Master Harga", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/system-settings", label: "Pengaturan Sistem", icon: Settings2, roles: [ROLE.SUPER_ADMIN] },

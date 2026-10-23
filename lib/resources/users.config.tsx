@@ -9,7 +9,7 @@ export const usersConfig: ResourceConfig = {
   key: "users",
   endpoint: "users",
   title: "Pengguna",
-  description: "Kelola akun Super Admin dan Merchant (khusus Super Admin).",
+  description: "Kelola akun Super Admin dan Seller (khusus Super Admin).",
   searchPlaceholder: "Cari nama, email, atau telepon...",
   columns: [
     { key: "FullName", label: "Nama", render: (r) => (r.FullName as string) || "-" },
@@ -69,7 +69,7 @@ export const usersConfig: ResourceConfig = {
       required: true,
       options: [
         { value: ROLE.SUPER_ADMIN, label: "Super Admin" },
-        { value: ROLE.MERCHANT, label: "Merchant" },
+        { value: ROLE.MERCHANT, label: "Seller" },
         { value: ROLE.CUSTOMER, label: "Customer" },
       ],
     },

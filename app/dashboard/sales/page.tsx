@@ -189,7 +189,7 @@ export default function SalesReportPage() {
           </div>
           <a href={exportHref} download>
             <Button variant="outline" size="sm" type="button">
-              <Download className="size-4" /> Ekspor Excel (CSV)
+              <Download className="size-4" /> Ekspor Excel
             </Button>
           </a>
         </div>

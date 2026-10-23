@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
 import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, Inbox } from "lucide-react";
-import { apiFetch, ApiError } from "@/lib/api-client";
+import { apiFetch, ApiError, type QueryValue } from "@/lib/api-client";
 import type { ResourceConfig } from "@/lib/resources/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { ResourceForm } from "./ResourceForm";
+import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 
 type Row = Record<string, unknown>;
 
@@ -27,9 +28,11 @@ interface ResourceTableProps {
   pageSizeOverride?: number;
   /** Hides the server-pagination footer, for when filterRows makes it not meaningful. */
   hidePagination?: boolean;
+  /** Extra query params sent with the list request (e.g. a seller filter); a change goes back to page 1. */
+  extraQuery?: Record<string, QueryValue>;
 }
 
-export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverride, hidePagination }: ResourceTableProps) {
+export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverride, hidePagination, extraQuery }: ResourceTableProps) {
   const idKey = config.idKey ?? "Id";
   const pageSize = pageSizeOverride ?? config.pageSize ?? 10;
 
@@ -39,6 +42,14 @@ export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverri
   const [modal, setModal] = useState<{ mode: "create" | "edit"; row?: Row } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [period, setPeriod] = useState<Period>(ALL_TIME);
+
+  const extraKey = JSON.stringify(extraQuery ?? {});
+  const [lastExtraKey, setLastExtraKey] = useState(extraKey);
+  if (lastExtraKey !== extraKey) {
+    setLastExtraKey(extraKey);
+    setPage(1);
+  }
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -49,10 +60,10 @@ export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverri
   }, [searchInput]);
 
   const { data, isLoading, mutate } = useSWR(
-    [config.endpoint, page, search, pageSize],
+    [config.endpoint, page, search, pageSize, period.from, period.to, extraKey],
     () =>
       apiFetch<Row[]>(config.endpoint, {
-        query: { page, limit: pageSize, search: search || undefined },
+        query: { page, limit: pageSize, search: search || undefined, ...(config.periodFilter ? periodQuery(period) : {}), ...extraQuery },
       }),
     { keepPreviousData: true },
   );
@@ -106,6 +117,16 @@ export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverri
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {toolbarExtra}
+          {config.periodFilter && (
+            <PeriodFilter
+              label={config.periodFilter}
+              value={period}
+              onChange={(p) => {
+                setPeriod(p);
+                setPage(1);
+              }}
+            />
+          )}
           {config.searchable !== false && (
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />

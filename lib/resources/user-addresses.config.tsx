@@ -8,10 +8,10 @@ export function buildUserAddressesConfig(isAdmin: boolean): ResourceConfig {
   return {
     key: "user-addresses",
     endpoint: "user-addresses",
-    title: "Alamat",
+    title: isAdmin ? "Alamat" : "Alamat Toko",
     description: isAdmin
-      ? "Alamat milik seluruh pengguna (admin dan merchant)."
-      : "Alamat tokomu — ditampilkan ke pembeli pada detail pesanan.",
+      ? "Alamat milik seluruh pengguna (admin dan seller)."
+      : "Dipakai untuk ongkir, kurir instan, dan Toko Terdekat di aplikasi — isi kota dan titik peta (latitude/longitude).",
     searchPlaceholder: "Cari alamat...",
     columns: [
       { key: "Label", label: "Label" },

@@ -19,10 +19,10 @@ export default function TermsPage() {
 
       <LegalSection title="1. Tentang layanan">
         <p>
-          {appName} mempertemukan pelanggan dengan merchant cetak 3D. Pelanggan dapat membuat model
-          3D dari prompt AI atau mengunggah file 3D sendiri, menemukan merchant terdekat, dan
-          berkomunikasi melalui chat. Pesanan dibuat dan diproses secara manual oleh merchant.
-          Pencetakan, harga akhir, dan pengiriman dilakukan oleh merchant, bukan oleh {appName}.
+          {appName} mempertemukan pelanggan dengan seller cetak 3D. Pelanggan dapat membuat model
+          3D dari prompt AI atau mengunggah file 3D sendiri, menemukan seller terdekat, dan
+          berkomunikasi melalui chat. Pesanan dibuat dan diproses secara manual oleh seller.
+          Pencetakan, harga akhir, dan pengiriman dilakukan oleh seller, bukan oleh {appName}.
         </p>
       </LegalSection>
 
@@ -30,7 +30,7 @@ export default function TermsPage() {
         <ul>
           <li>Anda bertanggung jawab atas kerahasiaan akun dan seluruh aktivitas di dalamnya.</li>
           <li>Informasi yang Anda berikan harus benar dan terbaru.</li>
-          <li>Dashboard ini khusus untuk merchant dan admin yang telah terdaftar.</li>
+          <li>Dashboard ini khusus untuk seller dan admin yang telah terdaftar.</li>
         </ul>
       </LegalSection>
 
@@ -51,7 +51,7 @@ export default function TermsPage() {
       <LegalSection title="4. Pesanan dan pembayaran">
         <p>
           Ketentuan harga, waktu pengerjaan, pembayaran, dan pengiriman disepakati antara pelanggan
-          dan merchant. Sengketa terkait pesanan diselesaikan terlebih dahulu antara kedua pihak;
+          dan seller. Sengketa terkait pesanan diselesaikan terlebih dahulu antara kedua pihak;
           kami dapat membantu memfasilitasi bila diperlukan.
         </p>
       </LegalSection>
@@ -67,7 +67,7 @@ export default function TermsPage() {
         <p>
           Layanan disediakan &quot;sebagaimana adanya&quot;. Sejauh diizinkan hukum, {appName} tidak
           bertanggung jawab atas kerugian tidak langsung, atau atas kualitas cetak, keterlambatan,
-          dan pengiriman yang dilakukan merchant.
+          dan pengiriman yang dilakukan seller.
         </p>
       </LegalSection>
 

@@ -43,7 +43,7 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
             <div className="hidden text-left sm:block">
               <p className="text-sm font-bold leading-tight text-ink">{user.FullName}</p>
               <Badge tone={isAdmin ? "brand" : "info"} className="mt-0.5">
-                {isAdmin ? "Super Admin" : "Merchant"}
+                {isAdmin ? "Super Admin" : "Seller"}
               </Badge>
             </div>
           </div>

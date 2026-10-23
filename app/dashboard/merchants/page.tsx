@@ -20,6 +20,7 @@ import {
   type MerchantRow,
 } from "@/components/merchants/merchant-ui";
 import { cn } from "@/lib/utils";
+import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 
 const TABS = [
   { key: "", label: "Semua" },
@@ -32,6 +33,7 @@ type TabKey = (typeof TABS)[number]["key"];
 export default function MerchantsPage() {
   const { isAdmin, loading } = useAuth();
   const [page, setPage] = useState(1);
+  const [period, setPeriod] = useState<Period>(ALL_TIME);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<TabKey>("");
@@ -44,9 +46,9 @@ export default function MerchantsPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading, mutate } = useSWR(isAdmin ? ["admin-merchants", page, search, tab] : null, () =>
+  const { data, isLoading, mutate } = useSWR(isAdmin ? ["admin-merchants", page, search, tab, period.from, period.to] : null, () =>
     apiFetch<MerchantRow[]>("admin/merchants", {
-      query: { page, limit: 20, search: search || undefined, status: tab || undefined },
+      query: { page, limit: 20, search: search || undefined, status: tab || undefined, ...periodQuery(period) },
     }),
   );
 
@@ -65,17 +67,20 @@ export default function MerchantsPage() {
     <Card>
       <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-base font-extrabold text-ink">Merchant</h1>
-          <p className="mt-0.5 text-xs text-ink-soft">Daftar semua merchant, akun pemiliknya, dan produk yang mereka jual.</p>
+          <h1 className="text-base font-extrabold text-ink">Seller</h1>
+          <p className="mt-0.5 text-xs text-ink-soft">Daftar semua seller, akun pemiliknya, dan produk yang mereka jual.</p>
         </div>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
-          <Input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Cari nama, email, toko..."
-            className="w-full pl-9 sm:w-64"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <PeriodFilter label="Tanggal daftar" value={period} onChange={(p) => { setPeriod(p); setPage(1); }} />
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Cari nama, email, toko..."
+              className="w-full pl-9 sm:w-64"
+            />
+          </div>
         </div>
       </div>
 
@@ -110,15 +115,15 @@ export default function MerchantsPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={Store}
-          title={search ? "Merchant tidak ditemukan" : "Belum ada merchant"}
-          description={search ? "Coba kata kunci lain." : "Merchant yang terdaftar akan muncul di sini."}
+          title={search ? "Seller tidak ditemukan" : "Belum ada seller"}
+          description={search ? "Coba kata kunci lain." : "Seller yang terdaftar akan muncul di sini."}
         />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
-                <th className="whitespace-nowrap px-4 py-3">Merchant</th>
+                <th className="whitespace-nowrap px-4 py-3">Seller</th>
                 <th className="whitespace-nowrap px-4 py-3">Akun Pengguna</th>
                 <th className="whitespace-nowrap px-4 py-3">Produk</th>
                 <th className="whitespace-nowrap px-4 py-3">Pesanan</th>
@@ -172,7 +177,7 @@ export default function MerchantsPage() {
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
           <p className="text-xs text-ink-soft">
-            Halaman {pagination.currentPage} dari {pagination.totalPages} · {pagination.totalItems} merchant
+            Halaman {pagination.currentPage} dari {pagination.totalPages} · {pagination.totalItems} seller
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>

@@ -391,7 +391,7 @@ export default function OrderDetailPage() {
               </div>
               {isAdmin && (
                 <div>
-                  <p className="text-xs font-semibold text-ink-soft">Merchant</p>
+                  <p className="text-xs font-semibold text-ink-soft">Seller</p>
                   <p className="mt-0.5 font-bold text-ink">
                     {order.Merchant?.Branch?.Name ?? order.Merchant?.Company?.Name ?? order.Merchant?.FullName ?? "-"}
                   </p>
@@ -782,7 +782,7 @@ export default function OrderDetailPage() {
                         quantity={Math.max(1, order.Items![0].Quantity ?? 1)}
                       />
                       <p className="text-xs text-ink-soft">
-                        Harga dihitung dari Master Harga admin; diskon tier pelanggan dipotong otomatis. Fee transaksi, biaya layanan, dan PPN dipotong dari hasil jualan Anda, bukan ditagihkan ke customer.
+                        Harga dihitung dari Master Harga admin; diskon tier pelanggan dipotong otomatis dan PPN ditambahkan ke tagihan customer. Fee transaksi dan admin fee dipotong dari hasil jualan Anda.
                       </p>
                     </>
                   ) : (

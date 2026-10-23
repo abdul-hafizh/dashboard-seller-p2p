@@ -21,7 +21,7 @@ export default function ContactPage() {
           <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
         </p>
         <p>
-          {companyName}: dukungan pelanggan dan merchant {appName}. Kami berusaha membalas dalam
+          {companyName}: dukungan pelanggan dan seller {appName}. Kami berusaha membalas dalam
           beberapa hari kerja.
         </p>
       </LegalSection>

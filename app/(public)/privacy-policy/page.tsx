@@ -14,9 +14,9 @@ export default function PrivacyPolicyPage() {
       <LegalTitle title="Kebijakan Privasi" updated={siteConfig.legalLastUpdated} />
       <p className="text-sm leading-relaxed text-ink/80">
         {appName} adalah layanan cetak 3D: pelanggan dapat membuat model 3D dari prompt AI atau
-        mengunggah file 3D sendiri, mencari merchant terdekat, lalu berkomunikasi melalui chat.
+        mengunggah file 3D sendiri, mencari seller terdekat, lalu berkomunikasi melalui chat.
         Kebijakan ini menjelaskan data apa yang kami kumpulkan, untuk apa, dan pilihan Anda, baik di
-        aplikasi seluler maupun di dashboard merchant.
+        aplikasi seluler maupun di dashboard seller.
       </p>
 
       <LegalSection title="1. Data yang kami kumpulkan">
@@ -51,10 +51,10 @@ export default function PrivacyPolicyPage() {
             pengiriman dan pembayaran yang terkait pesanan.
           </li>
           <li>
-            <strong>Pesan chat:</strong> percakapan antara pelanggan dan merchant, termasuk lampiran.
+            <strong>Pesan chat:</strong> percakapan antara pelanggan dan seller, termasuk lampiran.
           </li>
           <li>
-            <strong>Data merchant (dashboard):</strong> data toko, foto toko, jam operasional, lokasi
+            <strong>Data seller (dashboard):</strong> data toko, foto toko, jam operasional, lokasi
             toko, dokumen pendaftaran, data pajak (NPWP), dan rekening bank untuk pencairan dana.
           </li>
         </ul>
@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="3. Berbagi data dengan pihak lain">
         <ul>
           <li>
-            <strong>Merchant:</strong> merchant yang Anda hubungi menerima informasi yang diperlukan
+            <strong>Seller:</strong> seller yang Anda hubungi menerima informasi yang diperlukan
             untuk memproses pesanan (mis. nama, kontak, alamat pengiriman, file 3D, isi chat).
           </li>
           <li>

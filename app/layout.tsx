@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: `${siteConfig.appName} Seller Dashboard`,
-  description: `Dashboard merchant & admin ${siteConfig.appName}.`,
+  description: `Dashboard seller & admin ${siteConfig.appName}.`,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

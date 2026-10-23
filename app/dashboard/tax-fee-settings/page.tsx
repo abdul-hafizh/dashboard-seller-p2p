@@ -15,7 +15,7 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 interface TaxAndFees {
   taxPercent: number;
   serviceFeePercent: number;
-  sellerFeePercent: number;
+  sellerFeeAmount: number;
   minPayoutAmount: number;
 }
 
@@ -23,7 +23,7 @@ export default function TaxFeeSettingsPage() {
   const { isAdmin, loading: authLoading } = useAuth();
   const [taxPercentDraft, setTaxPercentDraft] = useState("");
   const [serviceFeePercentDraft, setServiceFeePercentDraft] = useState("");
-  const [sellerFeePercentDraft, setSellerFeePercentDraft] = useState("");
+  const [sellerFeeAmountDraft, setSellerFeeAmountDraft] = useState("");
   const [minPayoutDraft, setMinPayoutDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,7 +34,7 @@ export default function TaxFeeSettingsPage() {
       const res = await apiFetch<TaxAndFees>("system-settings/tax-and-fees");
       setTaxPercentDraft(String(res.data.taxPercent));
       setServiceFeePercentDraft(String(res.data.serviceFeePercent));
-      setSellerFeePercentDraft(String(res.data.sellerFeePercent ?? 0));
+      setSellerFeeAmountDraft(String(res.data.sellerFeeAmount ?? 0));
       setMinPayoutDraft(String(res.data.minPayoutAmount ?? 50000));
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Gagal memuat pengaturan pajak & biaya layanan.");
@@ -57,12 +57,12 @@ export default function TaxFeeSettingsPage() {
       return;
     }
     if (!Number.isFinite(serviceFeePercent) || serviceFeePercent < 0 || serviceFeePercent > 100) {
-      toast.error("Persentase biaya layanan harus antara 0 - 100.");
+      toast.error("Admin fee harus antara 0 - 100%.");
       return;
     }
-    const sellerFeePercent = Number(sellerFeePercentDraft);
-    if (!Number.isFinite(sellerFeePercent) || sellerFeePercent < 0 || sellerFeePercent > 100) {
-      toast.error("Fee transaksi seller harus antara 0 - 100.");
+    const sellerFeeAmount = Math.round(Number(sellerFeeAmountDraft));
+    if (!Number.isFinite(sellerFeeAmount) || sellerFeeAmount < 0) {
+      toast.error("Fee transaksi seller harus berupa nominal Rupiah (0 atau lebih).");
       return;
     }
     const minPayoutAmount = Number(minPayoutDraft);
@@ -73,7 +73,7 @@ export default function TaxFeeSettingsPage() {
 
     setSaving(true);
     try {
-      await apiFetch("system-settings/tax-and-fees", { method: "PUT", json: { taxPercent, serviceFeePercent, sellerFeePercent, minPayoutAmount } });
+      await apiFetch("system-settings/tax-and-fees", { method: "PUT", json: { taxPercent, serviceFeePercent, sellerFeeAmount, minPayoutAmount } });
       toast.success("Pengaturan pajak & biaya layanan berhasil disimpan.");
       await load();
     } catch (error) {
@@ -100,16 +100,16 @@ export default function TaxFeeSettingsPage() {
       <div>
         <h1 className="text-xl font-extrabold text-ink">Pajak & Biaya Layanan</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Semua biaya di halaman ini <b>dibayar merchant kepada Petope</b> dan dipotong dari hasil jualan merchant.
-          Customer hanya membayar harga dari Master Harga (dikurangi diskon tier) ditambah ongkir — tanpa PPN atau biaya
-          layanan. Perubahan berlaku untuk pesanan baru; pesanan lama memakai tarif saat dibuat.
+          <b>Admin fee</b> dan <b>fee transaksi</b> dibayar seller kepada Petope (dipotong dari hasil jualan seller).
+          <b> PPN</b> ditagihkan ke customer di atas harga dari Master Harga, pada semua pesanan kecuali pembelian token, dan
+          disetor oleh Petope. Perubahan berlaku untuk pesanan baru; pesanan lama memakai tarif saat dibuat.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Percent className="size-4" /> Potongan Merchant
+            <Percent className="size-4" /> Potongan Seller
           </CardTitle>
         </CardHeader>
         <CardBody className="flex flex-col gap-5">
@@ -118,10 +118,10 @@ export default function TaxFeeSettingsPage() {
           ) : (
             <>
               <div className="flex flex-col gap-2">
-                <FieldLabel>Persentase Biaya Layanan (%)</FieldLabel>
+                <FieldLabel>Admin Fee (%)</FieldLabel>
                 <p className="text-xs text-ink-soft">
-                  Dibayar merchant, dihitung dari Harga Dasar, berlaku untuk semua merchant (PKP maupun Non-PKP). Contoh:
-                  harga dasar Rp 300.000 dan biaya layanan 1,5% = Rp 4.500 dipotong dari hasil jualan merchant.
+                  Dibayar seller, dihitung dari Harga Dasar, berlaku untuk semua seller (PKP maupun Non-PKP). Contoh:
+                  harga dasar Rp 300.000 dan admin fee 1,5% = Rp 4.500 dipotong dari hasil jualan seller.
                 </p>
                 <Input
                   type="number"
@@ -136,8 +136,9 @@ export default function TaxFeeSettingsPage() {
               <div className="flex flex-col gap-2">
                 <FieldLabel>Persentase Pajak PPN (%)</FieldLabel>
                 <p className="text-xs text-ink-soft">
-                  Dibayar merchant PKP saja — merchant Non-PKP otomatis 0% tanpa mengubah angka ini. Dihitung dari Harga
-                  Dasar dan dipotong dari hasil jualan merchant; tidak ditagihkan ke customer.
+                  Ditagihkan ke <b>customer</b> di setiap pesanan (produk, desain AI, pesanan custom) — kecuali pembelian
+                  token AI. Dihitung dari Harga Dasar (setelah diskon tier, tanpa ongkir), tampil di checkout dan invoice, dan
+                  disetor oleh Petope. Contoh: harga Rp 100.000 dan PPN 11% → customer membayar Rp 111.000 + ongkir.
                 </p>
                 <Input
                   type="number"
@@ -150,18 +151,18 @@ export default function TaxFeeSettingsPage() {
                 />
               </div>
               <div className="flex flex-col gap-2 border-t border-border pt-5">
-                <FieldLabel>Fee Transaksi Seller (%)</FieldLabel>
+                <FieldLabel>Fee Transaksi Seller (Rp)</FieldLabel>
                 <p className="text-xs text-ink-soft">
-                  Dibayar <b>seller kepada Petope</b> dari setiap penjualan, di luar biaya layanan dan PPN. Dihitung dari Harga
-                  Dasar dan dipotong dari saldo hasil jualan seller. Contoh: harga dasar Rp 300.000 dan fee 5% = Rp 15.000.
+                  Nominal tetap yang dibayar <b>seller kepada Petope</b> untuk setiap pesanan (transaksi), di luar admin fee
+                  — berapa pun harga pesanannya. Dipotong dari saldo hasil jualan seller. Contoh: fee Rp 2.000 → setiap
+                  pesanan selesai memotong Rp 2.000 dari hasil jualan.
                 </p>
                 <Input
                   type="number"
                   min={0}
-                  max={100}
-                  step="0.1"
-                  value={sellerFeePercentDraft}
-                  onChange={(e) => setSellerFeePercentDraft(e.target.value)}
+                  step="500"
+                  value={sellerFeeAmountDraft}
+                  onChange={(e) => setSellerFeeAmountDraft(e.target.value)}
                   className="max-w-xs"
                 />
               </div>

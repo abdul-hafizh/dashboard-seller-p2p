@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Package, ShieldAlert, ShoppingCart, Store, CalendarDays, LogIn, FolderOpen } from "lucide-react";
 import { DocumentRow, type MerchantDocument } from "@/components/merchants/MerchantDocumentsCard";
 import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
+import { SellerAddressList } from "@/components/merchants/StoreAddressCard";
 import { MerchantBankInfo } from "@/components/merchants/BankAccountCard";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -57,7 +58,7 @@ export default function MerchantDetailPage() {
   }
   const merchant = data?.data;
   if (error || !merchant) {
-    return <EmptyState icon={Store} title="Merchant tidak ditemukan" description="Merchant ini tidak ada atau sudah dihapus." />;
+    return <EmptyState icon={Store} title="Seller tidak ditemukan" description="Seller ini tidak ada atau sudah dihapus." />;
   }
 
   const products = merchant.Products ?? [];
@@ -70,7 +71,7 @@ export default function MerchantDetailPage() {
         href="/dashboard/merchants"
         className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink"
       >
-        <ArrowLeft className="size-4" /> Kembali ke daftar merchant
+        <ArrowLeft className="size-4" /> Kembali ke daftar seller
       </Link>
 
       <Card>
@@ -92,7 +93,7 @@ export default function MerchantDetailPage() {
             {store && <p className="text-sm text-ink-soft">Pemilik: {merchant.FullName ?? "-"}</p>}
             {merchant.ApprovalStatus === "PENDING" && (
               <p className="mt-2 text-sm text-brand-orange-deep">
-                Merchant ini belum bisa masuk ke dashboard sampai pendaftarannya disetujui.
+                Seller ini belum bisa masuk ke dashboard sampai pendaftarannya disetujui.
               </p>
             )}
             <div className="mt-3 flex justify-start">
@@ -138,6 +139,8 @@ export default function MerchantDetailPage() {
         accountName={merchant.PayoutAccountName}
       />
 
+      <SellerAddressList userId={id} />
+
       <OperatingHoursCard merchantId={id} />
 
       <Card>
@@ -171,7 +174,7 @@ export default function MerchantDetailPage() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-ink-soft">Merchant ini belum mengunggah dokumen apa pun.</p>
+            <p className="text-sm text-ink-soft">Seller ini belum mengunggah dokumen apa pun.</p>
           )}
         </CardBody>
       </Card>
@@ -179,11 +182,11 @@ export default function MerchantDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="size-4" /> Produk Merchant
+            <Package className="size-4" /> Produk Seller
           </CardTitle>
         </CardHeader>
         {products.length === 0 ? (
-          <EmptyState icon={Package} title="Belum ada produk" description="Merchant ini belum menambahkan produk." />
+          <EmptyState icon={Package} title="Belum ada produk" description="Seller ini belum menambahkan produk." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">

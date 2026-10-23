@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate } from "@/lib/resources/format";
+import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 
 interface OrderRow {
   Id: string;
@@ -41,6 +42,7 @@ function merchantLabel(merchant: OrderRow["Merchant"]): string {
 export default function OrdersPage() {
   const { isAdmin } = useAuth();
   const [page, setPage] = useState(1);
+  const [period, setPeriod] = useState<Period>(ALL_TIME);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
@@ -52,8 +54,8 @@ export default function OrdersPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading } = useSWR(["orders", page, search], () =>
-    apiFetch<OrderRow[]>("orders", { query: { page, limit: 10, search: search || undefined } }),
+  const { data, isLoading } = useSWR(["orders", page, search, period.from, period.to], () =>
+    apiFetch<OrderRow[]>("orders", { query: { page, limit: 10, search: search || undefined, ...periodQuery(period) } }),
   );
 
   const rows = data?.data ?? [];
@@ -66,14 +68,17 @@ export default function OrdersPage() {
           <h1 className="text-base font-extrabold text-ink">Pesanan</h1>
           <p className="mt-0.5 text-xs text-ink-soft">Pantau status pesanan yang masuk.</p>
         </div>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
-          <Input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Cari nomor pesanan..."
-            className="w-full pl-9 sm:w-64"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <PeriodFilter label="Tanggal pesanan" value={period} onChange={(p) => { setPeriod(p); setPage(1); }} />
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Cari nomor pesanan..."
+              className="w-full pl-9 sm:w-64"
+            />
+          </div>
         </div>
       </div>
 
@@ -90,7 +95,7 @@ export default function OrdersPage() {
               <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
                 <th className="whitespace-nowrap px-4 py-3">No. Pesanan</th>
                 <th className="whitespace-nowrap px-4 py-3">Pelanggan</th>
-                {isAdmin && <th className="whitespace-nowrap px-4 py-3">Merchant</th>}
+                {isAdmin && <th className="whitespace-nowrap px-4 py-3">Seller</th>}
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
                 <th className="whitespace-nowrap px-4 py-3">Kurir</th>
                 <th className="whitespace-nowrap px-4 py-3">Total</th>

@@ -1,7 +1,7 @@
 import type { ResourceConfig } from "./types";
 import { formatCurrency, toPublicAssetUrl } from "./format";
 import { Badge } from "@/components/ui/Badge";
-import { ImageOff, Star } from "lucide-react";
+import { ImageOff, Star, Store } from "lucide-react";
 
 /** SellerId is only editable by admins — merchants always create products under themselves
  * (the backend defaults SellerId to the authenticated user when it's omitted). */
@@ -9,8 +9,9 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
   return {
     key: "products",
     endpoint: "products",
+    periodFilter: "Tanggal produk ditambahkan",
     title: "Produk",
-    description: isAdmin ? "Seluruh produk dari semua merchant." : "Produk yang kamu jual di marketplace.",
+    description: isAdmin ? "Seluruh produk dari semua seller." : "Produk yang kamu jual di marketplace.",
     searchPlaceholder: "Cari produk...",
     columns: [
       {
@@ -30,7 +31,24 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
           );
         },
       },
-      { key: "ProductName", label: "Nama Produk" },
+      {
+        key: "ProductName",
+        label: "Nama Produk",
+        // Admins see every seller's products: the seller goes under the name instead of its own column.
+        render: (r) => {
+          const seller = r.Seller as { FullName?: string } | null | undefined;
+          return (
+            <div>
+              <p className="font-medium text-ink">{String(r.ProductName ?? "-")}</p>
+              {isAdmin && (
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-faint">
+                  <Store className="size-3" /> {seller?.FullName ?? "Tanpa seller"}
+                </p>
+              )}
+            </div>
+          );
+        },
+      },
       {
         key: "Category",
         label: "Kategori",
@@ -74,18 +92,6 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
           );
         },
       },
-      ...(isAdmin
-        ? [
-            {
-              key: "Seller",
-              label: "Penjual",
-              render: (r: Record<string, unknown>) => {
-                const seller = r.Seller as { FullName?: string } | null | undefined;
-                return seller?.FullName ?? "-";
-              },
-            },
-          ]
-        : []),
       {
         key: "IsPublished",
         label: "Status",
@@ -126,11 +132,11 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
         ? [
             {
               name: "SellerId",
-              label: "Penjual",
+              label: "Seller",
               type: "select" as const,
               optionsEndpoint: "users",
               optionLabelKey: "FullName",
-              helpText: "Kosongkan untuk menetapkan dirimu sendiri sebagai penjual.",
+              helpText: "Kosongkan untuk menetapkan dirimu sendiri sebagai seller.",
             },
           ]
         : []),

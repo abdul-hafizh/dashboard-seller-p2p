@@ -15,11 +15,13 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate } from "@/lib/resources/format";
 import { CustomerAvatar, ageOf, genderLabel, type CustomerRow } from "@/components/customers/customer-ui";
+import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 
-/** Admin › Customer: every customer account with their purchases; CSV export. */
+/** Admin › Customer: every customer account with their purchases; Excel export. */
 export default function CustomersPage() {
   const { isAdmin } = useAuth();
   const [page, setPage] = useState(1);
+  const [period, setPeriod] = useState<Period>(ALL_TIME);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [gender, setGender] = useState("");
@@ -32,8 +34,10 @@ export default function CustomersPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading } = useSWR(isAdmin ? ["admin-customers", page, search, gender] : null, () =>
-    apiFetch<CustomerRow[]>("admin/customers", { query: { page, limit: 20, search: search || undefined, gender: gender || undefined } }),
+  const { data, isLoading } = useSWR(isAdmin ? ["admin-customers", page, search, gender, period.from, period.to] : null, () =>
+    apiFetch<CustomerRow[]>("admin/customers", {
+      query: { page, limit: 20, search: search || undefined, gender: gender || undefined, ...periodQuery(period) },
+    }),
   );
 
   if (!isAdmin) {
@@ -55,6 +59,7 @@ export default function CustomersPage() {
           <p className="mt-0.5 text-xs text-ink-soft">Data customer, alamat kirim, dan riwayat belanja mereka.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <PeriodFilter label="Tanggal daftar" value={period} onChange={(p) => { setPeriod(p); setPage(1); }} />
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
             <Input
@@ -71,7 +76,7 @@ export default function CustomersPage() {
           </Select>
           <a href="/api/backend/admin/customers/export" download>
             <Button type="button" variant="outline" size="sm">
-              <Download className="size-4" /> Ekspor CSV
+              <Download className="size-4" /> Ekspor Excel
             </Button>
           </a>
         </div>

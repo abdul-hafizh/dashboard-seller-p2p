@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { toast } from "sonner";
 import {
   Wallet,
   Store,
@@ -10,20 +9,16 @@ import {
   Truck,
   Landmark,
   HandCoins,
-  RefreshCw,
-  Sparkles,
   Info,
-  AlertTriangle,
 } from "lucide-react";
-import { apiFetch, ApiError } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldLabel } from "@/components/ui/FieldLabel";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
+import { formatCurrency } from "@/lib/resources/format";
 import Link from "next/link";
 
 interface SellerFinance {
@@ -78,16 +73,6 @@ interface FinanceReport {
   };
 }
 
-interface MeshyBalance {
-  Balance: number;
-  MonthlyCredits: number | null;
-  PermanentCredits: number | null;
-  MonthlyResetsAt: string | null;
-  CheckedAt: string;
-}
-
-const LOW_MESHY_BALANCE = 300;
-
 const pad = (n: number) => String(n).padStart(2, "0");
 const toDateInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const monthStart = () => {
@@ -128,69 +113,8 @@ function Note({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Sisa kredit akun Meshy milik Petope (bukan token customer). */
-function MeshyBalanceCard() {
-  const [refreshing, setRefreshing] = useState(false);
-  const { data, error, isLoading, mutate } = useSWR("meshy-balance", () => apiFetch<MeshyBalance>("reports/meshy-balance"), {
-    refreshInterval: 5 * 60 * 1000,
-  });
-  const b = data?.data;
-  const low = b ? b.Balance < LOW_MESHY_BALANCE : false;
-
-  const refresh = async () => {
-    setRefreshing(true);
-    try {
-      await mutate(await apiFetch<MeshyBalance>("reports/meshy-balance", { query: { refresh: 1 } }), { revalidate: false });
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Gagal memuat saldo Meshy");
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex items-center justify-between gap-2">
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="size-4" /> Saldo Kredit Meshy
-        </CardTitle>
-        <Button variant="ghost" size="sm" type="button" onClick={refresh} loading={refreshing}>
-          {!refreshing && <RefreshCw className="size-4" />} Perbarui
-        </Button>
-      </CardHeader>
-      <CardBody>
-        {isLoading ? (
-          <div className="flex justify-center py-4">
-            <Spinner className="size-5" />
-          </div>
-        ) : error || !b ? (
-          <p className="text-sm text-error">{error instanceof Error ? error.message : "Saldo Meshy tidak tersedia"}</p>
-        ) : (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className={`text-3xl font-extrabold ${low ? "text-error" : "text-ink"}`}>
-                {b.Balance.toLocaleString("id-ID")} <span className="text-base font-semibold text-ink-soft">kredit</span>
-              </p>
-              <p className="mt-1 text-xs text-ink-soft">
-                Bulanan {b.MonthlyCredits?.toLocaleString("id-ID") ?? "-"} · Permanen {b.PermanentCredits?.toLocaleString("id-ID") ?? "-"}
-                {b.MonthlyResetsAt && <> · Reset {formatDate(b.MonthlyResetsAt)}</>}
-              </p>
-              <p className="mt-0.5 text-[11px] text-ink-faint">Dicek {formatDateTime(b.CheckedAt)}</p>
-            </div>
-            {low && (
-              <div className="flex items-center gap-2 rounded-xl bg-error/10 px-3 py-2 text-xs font-semibold text-error">
-                <AlertTriangle className="size-4" /> Saldo menipis — isi ulang di meshy.ai agar pembuatan model tidak gagal.
-              </div>
-            )}
-          </div>
-        )}
-      </CardBody>
-    </Card>
-  );
-}
-
 /**
- * Rekap Keuangan — merchant: own earnings. Super admin: Meshy credit balance,
+ * Rekap Keuangan — merchant: own earnings. Super admin:
  * Petope's income (service fee, tokens, shipping pass-through) and every
  * seller's earnings. Computed from our order/payment records.
  */
@@ -232,7 +156,6 @@ export default function FinancePage() {
         </div>
       </Card>
 
-      {isAdmin && <MeshyBalanceCard />}
 
       {isLoading && !report ? (
         <div className="flex justify-center py-16">
@@ -257,7 +180,7 @@ export default function FinancePage() {
                     icon={Wallet}
                     label="Total Dibayar Customer"
                     value={formatCurrency(platform.TotalCollected)}
-                    hint="Harga produk + ongkir; semua masuk ke rekening DOKU pusat"
+                    hint="Harga produk + PPN + ongkir; semua masuk ke rekening DOKU pusat"
                   />
                   <Stat
                     icon={Landmark}
@@ -270,7 +193,7 @@ export default function FinancePage() {
                     icon={HandCoins}
                     label="Hak Seller"
                     value={formatCurrency(platform.OwedToSellers)}
-                    hint="Harga dasar − fee transaksi − biaya layanan − PPN; dicairkan lewat menu Pencairan Dana"
+                    hint="Harga dasar − fee transaksi − admin fee; dicairkan lewat menu Pencairan Dana"
                   />
                   <Stat
                     icon={Truck}
@@ -320,7 +243,7 @@ export default function FinancePage() {
                         <dd className="text-ink">− {formatCurrency(platform.OwedToSellers)}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-ink-soft">PPN untuk disetor (seller PKP & token)</dt>
+                        <dt className="text-ink-soft">PPN untuk disetor</dt>
                         <dd className="text-ink">− {formatCurrency(platform.TaxToRemit)}</dd>
                       </div>
                     </dl>
@@ -454,7 +377,7 @@ export default function FinancePage() {
               <Note>
                 <p>
                   Penjualan bersih = harga produk setelah diskon tier (yang dibayar customer, tanpa ongkir). Pembayarannya masuk ke
-                  rekening DOKU pusat. Potongan = fee transaksi + biaya layanan + PPN (seller PKP) yang dibayar seller ke Petope.
+                  rekening DOKU pusat. Potongan = fee transaksi + admin fee yang dibayar seller ke Petope. PPN dibayar customer dan disetor Petope.
                 </p>
                 <p>Periode dihitung dari tanggal pembayaran pesanan.</p>
               </Note>

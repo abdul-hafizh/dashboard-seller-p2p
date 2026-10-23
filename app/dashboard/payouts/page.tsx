@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency, formatDateTime } from "@/lib/resources/format";
 import { BankAccountCard, type BankAccount } from "@/components/merchants/BankAccountCard";
+import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 
 interface Balance {
   CompletedOrders: number;
@@ -32,7 +33,7 @@ interface Balance {
   Pending: number;
   Available: number;
   MinPayout?: number;
-  SellerFeePercent?: number;
+  SellerFeeAmount?: number;
   ServiceFeePercent?: number;
   TaxPercent?: number;
 }
@@ -171,7 +172,8 @@ export default function PayoutsPage() {
 function MerchantPayouts() {
   const balance = useSWR("payout-balance", () => apiFetch<Balance>("payouts/balance"));
   const bank = useSWR("payout-bank", () => apiFetch<BankAccount>("payouts/bank-account"));
-  const history = useSWR("payout-history", () => apiFetch<Payout[]>("payouts"));
+  const [period, setPeriod] = useState<Period>(ALL_TIME);
+  const history = useSWR(["payout-history", period.from, period.to], () => apiFetch<Payout[]>("payouts", { query: periodQuery(period) }));
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -238,7 +240,7 @@ function MerchantPayouts() {
               {b.Tax > 0 && (
                 <div className="flex justify-between"><dt className="text-ink-soft">PPN dibayar customer (pesanan lama)</dt><dd className="text-ink">{formatCurrency(b.Tax)}</dd></div>
               )}
-              <div className="flex justify-between"><dt className="text-ink-soft">Fee transaksi Petope{b.SellerFeePercent ? ` (saat ini ${b.SellerFeePercent}%)` : ""}</dt><dd className="text-error">− {formatCurrency(b.SellerFee)}</dd></div>
+              <div className="flex justify-between"><dt className="text-ink-soft">Fee transaksi Petope{b.SellerFeeAmount ? ` (saat ini ${formatCurrency(b.SellerFeeAmount)}/pesanan)` : ""}</dt><dd className="text-error">− {formatCurrency(b.SellerFee)}</dd></div>
               <div className="flex justify-between"><dt className="text-ink-soft">Biaya layanan{b.ServiceFeePercent ? ` (saat ini ${b.ServiceFeePercent}%)` : ""}</dt><dd className="text-error">− {formatCurrency(b.ServiceFee ?? 0)}</dd></div>
               {((b.MerchantTax ?? 0) > 0 || (b.TaxPercent ?? 0) > 0) && (
                 <div className="flex justify-between"><dt className="text-ink-soft">PPN (seller PKP{b.TaxPercent ? `, saat ini ${b.TaxPercent}%` : ""})</dt><dd className="text-error">− {formatCurrency(b.MerchantTax ?? 0)}</dd></div>
@@ -285,8 +287,9 @@ function MerchantPayouts() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Riwayat Pencairan</CardTitle>
+          <PeriodFilter label="Tanggal pengajuan" value={period} onChange={setPeriod} />
         </CardHeader>
         <CardBody>
           {history.isLoading ? <Spinner className="size-5" /> : <PayoutTable rows={history.data?.data ?? []} admin={false} onCancel={cancel} />}
@@ -300,7 +303,10 @@ function MerchantPayouts() {
 
 function AdminPayouts() {
   const [tab, setTab] = useState<"REQUESTED" | "ALL">("REQUESTED");
-  const payouts = useSWR(["payouts", tab], () => apiFetch<Payout[]>("payouts", { query: { status: tab === "ALL" ? undefined : tab } }));
+  const [period, setPeriod] = useState<Period>(ALL_TIME);
+  const payouts = useSWR(["payouts", tab, period.from, period.to], () =>
+    apiFetch<Payout[]>("payouts", { query: { status: tab === "ALL" ? undefined : tab, ...periodQuery(period) } }),
+  );
   const balances = useSWR("payout-balances", () => apiFetch<SellerBalanceRow[]>("payouts/balances"));
   const [paying, setPaying] = useState<Payout | null>(null);
   const [rejecting, setRejecting] = useState<Payout | null>(null);
@@ -330,7 +336,8 @@ function AdminPayouts() {
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Permintaan Pencairan</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodFilter label="Tanggal pengajuan" value={period} onChange={setPeriod} />
             <Button size="sm" type="button" variant={tab === "REQUESTED" ? "primary" : "outline"} onClick={() => setTab("REQUESTED")}>
               Menunggu Transfer
             </Button>

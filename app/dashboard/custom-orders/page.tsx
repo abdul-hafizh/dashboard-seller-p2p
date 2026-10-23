@@ -222,7 +222,7 @@ export default function CustomOrdersPage() {
         <h1 className="text-xl font-extrabold text-ink">Pesanan Custom (Ready to Print)</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Buat pesanan produk manual/custom (Gantungan Kunci, Plakat, Stiker, dll) untuk customer setelah harga & ongkir
-          disepakati lewat chat — sistem otomatis menghitung harga dan mengirim kartu tagihan ke chat. Customer membayar harga + ongkir saja; fee transaksi, biaya layanan, dan PPN dipotong dari hasil jualan Anda.
+          disepakati lewat chat — sistem otomatis menghitung harga dan mengirim kartu tagihan ke chat. Customer membayar harga + PPN + ongkir; fee transaksi dan admin fee dipotong dari hasil jualan Anda.
         </p>
       </div>
 

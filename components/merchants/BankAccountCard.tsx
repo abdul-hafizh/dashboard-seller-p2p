@@ -181,7 +181,7 @@ export function MerchantBankInfo({
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-ink-soft">Merchant ini belum mengisi rekening pencairan di profilnya.</p>
+          <p className="text-sm text-ink-soft">Seller ini belum mengisi rekening pencairan di profilnya.</p>
         )}
       </CardBody>
     </Card>

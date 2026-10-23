@@ -7,7 +7,7 @@
 export const siteConfig = {
   appName: "Petope",
   companyName: "Petope",
-  tagline: "Cetak 3D dari prompt AI atau file 3D milikmu, langsung ke merchant terdekat.",
+  tagline: "Cetak 3D dari prompt AI atau file 3D milikmu, langsung ke seller terdekat.",
   contactEmail: "petope@gmail.com",
   /** Shown as "Terakhir diperbarui" on the legal pages. Update when their content changes. */
   legalLastUpdated: "21 Oktober 2026",

@@ -116,8 +116,8 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
           </div>
         </dl>
         <p className="text-xs text-ink-soft">
-          Diskon tier pelanggan dipotong otomatis dan ongkir dihitung ulang untuk berat baru. Fee transaksi, biaya layanan, dan
-          PPN dipotong dari hasil jualan Anda.
+          Diskon tier pelanggan dipotong otomatis, PPN ditambahkan ke tagihan customer, dan ongkir dihitung ulang untuk berat
+          baru. Fee transaksi dan admin fee dipotong dari hasil jualan Anda.
         </p>
         <Button onClick={confirm} loading={saving} disabled={!ready || designTotal === null}>
           Konfirmasi & Kirim Harga ke Customer

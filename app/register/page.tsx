@@ -100,7 +100,7 @@ export default function RegisterPage() {
     return (
       <AuthCard
         title="Pendaftaran Terkirim"
-        subtitle="Akun merchant kamu sedang ditinjau admin"
+        subtitle="Akun seller kamu sedang ditinjau admin"
         footer={
           <Link href="/login" className="font-bold text-brand-purple hover:underline">
             Kembali ke halaman Masuk
@@ -130,8 +130,8 @@ export default function RegisterPage() {
 
   return (
     <AuthCard
-      title="Daftar sebagai Merchant"
-      subtitle="Pendaftaran dashboard ini khusus untuk merchant"
+      title="Daftar sebagai Seller"
+      subtitle="Pendaftaran dashboard ini khusus untuk seller"
       error={serverError}
       footer={
         <>

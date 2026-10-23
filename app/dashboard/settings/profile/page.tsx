@@ -13,6 +13,7 @@ import { MerchantDocumentsCard } from "@/components/merchants/MerchantDocumentsC
 import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
 import { BankAccountCard } from "@/components/merchants/BankAccountCard";
 import { ProfilePhotosCard } from "@/components/merchants/ProfilePhotosCard";
+import { StoreAddressCard } from "@/components/merchants/StoreAddressCard";
 
 type TaxType = "PKP" | "NON_PKP";
 
@@ -35,8 +36,8 @@ const EMPTY_FORM: ProfileForm = {
 };
 
 const TAX_OPTIONS: { value: TaxType; label: string; description: string }[] = [
-  { value: "NON_PKP", label: "Non-PKP", description: "Belum dikukuhkan sebagai Pengusaha Kena Pajak. Tidak ada potongan PPN." },
-  { value: "PKP", label: "PKP", description: "Pengusaha Kena Pajak. PPN dipotong dari hasil jualan Anda (tidak ditagihkan ke customer)." },
+  { value: "NON_PKP", label: "Non-PKP", description: "Belum dikukuhkan sebagai Pengusaha Kena Pajak." },
+  { value: "PKP", label: "PKP", description: "Pengusaha Kena Pajak. Untuk data administrasi pajak — PPN pesanan ditagihkan ke customer dan disetor Petope." },
 ];
 
 export default function ProfileSettingsPage() {
@@ -138,8 +139,8 @@ export default function ProfileSettingsPage() {
             {showTax && (
               <div className="space-y-3 border-t border-border pt-4">
                 <div>
-                  <FieldLabel>Jenis Pajak Merchant</FieldLabel>
-                  <p className="text-xs text-ink-faint">Berlaku untuk merchant di Indonesia.</p>
+                  <FieldLabel>Jenis Pajak Seller</FieldLabel>
+                  <p className="text-xs text-ink-faint">Berlaku untuk seller di Indonesia.</p>
                 </div>
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   {TAX_OPTIONS.map((opt) => (
@@ -185,6 +186,7 @@ export default function ProfileSettingsPage() {
           </form>
         </CardBody>
       </Card>
+      {isMerchant && <StoreAddressCard />}
       {isMerchant && <OperatingHoursCard />}
       {isMerchant && <BankAccountCard />}
       {isMerchant && <MerchantDocumentsCard />}
