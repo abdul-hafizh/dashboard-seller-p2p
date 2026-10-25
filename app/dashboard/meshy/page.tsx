@@ -14,6 +14,8 @@ import { FullPageSpinner, Spinner } from "@/components/ui/Spinner";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 import { MeshyBalanceCard } from "@/components/meshy/MeshyBalanceCard";
 import { TokenLedgerCard } from "@/components/meshy/TokenLedgerCard";
+import { ResourceTable } from "@/components/crud/ResourceTable";
+import { modelFormatsConfig } from "@/lib/resources/model-formats.config";
 import { formatDateTime } from "@/lib/resources/format";
 import { cn } from "@/lib/utils";
 
@@ -108,6 +110,8 @@ export default function MeshyActivityPage() {
       </div>
 
       <MeshyBalanceCard />
+
+      <ResourceTable config={modelFormatsConfig} extraQuery={{ all: 1 }} hidePagination />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat icon={Sparkles} label="Total Generate" value={n(summary?.Total)} hint={`${n(summary?.TextTo3D)} dari teks · ${n(summary?.ImageTo3D)} dari foto`} />

@@ -14,6 +14,7 @@ import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
 import { BankAccountCard } from "@/components/merchants/BankAccountCard";
 import { ProfilePhotosCard } from "@/components/merchants/ProfilePhotosCard";
 import { StoreAddressCard } from "@/components/merchants/StoreAddressCard";
+import { TelegramCard } from "@/components/merchants/TelegramCard";
 
 type TaxType = "PKP" | "NON_PKP";
 
@@ -21,7 +22,6 @@ interface ProfileForm {
   FullName: string;
   Phone: string;
   WhatsappNumber: string;
-  TelegramChatId: string;
   TaxType: TaxType;
   NPWP: string;
 }
@@ -30,7 +30,6 @@ const EMPTY_FORM: ProfileForm = {
   FullName: "",
   Phone: "",
   WhatsappNumber: "",
-  TelegramChatId: "",
   TaxType: "NON_PKP",
   NPWP: "",
 };
@@ -51,7 +50,6 @@ export default function ProfileSettingsPage() {
       FullName: user.FullName ?? "",
       Phone: user.Phone ?? "",
       WhatsappNumber: user.WhatsappNumber ?? "",
-      TelegramChatId: user.TelegramChatId ?? "",
       TaxType: user.TaxProfile?.TaxType ?? "NON_PKP",
       NPWP: user.TaxProfile?.NPWP ?? "",
     });
@@ -74,7 +72,6 @@ export default function ProfileSettingsPage() {
           FullName: form.FullName,
           Phone: form.Phone || null,
           WhatsappNumber: form.WhatsappNumber || null,
-          TelegramChatId: form.TelegramChatId || null,
           ...(showTax && canEditTax
             ? { TaxType: form.TaxType, NPWP: form.TaxType === "PKP" || form.NPWP ? form.NPWP : null }
             : {}),
@@ -123,18 +120,6 @@ export default function ProfileSettingsPage() {
                 value={form.WhatsappNumber}
                 onChange={(e) => setForm((f) => ({ ...f, WhatsappNumber: e.target.value }))}
               />
-            </div>
-            <div>
-              <FieldLabel>Telegram Chat ID</FieldLabel>
-              <Input
-                value={form.TelegramChatId}
-                onChange={(e) => setForm((f) => ({ ...f, TelegramChatId: e.target.value }))}
-                placeholder="Contoh: 123456789"
-              />
-              <p className="mt-1.5 text-xs text-ink-faint">
-                Digunakan untuk mengirim notifikasi pesanan baru lewat Telegram. Dapatkan Chat ID Anda
-                dengan mengirim pesan ke bot notifikasi, lalu tempelkan ID yang dibalas di sini.
-              </p>
             </div>
             {showTax && (
               <div className="space-y-3 border-t border-border pt-4">
@@ -186,6 +171,7 @@ export default function ProfileSettingsPage() {
           </form>
         </CardBody>
       </Card>
+      {isMerchant && <TelegramCard />}
       {isMerchant && <StoreAddressCard />}
       {isMerchant && <OperatingHoursCard />}
       {isMerchant && <BankAccountCard />}

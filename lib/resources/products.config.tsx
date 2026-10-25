@@ -57,7 +57,18 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
           return category?.Name ?? "-";
         },
       },
-      { key: "MaterialName", label: "Bahan", render: (r) => (r.MaterialName as string | null) || "-" },
+      {
+        key: "MaterialName",
+        label: "Bahan",
+        render: (r) => (
+          <div>
+            <p>{(r.MaterialName as string | null) || "-"}</p>
+            {r.ColorType ? (
+              <p className="mt-0.5 text-xs text-ink-faint">{r.ColorType === "MULTI" ? "Multicolor" : "Satu warna"}</p>
+            ) : null}
+          </div>
+        ),
+      },
       {
         key: "Price",
         label: "Harga",
@@ -126,6 +137,17 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
         type: "number",
         placeholder: "250",
         helpText: "Menentukan harga dan ongkos kirim. Produk baru bisa dipublikasikan setelah bahan & berat diisi dan admin sudah mengisi harganya.",
+      },
+      {
+        name: "ColorType",
+        label: "Jenis Warna",
+        type: "select",
+        required: true,
+        options: [
+          { value: "SINGLE", label: "Satu warna (single color)" },
+          { value: "MULTI", label: "Multicolor" },
+        ],
+        helpText: "Pilih salah satu: produk dicetak dengan satu warna filamen atau beberapa warna.",
       },
       { name: "Stock", label: "Stok", type: "number", placeholder: "10", defaultValue: 0 },
       ...(isAdmin
