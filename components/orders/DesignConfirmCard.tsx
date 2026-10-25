@@ -7,6 +7,7 @@ import { apiFetch, ApiError } from "@/lib/api-client";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/resources/format";
+import { ITEM_CATEGORIES } from "@/lib/item-category";
 import { MasterPriceFields, quoteFromMaster, usePriceMaster } from "@/components/pricing/MasterPriceFields";
 
 export interface DesignLine {
@@ -85,7 +86,8 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
         {designs.map((d, i) => (
           <div key={d.Id} className="space-y-2 rounded-xl border border-border p-3">
             <p className="text-sm font-bold text-ink">
-              {d.AIModel?.ModelName || `Desain AI ${i + 1}`}
+              {ITEM_CATEGORIES.PROMPT}
+              {designs.length > 1 && ` #${i + 1}`}
               <span className="font-normal text-ink-soft"> · {Math.max(1, d.Quantity ?? 1)} pcs</span>
             </p>
             {d.Notes && (

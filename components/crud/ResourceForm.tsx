@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { FieldConfig } from "@/lib/resources/types";
@@ -68,6 +68,12 @@ function toPayload(fields: FieldConfig[], values: FormValues): Record<string, un
   return payload;
 }
 
+/** A field's liveHint, re-rendered on its own as the form values change. */
+function LiveHint({ control, render }: { control: Control<FormValues>; render: NonNullable<FieldConfig["liveHint"]> }) {
+  const values = useWatch({ control }) as FormValues;
+  return <>{render(values)}</>;
+}
+
 interface ResourceFormProps {
   fields: FieldConfig[];
   initialValues?: Record<string, unknown>;
@@ -83,6 +89,7 @@ export function ResourceForm({ fields, initialValues, submitLabel, onSubmit, onC
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -96,7 +103,10 @@ export function ResourceForm({ fields, initialValues, submitLabel, onSubmit, onC
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
       {fields.map((field) => (
-        <FormField key={field.name} field={field} register={register} errors={errors} watch={watch} setValue={setValue} />
+        <div key={field.name}>
+          <FormField field={field} register={register} errors={errors} watch={watch} setValue={setValue} />
+          {field.liveHint && <LiveHint control={control} render={field.liveHint} />}
+        </div>
       ))}
 
       <div className="mt-2 flex justify-end gap-2">

@@ -89,10 +89,9 @@ export const NAV_SECTIONS: NavSection[] = [
       // Everything below is global reference data the backend now
       // restricts to Super Admin for create/update/delete.
       { href: "/dashboard/product-categories", label: "Kategori Produk", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
-      { href: "/dashboard/printer-types", label: "Tipe Printer", icon: Cpu, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/printer-types", label: "Merk", icon: Cpu, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/payment-methods", label: "Metode Pembayaran", icon: CreditCard, roles: [ROLE.SUPER_ADMIN] },
-      { href: "/dashboard/shipping-methods", label: "Metode Pengiriman", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
-      { href: "/dashboard/shipping-services", label: "Layanan Pengiriman", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/shipping-methods", label: "Kurir & Layanan", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/order-statuses", label: "Status Pesanan", icon: ListChecks, roles: [ROLE.SUPER_ADMIN] },
     ],
   },

@@ -94,7 +94,8 @@ export default function CustomersPage() {
             <thead>
               <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
                 <th className="whitespace-nowrap px-4 py-3">Customer</th>
-                <th className="whitespace-nowrap px-4 py-3">Kontak</th>
+                <th className="whitespace-nowrap px-4 py-3">Email</th>
+                <th className="whitespace-nowrap px-4 py-3">No HP</th>
                 <th className="whitespace-nowrap px-4 py-3">Gender / Usia</th>
                 <th className="whitespace-nowrap px-4 py-3">Kota</th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">Pesanan</th>
@@ -120,16 +121,24 @@ export default function CustomersPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-ink">{c.Email ?? "-"}</td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <p className="text-ink">{c.Email ?? "-"}</p>
-                      <p className="text-xs text-ink-soft">{c.Phone || c.WhatsappNumber || "-"}</p>
+                      {c.Phone || c.WhatsappNumber ? (
+                        <span className="text-ink">{c.Phone || c.WhatsappNumber}</span>
+                      ) : (
+                        <span className="text-xs font-semibold text-error">Belum diisi</span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-ink-soft">
                       {genderLabel(c.Gender)}
                       {age !== null && <span> · {age} th</span>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <span className="text-ink">{c.DefaultAddress?.City ?? "-"}</span>
+                      {c.DefaultAddress ? (
+                        <span className="text-ink">{c.DefaultAddress.City ?? "-"}</span>
+                      ) : (
+                        <span className="text-xs font-semibold text-error">Alamat belum diisi</span>
+                      )}
                       {c.DefaultAddress?.HasPin && <MapPin className="ml-1 inline size-3.5 text-success" aria-label="Alamat sudah di-pin" />}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-ink">

@@ -2,6 +2,7 @@ import type { ResourceConfig } from "./types";
 import { formatCurrency, toPublicAssetUrl } from "./format";
 import { Badge } from "@/components/ui/Badge";
 import { ImageOff, Star, Store } from "lucide-react";
+import { WeightPriceHint } from "@/components/pricing/WeightPriceHint";
 
 /** SellerId is only editable by admins — merchants always create products under themselves
  * (the backend defaults SellerId to the authenticated user when it's omitted). */
@@ -11,7 +12,9 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
     endpoint: "products",
     periodFilter: "Tanggal produk ditambahkan",
     title: "Produk",
-    description: isAdmin ? "Seluruh produk dari semua seller." : "Produk yang kamu jual di marketplace.",
+    description: isAdmin
+      ? "Seluruh produk dari semua seller. Semua produk di menu ini otomatis berkategori Barang Jadi."
+      : "Produk yang kamu jual di marketplace — otomatis berkategori Barang Jadi.",
     searchPlaceholder: "Cari produk...",
     columns: [
       {
@@ -47,14 +50,6 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
               )}
             </div>
           );
-        },
-      },
-      {
-        key: "Category",
-        label: "Kategori",
-        render: (r) => {
-          const category = r.Category as { Name?: string } | null | undefined;
-          return category?.Name ?? "-";
         },
       },
       {
@@ -114,13 +109,6 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
     fields: [
       { name: "ProductName", label: "Nama Produk", type: "text", required: true, placeholder: "Miniatur Karakter" },
       { name: "ThumbnailPath", label: "Gambar Produk", type: "image" },
-      {
-        name: "CategoryId",
-        label: "Kategori",
-        type: "select",
-        optionsEndpoint: "product-categories",
-        optionLabelKey: "Name",
-      },
       { name: "Description", label: "Deskripsi", type: "textarea" },
       {
         name: "MaterialName",
@@ -137,6 +125,7 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
         type: "number",
         placeholder: "250",
         helpText: "Menentukan harga dan ongkos kirim. Produk baru bisa dipublikasikan setelah bahan & berat diisi dan admin sudah mengisi harganya.",
+        liveHint: (v) => <WeightPriceHint material={v.MaterialName} weight={v.Weight} />,
       },
       {
         name: "ColorType",

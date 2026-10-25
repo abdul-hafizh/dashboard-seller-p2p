@@ -1,3 +1,5 @@
+import { ITEM_CATEGORIES } from "./item-category";
+
 /** The slice of an `/orders` list row needed to label it. The backend's list
  * include carries each item's Product and AIModel (with previews + the AI
  * job's owner). */
@@ -27,6 +29,7 @@ export interface OrderDisplay {
  * saved with an unrelated placeholder AI model, so a model whose job belongs
  * to someone other than the order's customer counts as custom. */
 export function orderDisplay(order: OrderDisplaySource): OrderDisplay {
+  // Non-product items are named after their category (see lib/item-category.ts).
   const item = order.Items?.[0];
 
   const product = item?.Product;
@@ -44,12 +47,10 @@ export function orderDisplay(order: OrderDisplaySource): OrderDisplay {
   if (model && (!owner || !customerUserId || owner === customerUserId)) {
     return {
       kind: "aiDesign",
-      title: model.Job?.Prompt?.trim() || model.ModelName?.trim() || "Desain AI",
+      title: ITEM_CATEGORIES.PROMPT,
       thumbnailPath: model.Previews?.[0]?.PreviewPath || null,
     };
   }
 
-  // Custom orders store "itemName - extra notes" (or just the item name).
-  const name = (order.Notes ?? "").trim().split("\n")[0].split(" - ")[0].trim();
-  return { kind: "custom", title: name || "Pesanan Custom", thumbnailPath: null };
+  return { kind: "custom", title: ITEM_CATEGORIES.PRINT_FILE, thumbnailPath: null };
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, MessageCircle, Cake, User, MapPin, ExternalLink, ShoppingBag, ChevronDown, ChevronUp, Coins, Package } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Cake, User, MapPin, ExternalLink, ShoppingBag, ChevronDown, ChevronUp, Coins, Package } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -216,8 +216,7 @@ export default function CustomerDetailPage() {
             </div>
             <div className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
               <Info icon={Mail} label="Email" value={c.Email ?? "-"} />
-              <Info icon={Phone} label="No HP" value={c.Phone || "-"} />
-              <Info icon={MessageCircle} label="WhatsApp" value={c.WhatsappNumber || "-"} />
+              <Info icon={Phone} label="No HP" value={c.Phone || c.WhatsappNumber || "Belum diisi"} />
               <Info icon={User} label="Jenis kelamin" value={genderLabel(c.Gender)} />
               <Info icon={Cake} label="Tanggal lahir" value={c.BirthDate ? `${formatDate(c.BirthDate)}${age !== null ? ` (${age} th)` : ""}` : "-"} />
               <Info icon={User} label="Terdaftar" value={c.CreatedAt ? formatDate(c.CreatedAt) : "-"} />
@@ -253,7 +252,7 @@ export default function CustomerDetailPage() {
         </CardHeader>
         <CardBody>
           {c.Addresses.length === 0 ? (
-            <p className="text-sm text-ink-soft">Customer belum menyimpan alamat.</p>
+            <p className="text-sm font-semibold text-error">Customer belum mengisi alamat (wajib).</p>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {c.Addresses.map((a) => (

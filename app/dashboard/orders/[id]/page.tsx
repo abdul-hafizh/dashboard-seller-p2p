@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
+import { ITEM_CATEGORIES, itemCategory, itemDisplayName } from "@/lib/item-category";
 import { downloadInvoice } from "@/lib/download-invoice";
 import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
 import { DesignConfirmCard } from "@/components/orders/DesignConfirmCard";
@@ -558,7 +559,10 @@ export default function OrderDetailPage() {
                       return (
                         <tr key={item.Id} className="border-b border-border last:border-0">
                           <td className="px-4 py-2.5 font-semibold text-ink">
-                            {item.Product?.ProductName ?? item.AIModel?.ModelName ?? "-"}
+                            {itemDisplayName(item)}
+                            {itemCategory(item) === ITEM_CATEGORIES.READY && (
+                              <span className="ml-1.5 text-xs font-normal text-ink-faint">· {ITEM_CATEGORIES.READY}</span>
+                            )}
                             {item.Notes && (
                               <p className="mt-1 max-w-sm whitespace-pre-line rounded-lg bg-surface-muted px-2.5 py-1.5 text-xs font-normal text-ink-soft">
                                 <span className="font-semibold text-ink">Deskripsi customer:</span> {item.Notes}

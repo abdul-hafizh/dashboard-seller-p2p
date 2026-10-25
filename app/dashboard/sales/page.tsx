@@ -15,6 +15,7 @@ import {
   Boxes,
   CircleCheck,
   CircleX,
+  Star,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -64,6 +65,8 @@ interface SalesRow {
     CompletedAt: string | null;
     CancelledAt: string | null;
   };
+  Rating: number | null;
+  RatingNotes: string | null;
 }
 
 interface SalesSummary {
@@ -75,6 +78,8 @@ interface SalesSummary {
   Revenue: number;
   GrossSales: number;
   ItemsSold: number;
+  AvgRating: number | null;
+  RatedOrders: number;
 }
 
 const STATUS_OPTIONS = [
@@ -108,6 +113,26 @@ function buildQuery(params: Record<string, string | number | undefined>) {
 
 function DateCell({ value, empty = "-" }: { value: string | null; empty?: string }) {
   return <span className={value ? "text-ink" : "text-ink-faint"}>{value ? formatDateTime(value) : empty}</span>;
+}
+
+/** Customer's 1–5 star rating of the order, with their review underneath. */
+function RatingCell({ rating, notes }: { rating: number | null; notes: string | null }) {
+  if (rating == null) return <span className="text-ink-faint">Belum dinilai</span>;
+  return (
+    <div>
+      <div className="flex items-center gap-0.5" aria-label={`Rating ${rating} dari 5`}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <Star key={n} className={n <= rating ? "size-3.5 fill-amber-400 text-amber-400" : "size-3.5 text-border"} />
+        ))}
+        <span className="ml-1 font-semibold text-ink">{rating}</span>
+      </div>
+      {notes && (
+        <p className="mt-1 line-clamp-2 text-ink-soft" title={notes}>
+          {notes}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function SummaryCard({
@@ -251,7 +276,7 @@ export default function SalesReportPage() {
       </Card>
 
       {summary && (
-        <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-4 xl:grid-cols-7">
           <SummaryCard icon={Wallet} label="Pendapatan" value={formatCurrency(summary.Revenue)} hint="Pesanan dibayar, tanpa ongkir" />
           <SummaryCard icon={Receipt} label="Penjualan Produk" value={formatCurrency(summary.GrossSales)} hint="Harga × qty, sebelum biaya" />
           <SummaryCard icon={PackageCheck} label="Pesanan Dibayar" value={String(summary.PaidOrders)} hint={`dari ${summary.TotalOrders} pesanan`} />
@@ -261,6 +286,12 @@ export default function SalesReportPage() {
             icon={CircleX}
             label="Batal / Belum Bayar"
             value={`${summary.CancelledOrders} / ${summary.PendingOrders}`}
+          />
+          <SummaryCard
+            icon={Star}
+            label="Rating"
+            value={summary.AvgRating != null ? `${summary.AvgRating.toLocaleString("id-ID")} / 5` : "-"}
+            hint={summary.RatedOrders ? `dari ${summary.RatedOrders} ulasan` : "Belum ada ulasan"}
           />
         </div>
       )}
@@ -289,6 +320,7 @@ export default function SalesReportPage() {
                   <th className="whitespace-nowrap px-4 py-3">Tgl Bayar</th>
                   <th className="whitespace-nowrap px-4 py-3">Tgl Kirim</th>
                   <th className="whitespace-nowrap px-4 py-3">Tgl Terima</th>
+                  <th className="min-w-44 px-4 py-3">Rating</th>
                 </tr>
               </thead>
               <tbody>
@@ -359,6 +391,9 @@ export default function SalesReportPage() {
                         ) : (
                           <DateCell value={r.Dates.ReceivedAt} />
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <RatingCell rating={r.Rating} notes={r.RatingNotes} />
                       </td>
                     </tr>
                   );

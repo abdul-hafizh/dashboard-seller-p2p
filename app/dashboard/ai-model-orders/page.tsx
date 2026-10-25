@@ -40,9 +40,6 @@ interface AIJobResult {
 interface PrinterTypeOption {
   Id: number;
   Brand: string | null;
-  Model: string | null;
-  Technology: string | null;
-  OperatingCostPerGram: number | null;
 }
 
 interface MaterialOption {
@@ -307,12 +304,12 @@ export default function AiModelOrdersPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <FieldLabel>Tipe Printer (FDM/SLA)</FieldLabel>
+                <FieldLabel>Merk Printer</FieldLabel>
                 <Select value={form.printerTypeId} onChange={(e) => setForm((f) => ({ ...f, printerTypeId: e.target.value }))}>
-                  <option value="">Pilih tipe printer...</option>
+                  <option value="">Pilih merk printer...</option>
                   {printerTypes.map((pt) => (
                     <option key={pt.Id} value={pt.Id}>
-                      {pt.Brand} {pt.Model} ({pt.Technology}) — {formatCurrency(pt.OperatingCostPerGram)}/g
+                      {pt.Brand || "Tanpa nama"}
                     </option>
                   ))}
                 </Select>

@@ -1,51 +1,19 @@
 import type { ResourceConfig } from "./types";
-import { formatCurrency } from "./format";
 
+/** "Merk" — printer brands (the printer-types table; only the brand name is used). */
 export const printerTypesConfig: ResourceConfig = {
   key: "printer-types",
   endpoint: "printer-types",
-  title: "Tipe Printer",
-  description: "Merek, model, volume cetak, dan biaya operasional per gram dari tipe printer.",
-  // Backend's search filter targets a column that doesn't exist on this model, so it's a no-op — hide it rather than show a search box that silently does nothing.
-  searchable: false,
+  title: "Merk",
+  description: "Merk printer 3D yang dipakai saat mendaftarkan printer.",
+  searchPlaceholder: "Cari merk...",
   columns: [
-    { key: "Brand", label: "Merek" },
-    { key: "Model", label: "Model" },
-    { key: "Technology", label: "Teknologi", render: (r) => (r.Technology ? String(r.Technology) : "-") },
+    { key: "Brand", label: "Nama Merk", render: (r) => <span className="font-semibold text-ink">{String(r.Brand ?? "-")}</span> },
     {
-      key: "volume",
-      label: "Volume Cetak (mm)",
-      render: (r) => (r.MaxX && r.MaxY && r.MaxZ ? `${r.MaxX} × ${r.MaxY} × ${r.MaxZ}` : "-"),
-    },
-    {
-      key: "OperatingCostPerGram",
-      label: "Biaya Operasional / gram",
-      render: (r) => formatCurrency(r.OperatingCostPerGram),
+      key: "Printers",
+      label: "Jumlah Printer",
+      render: (r) => ((r.Printers as unknown[] | undefined) ?? []).length,
     },
   ],
-  fields: [
-    { name: "Brand", label: "Merek", type: "text", required: true, placeholder: "Bambu Lab" },
-    { name: "Model", label: "Model", type: "text", required: true, placeholder: "X1C" },
-    {
-      name: "Technology",
-      label: "Teknologi",
-      type: "select",
-      options: [
-        { value: "FDM", label: "FDM" },
-        { value: "SLA", label: "SLA" },
-        { value: "SLS", label: "SLS" },
-        { value: "DLP", label: "DLP" },
-      ],
-    },
-    { name: "MaxX", label: "Max X (mm)", type: "number", placeholder: "256" },
-    { name: "MaxY", label: "Max Y (mm)", type: "number", placeholder: "256" },
-    { name: "MaxZ", label: "Max Z (mm)", type: "number", placeholder: "256" },
-    {
-      name: "OperatingCostPerGram",
-      label: "Biaya Operasional per Gram (Rp)",
-      type: "number",
-      placeholder: "1750",
-      helpText: "Dipakai otomatis untuk menghitung estimasi harga cetak (FDM biasanya ~1.750, SLA ~12.000).",
-    },
-  ],
+  fields: [{ name: "Brand", label: "Nama Merk", type: "text", required: true, placeholder: "Bambu Lab" }],
 };

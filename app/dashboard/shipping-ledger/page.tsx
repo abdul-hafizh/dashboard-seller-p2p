@@ -4,10 +4,10 @@ import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowDownLeft, ArrowUpRight, Truck, Wallet, Plus, Trash2, Scale, Info } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Truck, Wallet, Plus, Trash2, Scale, Info, History } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import { Card, CardBody } from "@/components/ui/Card";
+import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -82,6 +82,14 @@ export default function ShippingLedgerPage() {
   const { data, isLoading, mutate } = useSWR(isAdmin ? ["shipping-ledger", from, to, type] : null, () =>
     apiFetch<LedgerEntry[]>("shipping-ledger", { query: { from, to, type: type || undefined } }),
   );
+  // Every top-up ever recorded, independent of the period filter below.
+  const topUps = useSWR(isAdmin ? "shipping-ledger-topups" : null, () =>
+    apiFetch<LedgerEntry[]>("shipping-ledger", { query: { type: "TOPUP" } }),
+  );
+  const refresh = () => {
+    mutate();
+    topUps.mutate();
+  };
 
   if (!isAdmin) {
     return (
@@ -100,7 +108,7 @@ export default function ShippingLedgerPage() {
     try {
       await apiFetch(`shipping-ledger/${e.Id}`, { method: "DELETE" });
       toast.success("Catatan dihapus");
-      mutate();
+      refresh();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Gagal menghapus");
     }
@@ -130,9 +138,16 @@ export default function ShippingLedgerPage() {
       {allTime && (
         <div className="grid gap-3 sm:grid-cols-2">
           <Stat icon={ArrowDownLeft} label="Kas Ongkir Petope" value={formatCurrency(allTime.PetopeShippingCash)} hint="Ongkir diterima − top-up ke Biteship (sepanjang waktu)" />
-          <Stat icon={Scale} label="Selisih Ongkir" value={formatCurrency(allTime.Margin)} hint="Ongkir dari customer − biaya kurir (sepanjang waktu)" />
+          <Stat
+            icon={ArrowUpRight}
+            label="Total Top-up Biteship"
+            value={formatCurrency(allTime.TopUps)}
+            hint={`${topUps.data?.data.length ?? 0} kali top-up (sepanjang waktu)`}
+          />
         </div>
       )}
+
+      <TopUpHistory entries={topUps.data?.data ?? []} loading={topUps.isLoading} onAdd={() => setModal("topup")} onRemove={remove} />
 
       <Card>
         <CardBody className="space-y-4">
@@ -243,8 +258,76 @@ export default function ShippingLedgerPage() {
         </CardBody>
       </Card>
 
-      {modal && <EntryModal kind={modal} onClose={() => setModal(null)} onDone={() => mutate()} />}
+      {modal && <EntryModal kind={modal} onClose={() => setModal(null)} onDone={refresh} />}
     </div>
+  );
+}
+
+/** All recorded Biteship top-ups, newest first (Biteship has no API for its top-up history — they're entered here). */
+function TopUpHistory({
+  entries,
+  loading,
+  onAdd,
+  onRemove,
+}: {
+  entries: LedgerEntry[];
+  loading: boolean;
+  onAdd: () => void;
+  onRemove: (e: LedgerEntry) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+        <CardTitle className="flex items-center gap-2">
+          <History className="size-4" /> Riwayat Top-up Biteship
+        </CardTitle>
+        <Button type="button" size="sm" variant="outline" onClick={onAdd}>
+          <Plus className="size-4" /> Catat Top-up
+        </Button>
+      </CardHeader>
+      {loading ? (
+        <CardBody className="flex justify-center py-8">
+          <Spinner className="size-5" />
+        </CardBody>
+      ) : entries.length === 0 ? (
+        <CardBody>
+          <EmptyState
+            icon={History}
+            title="Belum ada top-up"
+            description="Catat setiap top-up sesuai riwayat di dashboard Biteship (menu Transaksi)."
+          />
+        </CardBody>
+      ) : (
+        <div className="max-h-96 overflow-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="sticky top-0">
+              <tr className="border-b border-border bg-surface-muted text-xs font-bold uppercase tracking-wide text-ink-soft">
+                <th className="whitespace-nowrap px-4 py-3">Tanggal</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">Nominal</th>
+                <th className="whitespace-nowrap px-4 py-3">No. Transaksi / Ref.</th>
+                <th className="px-4 py-3">Catatan</th>
+                <th className="w-10 px-2 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e) => (
+                <tr key={e.Id} className="border-b border-border last:border-0">
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-soft">{formatDateTime(e.EntryDate)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatCurrency(e.Amount)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-soft">{e.Reference || "-"}</td>
+                  <td className="max-w-72 px-4 py-3 text-xs text-ink-soft">{e.Note || "-"}</td>
+                  <td className="px-2 py-3">
+                    <Button type="button" size="icon" variant="ghost" aria-label="Hapus top-up" onClick={() => onRemove(e)}>
+                      <Trash2 className="size-4 text-error" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 

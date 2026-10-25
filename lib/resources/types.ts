@@ -35,6 +35,8 @@ export interface FieldConfig {
   defaultValue?: string | number | boolean;
   /** Backing DB column is an INTEGER (0/1), not a real BIT/BOOLEAN — send 1/0 instead of true/false. */
   intBoolean?: boolean;
+  /** Rendered under the field and updated as the user types — gets the form's current values. */
+  liveHint?: (values: Record<string, unknown>) => ReactNode;
 }
 
 export interface ColumnConfig<T> {

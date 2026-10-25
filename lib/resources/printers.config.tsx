@@ -1,44 +1,36 @@
 import type { ResourceConfig } from "./types";
 import { Badge } from "@/components/ui/Badge";
-import { apiFetch } from "@/lib/api-client";
 
 export const printersConfig: ResourceConfig = {
   key: "printers",
   endpoint: "printers",
   title: "Printer",
-  description: "Mesin printer fisik yang terdaftar per cabang.",
-  // Backend's search filter targets a column that doesn't exist on this model, so it's a no-op — hide it rather than show a search box that silently does nothing.
-  searchable: false,
-  // Material support lives behind its own endpoint (one printer, many materials).
-  afterSave: async (id, payload) => {
-    const materialIds = ((payload.MaterialIds as string[] | undefined) ?? []).map(Number);
-    await apiFetch(`printers/${id}/materials`, { method: "POST", json: { materialIds } });
-  },
+  description: "Daftarkan setiap mesin satu per satu beserta kecepatannya — dipakai untuk estimasi waktu di Antrian Cetak.",
+  searchPlaceholder: "Cari nama, merk, atau tipe...",
   columns: [
     { key: "Name", label: "Nama" },
-    { key: "SerialNumber", label: "No. Seri", render: (r) => (r.SerialNumber ? String(r.SerialNumber) : "-") },
+    {
+      key: "PrinterType",
+      label: "Merk / Tipe",
+      render: (r) => {
+        const brand = (r.PrinterType as { Brand?: string | null } | null | undefined)?.Brand;
+        return (
+          <div>
+            <p className="text-ink">{brand || "-"}</p>
+            <p className="text-xs text-ink-soft">{r.SerialNumber ? String(r.SerialNumber) : "-"}</p>
+          </div>
+        );
+      },
+    },
     {
       key: "PrintSpeedGramsPerMinute",
       label: "Kecepatan",
       render: (r) => `${r.PrintSpeedGramsPerMinute ?? 1} g/menit`,
     },
     {
-      key: "Materials",
+      key: "MaterialType",
       label: "Material",
-      render: (r) => {
-        const materials = (r.Materials as { Id: number; Name: string }[] | undefined) ?? [];
-        return materials.length === 0 ? (
-          "-"
-        ) : (
-          <div className="flex flex-wrap gap-1">
-            {materials.map((m) => (
-              <Badge key={m.Id} tone="neutral">
-                {m.Name}
-              </Badge>
-            ))}
-          </div>
-        );
-      },
+      render: (r) => <Badge tone={r.MaterialType === "RESIN" ? "info" : "neutral"}>{r.MaterialType === "RESIN" ? "Resin" : "Filament"}</Badge>,
     },
     { key: "CurrentStatus", label: "Status", render: (r) => <Badge tone="info">{String(r.CurrentStatus ?? "-")}</Badge> },
     {
@@ -51,18 +43,29 @@ export const printersConfig: ResourceConfig = {
     { name: "Name", label: "Nama Printer", type: "text", required: true, placeholder: "Printer #1" },
     {
       name: "PrinterTypeId",
-      label: "Tipe Printer",
+      label: "Merk",
       type: "select",
+      required: true,
+      placeholder: "Pilih merk...",
+      helpText: "Merk belum ada? Tambahkan dulu di menu Merk.",
       optionsEndpoint: "printer-types",
-      optionLabel: (row) => `${row.Brand ?? ""} ${row.Model ?? ""}`.trim() || "Tanpa nama",
+      optionLabel: (row) => String(row.Brand ?? "").trim() || "Tanpa nama",
     },
-    { name: "SerialNumber", label: "No. Seri", type: "text" },
+    {
+      name: "SerialNumber",
+      label: "Tipe Printer",
+      type: "text",
+      required: true,
+      placeholder: "X1 Carbon",
+      helpText: "Isi tipe/model mesin ini, mis. X1 Carbon, A1 Mini, Ender 3 V3.",
+    },
     {
       name: "PrintSpeedGramsPerMinute",
       label: "Kecepatan Cetak (gram/menit)",
       type: "number",
+      required: true,
       placeholder: "60",
-      helpText: "Dipakai untuk menghitung estimasi waktu selesai di Antrian Cetak.",
+      helpText: "Kecepatan mesin ini sendiri — tiap mesin bisa berbeda walau merk & tipenya sama. Dipakai untuk estimasi waktu selesai di Antrian Cetak.",
     },
     {
       name: "CurrentStatus",
@@ -78,14 +81,16 @@ export const printersConfig: ResourceConfig = {
       ],
     },
     {
-      name: "MaterialIds",
+      name: "MaterialType",
       label: "Material yang Didukung",
-      type: "multiselect",
-      optionsEndpoint: "materials",
-      optionLabelKey: "Name",
-      placeholder: "Belum ada material. Tambahkan dulu di menu Material.",
-      helpText: "Satu mesin bisa mendukung banyak material. Centang semua yang bisa dicetak oleh printer ini.",
-      initialFromRow: (row) => ((row.Materials as { Id: number }[] | undefined) ?? []).map((m) => String(m.Id)),
+      type: "select",
+      required: true,
+      defaultValue: "FILAMENT",
+      options: [
+        { value: "FILAMENT", label: "Filament" },
+        { value: "RESIN", label: "Resin" },
+      ],
+      helpText: "Pilih salah satu: printer filament (FDM) atau resin (SLA/DLP).",
     },
     { name: "IsEnabled", label: "Aktif", type: "boolean", defaultValue: true },
   ],
