@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
+import { TierBadge } from "@/components/customers/TierBadge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
@@ -115,7 +116,7 @@ export default function CustomersPage() {
                         <div>
                           <p className="font-semibold text-ink">{c.FullName ?? "-"}</p>
                           <div className="mt-0.5 flex gap-1">
-                            {c.UserLevel && <Badge tone="brand">{c.UserLevel}</Badge>}
+                            <TierBadge code={c.UserLevel} />
                             {c.IsActive === false && <Badge tone="error">Nonaktif</Badge>}
                           </div>
                         </div>

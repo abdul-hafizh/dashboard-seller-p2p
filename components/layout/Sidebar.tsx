@@ -62,7 +62,8 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
                 </p>
                 <div className="flex flex-col gap-0.5">
                   {items.map((item) => {
-                    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    const matches = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+                    const active = matches(item.href) || (item.alsoActiveOn ?? []).some(matches);
                     const Icon = item.icon;
                     return (
                       <Link

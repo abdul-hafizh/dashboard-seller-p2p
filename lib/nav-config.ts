@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Award,
   Tags,
   Cpu,
   Printer,
@@ -21,7 +22,6 @@ import {
   FilePlus2,
   Percent,
   BarChart3,
-  Wallet,
   Banknote,
   Contact,
   type LucideIcon,
@@ -34,6 +34,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** Omit to allow both Super Admin and Merchant. */
   roles?: number[];
+  /** Other pages that count as this menu (e.g. a second tab). */
+  alsoActiveOn?: string[];
 }
 
 export interface NavSection {
@@ -51,11 +53,10 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/products", label: "Produk", icon: Package },
       { href: "/dashboard/orders", label: "Pesanan", icon: ShoppingCart },
-      // Merchant: own sales · Super Admin: every seller (scoped server-side).
-      { href: "/dashboard/sales", label: "Laporan Penjualan", icon: BarChart3 },
-      // Merchant: "Penghasilan Saya" · Super Admin: Petope + sellers.
+      // Laporan = two tabs: Rekap Keuangan (/finance) and Detail Penjualan (/sales).
+      // Merchant: own store · Super Admin: Petope + every seller (scoped server-side).
+      { href: "/dashboard/finance", label: "Laporan", icon: BarChart3, alsoActiveOn: ["/dashboard/sales"] },
       { href: "/dashboard/customers", label: "Customer", icon: Contact, roles: [ROLE.SUPER_ADMIN] },
-      { href: "/dashboard/finance", label: "Rekap Keuangan", icon: Wallet },
       // Merchant: own balance + withdrawals · Super Admin: process them.
       { href: "/dashboard/payouts", label: "Pencairan Dana", icon: Banknote },
       { href: "/dashboard/shipping-ledger", label: "Keuangan Ongkir", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
@@ -86,6 +87,7 @@ export const NAV_SECTIONS: NavSection[] = [
       // Materials & Printers are merchant-owned data (scoped server-side to
       // the merchant's own MerchantId/Branch) — both roles see them.
       { href: "/dashboard/printers", label: "Printer", icon: Printer },
+      { href: "/dashboard/user-tiers", label: "Master Tier", icon: Award, roles: [ROLE.SUPER_ADMIN] },
       // Everything below is global reference data the backend now
       // restricts to Super Admin for create/update/delete.
       { href: "/dashboard/product-categories", label: "Kategori Produk", icon: Tags, roles: [ROLE.SUPER_ADMIN] },

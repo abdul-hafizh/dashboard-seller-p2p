@@ -9,11 +9,13 @@ import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { TierBadge } from "@/components/customers/TierBadge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate } from "@/lib/resources/format";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
+import { ItemCategoryBadge, orderCategories } from "@/components/orders/ItemCategoryBadge";
 
 interface OrderRow {
   Id: string;
@@ -25,7 +27,13 @@ interface OrderRow {
   RatingNotes: string | null;
   Status: { Id: number; Name: string; ColorCode: string | null } | null;
   AwaitingMerchantConfirmation?: boolean | null;
-  Customer?: { User?: { FullName: string | null; Phone: string | null; UserLevel?: string | null } | null } | null;
+  Customer?: { UserId?: string | null; User?: { FullName: string | null; Phone: string | null; UserLevel?: string | null } | null } | null;
+  Items?: {
+    ProductId?: string | null;
+    AIModelId?: string | null;
+    Product?: { ProductName: string | null } | null;
+    AIModel?: { Job?: { UserId?: string | null } | null } | null;
+  }[] | null;
   Merchant?: {
     FullName: string | null;
     Company?: { Name: string | null } | null;
@@ -96,6 +104,7 @@ export default function OrdersPage() {
                 <th className="whitespace-nowrap px-4 py-3">No. Pesanan</th>
                 <th className="whitespace-nowrap px-4 py-3">Pelanggan</th>
                 {isAdmin && <th className="whitespace-nowrap px-4 py-3">Seller</th>}
+                <th className="whitespace-nowrap px-4 py-3">Kategori</th>
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
                 <th className="whitespace-nowrap px-4 py-3">Kurir</th>
                 <th className="whitespace-nowrap px-4 py-3">Total</th>
@@ -114,13 +123,20 @@ export default function OrdersPage() {
                     <div className="flex items-center gap-2">
                       <span>{order.Customer?.User?.FullName ?? "-"}</span>
                       {order.Customer?.User?.UserLevel && (
-                        <Badge tone="brand">{order.Customer.User.UserLevel}</Badge>
+                        <TierBadge code={order.Customer.User.UserLevel} />
                       )}
                     </div>
                   </td>
                   {isAdmin && (
                     <td className="whitespace-nowrap px-4 py-3 text-ink-soft">{merchantLabel(order.Merchant)}</td>
                   )}
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {orderCategories(order.Items, order.Customer?.UserId).map((c) => (
+                        <ItemCategoryBadge key={c} category={c} />
+                      ))}
+                    </div>
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     {order.AwaitingMerchantConfirmation ? (
                       <Badge tone="warning">Perlu konfirmasi berat</Badge>

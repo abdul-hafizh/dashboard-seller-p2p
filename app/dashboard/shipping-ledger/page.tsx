@@ -147,7 +147,7 @@ export default function ShippingLedgerPage() {
         </div>
       )}
 
-      <TopUpHistory entries={topUps.data?.data ?? []} loading={topUps.isLoading} onAdd={() => setModal("topup")} onRemove={remove} />
+      <TopUpHistory entries={topUps.data?.data ?? []} loading={topUps.isLoading} onRemove={remove} />
 
       <Card>
         <CardBody className="space-y-4">
@@ -267,23 +267,18 @@ export default function ShippingLedgerPage() {
 function TopUpHistory({
   entries,
   loading,
-  onAdd,
   onRemove,
 }: {
   entries: LedgerEntry[];
   loading: boolean;
-  onAdd: () => void;
   onRemove: (e: LedgerEntry) => void;
 }) {
   return (
     <Card>
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <History className="size-4" /> Riwayat Top-up Biteship
         </CardTitle>
-        <Button type="button" size="sm" variant="outline" onClick={onAdd}>
-          <Plus className="size-4" /> Catat Top-up
-        </Button>
       </CardHeader>
       {loading ? (
         <CardBody className="flex justify-center py-8">
@@ -294,7 +289,7 @@ function TopUpHistory({
           <EmptyState
             icon={History}
             title="Belum ada top-up"
-            description="Catat setiap top-up sesuai riwayat di dashboard Biteship (menu Transaksi)."
+            description="Catat setiap top-up lewat tombol Catat Top-up Biteship di atas, sesuai riwayat di dashboard Biteship (menu Transaksi)."
           />
         </CardBody>
       ) : (

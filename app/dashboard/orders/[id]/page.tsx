@@ -10,12 +10,15 @@ import { useAuth } from "@/lib/auth-context";
 import { Model3DViewer } from "@/components/Model3DViewer";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { TierBadge } from "@/components/customers/TierBadge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
-import { ITEM_CATEGORIES, itemCategory, itemDisplayName } from "@/lib/item-category";
+import { itemCategory, itemDisplayName } from "@/lib/item-category";
+import { ItemCategoryBadge } from "@/components/orders/ItemCategoryBadge";
+import { PriceBreakdownCard } from "@/components/orders/PriceBreakdownCard";
 import { downloadInvoice } from "@/lib/download-invoice";
 import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
 import { DesignConfirmCard } from "@/components/orders/DesignConfirmCard";
@@ -166,6 +169,12 @@ interface OrderDetail {
   StatusId: number | null;
   TotalAmount: number | null;
   SubtotalAmount?: number | null;
+  DiscountAmount?: number | null;
+  TaxAmount?: number | null;
+  SellerFeeAmount?: number | null;
+  MerchantServiceFeePercent?: number | null;
+  MerchantServiceFeeAmount?: number | null;
+  MerchantTaxAmount?: number | null;
   /** Whole-package grams, set here by the merchant — drives the courier quote. */
   PackageWeight?: number | null;
   /** AI-design order from the cart waiting for the store to confirm its weight/price. */
@@ -559,10 +568,8 @@ export default function OrderDetailPage() {
                       return (
                         <tr key={item.Id} className="border-b border-border last:border-0">
                           <td className="px-4 py-2.5 font-semibold text-ink">
-                            {itemDisplayName(item)}
-                            {itemCategory(item) === ITEM_CATEGORIES.READY && (
-                              <span className="ml-1.5 text-xs font-normal text-ink-faint">· {ITEM_CATEGORIES.READY}</span>
-                            )}
+                            <span className="mr-2">{itemDisplayName(item)}</span>
+                            <ItemCategoryBadge category={itemCategory(item)} />
                             {item.Notes && (
                               <p className="mt-1 max-w-sm whitespace-pre-line rounded-lg bg-surface-muted px-2.5 py-1.5 text-xs font-normal text-ink-soft">
                                 <span className="font-semibold text-ink">Deskripsi customer:</span> {item.Notes}
@@ -585,6 +592,8 @@ export default function OrderDetailPage() {
               </CardBody>
             )}
           </Card>
+
+          <PriceBreakdownCard order={order} shippingCost={Number(order.Shipments?.[0]?.ShippingCost) || 0} />
 
           <Card>
             <CardHeader>
@@ -626,7 +635,7 @@ export default function OrderDetailPage() {
                   <p className="font-bold text-ink">
                     {order.Customer?.User?.FullName ?? order.Customer?.CompanyName ?? "-"}
                   </p>
-                  {order.Customer?.User?.UserLevel && <Badge tone="brand">{order.Customer.User.UserLevel}</Badge>}
+                  <TierBadge code={order.Customer?.User?.UserLevel} />
                 </div>
                 {order.Customer?.User?.Email && <p className="text-xs text-ink-soft">{order.Customer.User.Email}</p>}
                 {(order.Customer?.User?.Phone || order.Customer?.User?.WhatsappNumber) && (

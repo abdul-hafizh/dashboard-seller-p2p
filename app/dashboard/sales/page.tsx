@@ -28,11 +28,16 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency, formatDateTime } from "@/lib/resources/format";
+import type { ItemCategory } from "@/lib/item-category";
+import { ItemCategoryBadge } from "@/components/orders/ItemCategoryBadge";
+import { ReportTabs } from "@/components/reports/ReportTabs";
 import { storeName, type MerchantRow } from "@/components/merchants/merchant-ui";
 
 interface SalesItem {
   Id: string;
   Name: string;
+  /** Barang Jadi | File Via Prompt | File Siap Print */
+  Category: ItemCategory;
   Type: "PRODUCT" | "CUSTOM";
   Material: string | null;
   Quantity: number;
@@ -202,6 +207,7 @@ export default function SalesReportPage() {
 
   return (
     <div className="space-y-5">
+      <ReportTabs />
       <Card>
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -313,7 +319,8 @@ export default function SalesReportPage() {
                   <th className="whitespace-nowrap px-4 py-3">Pesanan</th>
                   {isAdmin && <th className="whitespace-nowrap px-4 py-3">Seller</th>}
                   <th className="whitespace-nowrap px-4 py-3">Customer</th>
-                  <th className="min-w-64 px-4 py-3">Produk · Harga</th>
+                  <th className="whitespace-nowrap px-4 py-3">Kategori Produk</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right">Harga</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Total</th>
                   <th className="whitespace-nowrap px-4 py-3">Pengiriman</th>
                   <th className="whitespace-nowrap px-4 py-3">Tgl Order</th>
@@ -342,18 +349,22 @@ export default function SalesReportPage() {
                         <p className="text-ink">{r.Customer?.Name ?? "-"}</p>
                         {r.Customer?.Phone && <p className="text-xs text-ink-soft">{r.Customer.Phone}</p>}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="whitespace-nowrap px-4 py-3">
                         <ul className="space-y-1">
                           {r.Items.map((it) => (
-                            <li key={it.Id} className="flex justify-between gap-3">
-                              <span className="text-ink">
-                                {it.Name}
-                                {it.Material && <span className="text-ink-faint"> · {it.Material}</span>}
-                                <span className="text-ink-soft"> × {it.Quantity}</span>
-                              </span>
-                              <span className="whitespace-nowrap text-ink-soft">
-                                {formatCurrency(it.UnitPrice)}
-                              </span>
+                            <li key={it.Id} className="flex h-6 items-center gap-1.5">
+                              <ItemCategoryBadge category={it.Category} />
+                              {it.Material && <span className="text-xs text-ink-faint">{it.Material}</span>}
+                              <span className="text-xs text-ink-soft">× {it.Quantity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        <ul className="space-y-1">
+                          {r.Items.map((it) => (
+                            <li key={it.Id} className="flex h-6 items-center justify-end text-ink">
+                              {formatCurrency(it.UnitPrice)}
                             </li>
                           ))}
                         </ul>

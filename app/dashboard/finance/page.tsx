@@ -19,6 +19,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency } from "@/lib/resources/format";
+import { ReportTabs } from "@/components/reports/ReportTabs";
 import Link from "next/link";
 
 interface SellerFinance {
@@ -133,6 +134,7 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-5">
+      <ReportTabs />
       <Card>
         <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -339,8 +341,6 @@ export default function FinancePage() {
                           <th className="whitespace-nowrap px-4 py-3">Seller</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Selesai / Pesanan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Penjualan Kotor</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Diskon</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Potongan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Total Hak Seller</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Bisa Dicairkan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Masih Diproses</th>
@@ -357,13 +357,6 @@ export default function FinancePage() {
                               {s.CompletedOrders}/{s.Orders}
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-ink">{formatCurrency(s.GrossSales)}</td>
-                            <td className="whitespace-nowrap px-4 py-3 text-right text-ink-soft">{formatCurrency(s.Discount)}</td>
-                            <td
-                              className="whitespace-nowrap px-4 py-3 text-right text-error"
-                              title={`Fee transaksi ${formatCurrency(s.SellerFee)} · Biaya layanan ${formatCurrency(s.MerchantServiceFee ?? 0)} · PPN ${formatCurrency(s.MerchantTax ?? 0)}`}
-                            >
-                              − {formatCurrency(s.SellerFee + (s.MerchantServiceFee ?? 0) + (s.MerchantTax ?? 0))}
-                            </td>
                             <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-ink">{formatCurrency(s.Earnings)}</td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-success">{formatCurrency(s.EarningsCompleted)}</td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-ink-soft">{formatCurrency(s.EarningsInProgress)}</td>
@@ -377,7 +370,7 @@ export default function FinancePage() {
               <Note>
                 <p>
                   Penjualan bersih = harga produk setelah diskon tier (yang dibayar customer, tanpa ongkir). Pembayarannya masuk ke
-                  rekening DOKU pusat. Potongan = fee transaksi + admin fee yang dibayar seller ke Petope. PPN dibayar customer dan disetor Petope.
+                  rekening DOKU pusat. Total hak seller sudah dipotong fee transaksi + admin fee; rinciannya per pesanan ada di detail pesanan. PPN dibayar customer dan disetor Petope.
                 </p>
                 <p>Periode dihitung dari tanggal pembayaran pesanan.</p>
               </Note>

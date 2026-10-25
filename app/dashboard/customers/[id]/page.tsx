@@ -9,6 +9,7 @@ import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { TierBadge } from "@/components/customers/TierBadge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
@@ -212,7 +213,7 @@ export default function CustomerDetailPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-extrabold text-ink">{c.FullName ?? "-"}</h1>
-              {c.UserLevel && <Badge tone="brand">{c.UserLevel}</Badge>}
+              <TierBadge code={c.UserLevel} />
             </div>
             <div className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
               <Info icon={Mail} label="Email" value={c.Email ?? "-"} />
