@@ -22,6 +22,8 @@ import { PriceBreakdownCard } from "@/components/orders/PriceBreakdownCard";
 import { downloadInvoice } from "@/lib/download-invoice";
 import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
 import { DesignConfirmCard } from "@/components/orders/DesignConfirmCard";
+import { ColorTypeSelect, colorTypeLabel } from "@/components/orders/ColorTypeSelect";
+import { DesignSpecs, type DesignJobSpecs } from "@/components/orders/DesignSpecs";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
 
 interface OrderStatus {
@@ -40,7 +42,7 @@ interface AIModelFile {
   FilePath: string | null;
 }
 
-interface AIJobRef {
+interface AIJobRef extends DesignJobSpecs {
   Id: string;
   Note: string | null;
 }
@@ -67,6 +69,8 @@ interface OrderItem {
   WeightGrams?: number | null;
   /** The customer's description for this item (AI designs, from the cart). */
   Notes?: string | null;
+  /** SINGLE | MULTI — set by the seller on a Pesanan Custom. */
+  ColorType?: string | null;
 }
 
 interface StatusHistoryEntry {
@@ -240,6 +244,7 @@ export default function OrderDetailPage() {
   // Print weight per item + material → price from the admin's Master Harga.
   const [itemWeightInput, setItemWeightInput] = useState<string>("");
   const [materialInput, setMaterialInput] = useState<string>("");
+  const [colorTypeInput, setColorTypeInput] = useState<string>("");
   const [weightInput, setWeightInput] = useState<string>("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
@@ -254,9 +259,10 @@ export default function OrderDetailPage() {
     const itemGrams = firstItem?.WeightGrams;
     setItemWeightInput(itemGrams != null && itemGrams > 0 ? String(itemGrams) : "");
     setMaterialInput(firstItem?.Material?.Name ?? "");
+    setColorTypeInput(firstItem?.ColorType ?? firstItem?.AIModel?.Job?.ColorPreference ?? "");
     const grams = data?.data.PackageWeight;
     setWeightInput(grams != null && grams > 0 ? String(grams) : "");
-  }, [firstItem?.WeightGrams, firstItem?.Material?.Name, data?.data.PackageWeight]);
+  }, [firstItem?.WeightGrams, firstItem?.Material?.Name, firstItem?.ColorType, firstItem?.AIModel?.Job?.ColorPreference, data?.data.PackageWeight]);
 
   if (isLoading || !data) return <FullPageSpinner />;
 
@@ -272,6 +278,8 @@ export default function OrderDetailPage() {
   // Marketplace-product orders already know their weight (product weight ×
   // qty), so the merchant only has to fill it in for quote/custom orders.
   const hasProductItems = (order.Items ?? []).some((item) => item.ProductId);
+  // A single design / custom item needs the seller's jenis warna (a product has its own).
+  const needsColorType = (order.Items ?? []).length === 1 && !order.Items![0].ProductId;
 
   const handleDownloadInvoice = async () => {
     setDownloadingInvoice(true);
@@ -305,6 +313,10 @@ export default function OrderDetailPage() {
       toast.error("Pilih bahan dan isi berat cetak per item.");
       return;
     }
+    if (needsColorType && !colorTypeInput) {
+      toast.error("Pilih jenis warna: satu warna atau multicolor.");
+      return;
+    }
     const grams = weightInput ? Number(weightInput) : null;
     if (grams !== null && (Number.isNaN(grams) || grams <= 0)) {
       toast.error("Berat paket harus berupa angka gram lebih dari 0.");
@@ -321,6 +333,7 @@ export default function OrderDetailPage() {
         json: {
           ItemWeightGrams: itemGrams,
           MaterialName: materialInput,
+          ...(needsColorType ? { ColorType: colorTypeInput } : {}),
           ...(grams !== null ? { PackageWeight: Math.round(grams) } : {}),
         },
       });
@@ -479,6 +492,7 @@ export default function OrderDetailPage() {
                       </div>
                       <div className="flex flex-1 flex-col gap-2">
                         <p className="text-sm font-semibold text-ink">{model.ModelName ?? "Model 3D"}</p>
+                        <DesignSpecs job={model.Job} />
                         {model.Job?.Note && (
                           <div className="rounded-xl border border-brand-purple/20 bg-brand-purple/5 p-3">
                             <p className="text-xs font-semibold text-brand-purple">Catatan dari Customer</p>
@@ -578,7 +592,10 @@ export default function OrderDetailPage() {
                           </td>
                           <td className="px-4 py-2.5 text-ink">{item.Quantity ?? "-"}</td>
                           <td className="px-4 py-2.5 text-ink">{unitPrice != null ? formatCurrency(unitPrice) : "-"}</td>
-                          <td className="px-4 py-2.5 text-ink-soft">{item.Material?.Name ?? "-"}</td>
+                          <td className="px-4 py-2.5 text-ink-soft">
+                            {item.Material?.Name ?? "-"}
+                            {colorTypeLabel(item.ColorType) && <p className="text-xs text-ink-faint">{colorTypeLabel(item.ColorType)}</p>}
+                          </td>
                           <td className="px-4 py-2.5 text-ink-soft">{item.PrintProfile?.Name ?? "-"}</td>
                         </tr>
                       );
@@ -794,6 +811,9 @@ export default function OrderDetailPage() {
                         onWeight={setItemWeightInput}
                         quantity={Math.max(1, order.Items![0].Quantity ?? 1)}
                       />
+                      {needsColorType && (
+                        <ColorTypeSelect id="order-price-color" value={colorTypeInput} onChange={setColorTypeInput} />
+                      )}
                       <p className="text-xs text-ink-soft">
                         Harga dihitung dari Master Harga admin; diskon tier pelanggan dipotong otomatis dan PPN ditambahkan ke tagihan customer. Fee transaksi dan admin fee dipotong dari hasil jualan Anda.
                       </p>
@@ -817,7 +837,7 @@ export default function OrderDetailPage() {
                   <Button
                     onClick={updatePrice}
                     loading={updatingPrice}
-                    disabled={(order.Items ?? []).length !== 1 || !materialInput || !itemWeightInput}
+                    disabled={(order.Items ?? []).length !== 1 || !materialInput || !itemWeightInput || (needsColorType && !colorTypeInput)}
                   >
                     {(order.TotalAmount ?? 0) <= 0 ? "Kirim Harga" : "Simpan Perubahan"}
                   </Button>

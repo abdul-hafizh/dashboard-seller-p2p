@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type FieldType = "text" | "password" | "number" | "textarea" | "boolean" | "select" | "multiselect" | "time" | "image";
+export type FieldType = "text" | "password" | "number" | "textarea" | "boolean" | "select" | "multiselect" | "time" | "datetime" | "image";
 
 export interface SelectOption {
   value: string | number;
@@ -35,6 +35,8 @@ export interface FieldConfig {
   defaultValue?: string | number | boolean;
   /** Backing DB column is an INTEGER (0/1), not a real BIT/BOOLEAN — send 1/0 instead of true/false. */
   intBoolean?: boolean;
+  /** Preview shape of an image field — "portrait" (9:16) for e.g. a full-screen promo ad. Square by default. */
+  imageAspect?: "square" | "portrait";
   /** Rendered under the field and updated as the user types — gets the form's current values. */
   liveHint?: (values: Record<string, unknown>) => ReactNode;
 }

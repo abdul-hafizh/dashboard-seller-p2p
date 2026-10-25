@@ -21,6 +21,7 @@ import { formatFileSize } from "@/components/merchants/MerchantDocumentsCard";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { ITEM_CATEGORIES } from "@/lib/item-category";
+import { ColorTypeSelect } from "@/components/orders/ColorTypeSelect";
 
 interface PrintFileRow {
   Id: string;
@@ -105,6 +106,7 @@ export default function CustomOrdersPage() {
   const [form, setForm] = useState({
     quantity: "1",
     materialName: "",
+    colorType: "",
     itemWeight: "",
     packageWeight: "",
     shippingAddressId: "",
@@ -265,6 +267,7 @@ export default function CustomOrdersPage() {
     setForm({
       quantity: "1",
       materialName: "",
+      colorType: "",
       itemWeight: "",
       packageWeight: "",
       shippingAddressId: "",
@@ -283,6 +286,7 @@ export default function CustomOrdersPage() {
   const canSubmit =
     !!selectedCustomer &&
     form.materialName.length > 0 &&
+    form.colorType.length > 0 &&
     Number(form.itemWeight) > 0 &&
     Number(form.packageWeight) > 0 &&
     !submitting;
@@ -297,6 +301,7 @@ export default function CustomOrdersPage() {
           customerUserId: selectedCustomer.Id,
           quantity: Number(form.quantity) || 1,
           materialName: form.materialName,
+          colorType: form.colorType,
           itemWeight: Number(form.itemWeight),
           packageWeight: Math.round(Number(form.packageWeight)),
           // A picked Biteship rate; none = the customer picks a courier at checkout.
@@ -495,6 +500,11 @@ export default function CustomOrdersPage() {
                   quantity={Math.max(1, Number(form.quantity) || 1)}
                 />
               </div>
+              <ColorTypeSelect
+                id="custom-order-color"
+                value={form.colorType}
+                onChange={(colorType) => setForm((f) => ({ ...f, colorType }))}
+              />
               <div>
                 <FieldLabel required>Berat Paket (gram)</FieldLabel>
                 <Input

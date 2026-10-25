@@ -24,6 +24,8 @@ import {
   BarChart3,
   Banknote,
   Contact,
+  Megaphone,
+  CalendarCheck2,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -57,6 +59,8 @@ export const NAV_SECTIONS: NavSection[] = [
       // Merchant: own store · Super Admin: Petope + every seller (scoped server-side).
       { href: "/dashboard/finance", label: "Laporan", icon: BarChart3, alsoActiveOn: ["/dashboard/sales"] },
       { href: "/dashboard/customers", label: "Customer", icon: Contact, roles: [ROLE.SUPER_ADMIN] },
+      // Promo ads shown as a pop-up on the app's home screen.
+      { href: "/dashboard/promotions", label: "Promosi", icon: Megaphone, roles: [ROLE.SUPER_ADMIN] },
       // Merchant: own balance + withdrawals · Super Admin: process them.
       { href: "/dashboard/payouts", label: "Pencairan Dana", icon: Banknote },
       { href: "/dashboard/shipping-ledger", label: "Keuangan Ongkir", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
@@ -120,6 +124,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/merchants", label: "Seller", icon: Store, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/price-master", label: "Master Harga", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
+      // Shipped orders the customer never confirmed complete themselves after N days.
+      { href: "/dashboard/order-auto-complete", label: "Selesai Otomatis", icon: CalendarCheck2, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/system-settings", label: "Pengaturan Sistem", icon: Settings2, roles: [ROLE.SUPER_ADMIN] },
     ],
   },

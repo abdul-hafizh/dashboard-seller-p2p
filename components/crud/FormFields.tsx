@@ -167,7 +167,11 @@ function ImageField({ field, watch, setValue, errors }: FieldProps) {
     <div>
       <FieldLabel required={field.required}>{field.label}</FieldLabel>
       <div className="flex items-center gap-3">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-muted">
+        <div
+          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-muted ${
+            field.imageAspect === "portrait" ? "h-40 w-[90px]" : "size-20"
+          }`}
+        >
           {uploading ? (
             <Loader2 className="size-5 animate-spin text-ink-faint" />
           ) : previewUrl ? (
@@ -250,7 +254,12 @@ export function FormField(props: FieldProps) {
     );
   }
 
-  const inputType = field.type === "number" || field.type === "password" || field.type === "time" ? field.type : "text";
+  const inputType =
+    field.type === "datetime"
+      ? "datetime-local"
+      : field.type === "number" || field.type === "password" || field.type === "time"
+        ? field.type
+        : "text";
 
   return (
     <div>

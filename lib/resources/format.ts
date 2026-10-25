@@ -42,6 +42,15 @@ export function toTimeInputValue(value: unknown): string {
   return `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
 }
 
+/** An ISO datetime from the API → "YYYY-MM-DDTHH:MM" in the browser's local time, for an <input type="datetime-local">. */
+export function toDateTimeInputValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  const d = new Date(String(value));
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export function formatTime(value: unknown) {
   const time = toTimeInputValue(value);
   return time || "-";

@@ -4,7 +4,7 @@ import { useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { FieldConfig } from "@/lib/resources/types";
-import { toTimeInputValue } from "@/lib/resources/format";
+import { toDateTimeInputValue, toTimeInputValue } from "@/lib/resources/format";
 import { FormField } from "./FormFields";
 import { Button } from "@/components/ui/Button";
 
@@ -44,6 +44,8 @@ function buildDefaultValues(fields: FieldConfig[], initial?: Record<string, unkn
       values[field.name] = initial && field.initialFromRow ? field.initialFromRow(initial) : [];
     } else if (field.type === "time") {
       values[field.name] = toTimeInputValue(raw);
+    } else if (field.type === "datetime") {
+      values[field.name] = toDateTimeInputValue(raw);
     } else {
       values[field.name] = raw === null || raw === undefined ? "" : String(raw);
     }
@@ -61,6 +63,9 @@ function toPayload(fields: FieldConfig[], values: FormValues): Record<string, un
       payload[field.name] = Array.isArray(raw) ? raw : [];
     } else if (field.type === "number") {
       payload[field.name] = raw === "" || raw === undefined ? null : Number(raw);
+    } else if (field.type === "datetime") {
+      // datetime-local is the browser's local time — send it as an absolute instant.
+      payload[field.name] = raw ? new Date(String(raw)).toISOString() : null;
     } else {
       payload[field.name] = raw === "" || raw === undefined ? null : raw;
     }
