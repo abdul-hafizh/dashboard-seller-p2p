@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, History, FileText, Box, Download, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw } from "lucide-react";
+import { ArrowLeft, Package, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Model3DViewer } from "@/components/Model3DViewer";
@@ -24,6 +24,7 @@ import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
 import { DesignConfirmCard } from "@/components/orders/DesignConfirmCard";
 import { ColorTypeSelect, colorTypeLabel } from "@/components/orders/ColorTypeSelect";
 import { DesignSpecs, type DesignJobSpecs } from "@/components/orders/DesignSpecs";
+import { ModelDownloadButtons, type DownloadFormat } from "@/components/orders/ModelDownloadButtons";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
 
 interface OrderStatus {
@@ -53,6 +54,8 @@ interface AIModel {
   Previews?: AIModelPreview[];
   Files?: AIModelFile[];
   Job?: AIJobRef | null;
+  /** Active download types (Tipe File Unduhan) this design has. */
+  DownloadFormats?: DownloadFormat[];
 }
 
 interface OrderItem {
@@ -179,6 +182,7 @@ interface OrderDetail {
   MerchantServiceFeePercent?: number | null;
   MerchantServiceFeeAmount?: number | null;
   MerchantTaxAmount?: number | null;
+  PlatformDiscountAmount?: number | null;
   /** Whole-package grams, set here by the merchant — drives the courier quote. */
   PackageWeight?: number | null;
   /** AI-design order from the cart waiting for the store to confirm its weight/price. */
@@ -499,25 +503,7 @@ export default function OrderDetailPage() {
                             <p className="mt-1 text-sm text-ink">{model.Job.Note}</p>
                           </div>
                         )}
-                        {files.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {files.map((file) =>
-                              file.FilePath ? (
-                                <a
-                                  key={file.Id}
-                                  href={file.FilePath}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-ink hover:bg-surface-muted"
-                                >
-                                  <Download className="size-3.5" /> {file.FileType}
-                                </a>
-                              ) : null,
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-ink-soft">Belum ada file model.</p>
-                        )}
+                        <ModelDownloadButtons jobId={model.Job?.Id} formats={model.DownloadFormats} />
                       </div>
                     </div>
                   );
@@ -566,7 +552,6 @@ export default function OrderDetailPage() {
                       <th className="px-4 py-2.5">Qty</th>
                       <th className="px-4 py-2.5">Harga Satuan</th>
                       <th className="px-4 py-2.5">Material</th>
-                      <th className="px-4 py-2.5">Profil Cetak</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -596,7 +581,6 @@ export default function OrderDetailPage() {
                             {item.Material?.Name ?? "-"}
                             {colorTypeLabel(item.ColorType) && <p className="text-xs text-ink-faint">{colorTypeLabel(item.ColorType)}</p>}
                           </td>
-                          <td className="px-4 py-2.5 text-ink-soft">{item.PrintProfile?.Name ?? "-"}</td>
                         </tr>
                       );
                     })}

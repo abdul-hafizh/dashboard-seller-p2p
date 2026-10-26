@@ -57,10 +57,16 @@ interface FinanceReport {
     MerchantServiceFee?: number;
     CustomerServiceFee?: number;
     MerchantTax?: number;
+    /** Hak seller — completed orders only. */
     OwedToSellers: number;
+    /** Paid orders not completed yet: held, not the seller's yet. */
+    HeldForSellers?: number;
     SellerTax: number;
     TaxToRemit: number;
     Income: number;
+    /** Promo diskon dari pusat paid by Petope (Promosi). */
+    PromoSubsidy?: number;
+    PromoOrders?: number;
     TotalCollected: number;
     GatewayIncoming: number;
   };
@@ -188,14 +194,14 @@ export default function FinancePage() {
                     icon={Landmark}
                     label="Pendapatan Petope"
                     value={formatCurrency(platform.Income)}
-                    hint="Biaya layanan + fee transaksi dari seller + token, sebelum potongan DOKU / Google"
+                    hint="Biaya layanan + fee transaksi dari seller + token − subsidi promo, sebelum potongan DOKU / Google"
                     emphasis
                   />
                   <Stat
                     icon={HandCoins}
                     label="Hak Seller"
                     value={formatCurrency(platform.OwedToSellers)}
-                    hint="Harga dasar − fee transaksi − admin fee; dicairkan lewat menu Pencairan Dana"
+                    hint={`Hanya pesanan selesai (harga dasar − fee transaksi − admin fee). ${formatCurrency(platform.HeldForSellers ?? 0)} masih tertahan di pesanan yang belum selesai.`}
                   />
                   <Stat
                     icon={Truck}
@@ -227,6 +233,12 @@ export default function FinancePage() {
                         </dt>
                         <dd className="font-semibold text-ink">± {formatCurrency(tokens.GooglePlay.EstimatedGross)}</dd>
                       </div>
+                      {(platform.PromoSubsidy ?? 0) > 0 && (
+                        <div className="flex justify-between">
+                          <dt className="text-ink-soft">Subsidi promo dari pusat · {platform.PromoOrders ?? 0} pesanan</dt>
+                          <dd className="font-semibold text-error">− {formatCurrency(platform.PromoSubsidy)}</dd>
+                        </div>
+                      )}
                     </dl>
                   </div>
                   <div className="rounded-2xl border border-border p-4 text-sm">
@@ -241,9 +253,15 @@ export default function FinancePage() {
                         <dd className="text-ink">− {formatCurrency(platform.ShippingCollected)}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-ink-soft">Hak seller (periode ini)</dt>
+                        <dt className="text-ink-soft">Hak seller (pesanan selesai)</dt>
                         <dd className="text-ink">− {formatCurrency(platform.OwedToSellers)}</dd>
                       </div>
+                      {(platform.HeldForSellers ?? 0) > 0 && (
+                        <div className="flex justify-between">
+                          <dt className="text-ink-soft">Tertahan (pesanan belum selesai)</dt>
+                          <dd className="text-ink">− {formatCurrency(platform.HeldForSellers)}</dd>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <dt className="text-ink-soft">PPN untuk disetor</dt>
                         <dd className="text-ink">− {formatCurrency(platform.TaxToRemit)}</dd>
@@ -303,24 +321,22 @@ export default function FinancePage() {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Stat
                   icon={Wallet}
-                  label="Total Hak Seller"
+                  label="Hak Seller (Pesanan Selesai)"
                   value={formatCurrency(totals.Earnings ?? 0)}
-                  hint={`Pesanan selesai + masih diproses, setelah potongan ${formatCurrency(
-                    (totals.SellerFee ?? 0) + (totals.MerchantServiceFee ?? 0) + (totals.MerchantTax ?? 0),
-                  )}. Bisa dicairkan setelah pesanan selesai.`}
+                  hint="Hanya pesanan yang sudah diterima customer, setelah potongan fee transaksi + admin fee. Bisa dicairkan."
                   emphasis
                 />
                 <Stat
                   icon={HandCoins}
-                  label="Bisa Dicairkan (Selesai)"
-                  value={formatCurrency(totals.EarningsCompleted ?? 0)}
-                  hint={`${totals.CompletedOrders ?? 0} pesanan sudah diterima customer`}
+                  label="Pesanan Selesai"
+                  value={`${totals.CompletedOrders ?? 0} / ${totals.Orders ?? 0}`}
+                  hint="Selesai dari semua pesanan dibayar di periode ini"
                 />
                 <Stat
                   icon={Truck}
-                  label="Masih Diproses"
+                  label="Tertahan (Belum Selesai)"
                   value={formatCurrency(totals.EarningsInProgress ?? 0)}
-                  hint="Sudah dibayar, belum diterima customer"
+                  hint="Sudah dibayar tapi belum diterima customer — belum masuk hak seller"
                 />
                 <Stat
                   icon={Coins}
@@ -341,9 +357,8 @@ export default function FinancePage() {
                           <th className="whitespace-nowrap px-4 py-3">Seller</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Selesai / Pesanan</th>
                           <th className="whitespace-nowrap px-4 py-3 text-right">Penjualan Kotor</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Total Hak Seller</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Bisa Dicairkan</th>
-                          <th className="whitespace-nowrap px-4 py-3 text-right">Masih Diproses</th>
+                          <th className="whitespace-nowrap px-4 py-3 text-right">Hak Seller (Selesai)</th>
+                          <th className="whitespace-nowrap px-4 py-3 text-right">Tertahan (Belum Selesai)</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -357,8 +372,7 @@ export default function FinancePage() {
                               {s.CompletedOrders}/{s.Orders}
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-ink">{formatCurrency(s.GrossSales)}</td>
-                            <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-ink">{formatCurrency(s.Earnings)}</td>
-                            <td className="whitespace-nowrap px-4 py-3 text-right text-success">{formatCurrency(s.EarningsCompleted)}</td>
+                            <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-success">{formatCurrency(s.Earnings)}</td>
                             <td className="whitespace-nowrap px-4 py-3 text-right text-ink-soft">{formatCurrency(s.EarningsInProgress)}</td>
                           </tr>
                         ))}
@@ -370,7 +384,7 @@ export default function FinancePage() {
               <Note>
                 <p>
                   Penjualan bersih = harga produk setelah diskon tier (yang dibayar customer, tanpa ongkir). Pembayarannya masuk ke
-                  rekening DOKU pusat. Total hak seller sudah dipotong fee transaksi + admin fee; rinciannya per pesanan ada di detail pesanan. PPN dibayar customer dan disetor Petope.
+                  rekening DOKU pusat. Hak seller hanya dihitung dari pesanan yang sudah selesai (diterima customer) dan sudah dipotong fee transaksi + admin fee; pesanan yang belum selesai tercatat sebagai tertahan; rinciannya per pesanan ada di detail pesanan. PPN dibayar customer dan disetor Petope.
                 </p>
                 <p>Periode dihitung dari tanggal pembayaran pesanan.</p>
               </Note>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ShieldAlert, Settings2, Coins } from "lucide-react";
+import { ShieldAlert, Settings2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/Input";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
-import { formatCurrency } from "@/lib/resources/format";
 
 interface SystemSetting {
   Id: string;
@@ -20,113 +19,16 @@ interface SystemSetting {
   Description: string | null;
 }
 
-interface TokenPricing {
-  pricePerToken: number;
-  allowedPackages: number[];
-  packages: { quantity: number; price: number; description: string }[];
-}
-
-function TokenPricingCard() {
-  const [pricing, setPricing] = useState<TokenPricing | null>(null);
-  const [pricePerTokenDraft, setPricePerTokenDraft] = useState("");
-  const [packagesDraft, setPackagesDraft] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await apiFetch<TokenPricing>("system-settings/token-pricing");
-      setPricing(res.data);
-      setPricePerTokenDraft(String(res.data.pricePerToken));
-      setPackagesDraft(res.data.allowedPackages.join(", "));
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Gagal memuat harga token AI.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const handleSave = async () => {
-    const allowedPackages = packagesDraft
-      .split(",")
-      .map((v) => parseInt(v.trim(), 10))
-      .filter((n) => Number.isFinite(n) && n > 0);
-
-    if (allowedPackages.length === 0) {
-      toast.error("Isi minimal satu paket token yang valid (contoh: 20, 40, 50).");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await apiFetch("system-settings/token-pricing", {
-        method: "PUT",
-        json: { pricePerToken: Number(pricePerTokenDraft), allowedPackages },
-      });
-      toast.success("Harga token AI berhasil diperbarui.");
-      await load();
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Gagal menyimpan harga token AI.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Coins className="size-4" /> Harga Token AI
-        </CardTitle>
-      </CardHeader>
-      <CardBody className="flex flex-col gap-5">
-        {loading ? (
-          <FullPageSpinner />
-        ) : (
-          <>
-            <div className="flex flex-col gap-2">
-              <FieldLabel>Harga per Token (Rp)</FieldLabel>
-              <p className="text-xs text-ink-soft">Dipakai untuk menghitung harga setiap paket token AI di aplikasi customer.</p>
-              <Input
-                type="number"
-                value={pricePerTokenDraft}
-                onChange={(e) => setPricePerTokenDraft(e.target.value)}
-                className="max-w-xs"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <FieldLabel>Pilihan Jumlah Paket Token</FieldLabel>
-              <p className="text-xs text-ink-soft">Pisahkan dengan koma, contoh: 20, 40, 50, 100, 200</p>
-              <Input value={packagesDraft} onChange={(e) => setPackagesDraft(e.target.value)} className="max-w-md" />
-            </div>
-            {pricing && pricing.packages.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {pricing.packages.map((pkg) => (
-                  <span
-                    key={pkg.quantity}
-                    className="rounded-full border border-border bg-surface-muted px-3 py-1 text-xs text-ink-soft"
-                  >
-                    {pkg.quantity} token · {formatCurrency(pkg.price)}
-                  </span>
-                ))}
-              </div>
-            )}
-            <div>
-              <Button loading={saving} onClick={handleSave}>
-                Simpan Harga Token
-              </Button>
-            </div>
-          </>
-        )}
-      </CardBody>
-    </Card>
-  );
-}
+// Settings that have their own menu (or live in Google Play Console) — not
+// edited here as raw values.
+const MANAGED_ELSEWHERE = new Set([
+  "ORDER_AUTO_COMPLETE", // Selesai Otomatis
+  "PRICE_MASTER", // Master Harga
+  "SERVICE_FEE_PERCENT", // Pajak & Biaya Layanan
+  "TAX_PERCENT", // Pajak & Biaya Layanan
+  "TOKEN_ALLOWED_PACKAGES", // token prices: Google Play Console
+  "TOKEN_PRICE_PER_UNIT",
+]);
 
 export default function SystemSettingsPage() {
   const { isAdmin, loading: authLoading } = useAuth();
@@ -139,8 +41,9 @@ export default function SystemSettingsPage() {
     setLoading(true);
     try {
       const res = await apiFetch<SystemSetting[]>("system/settings");
-      setSettings(res.data);
-      setDrafts(Object.fromEntries(res.data.map((s) => [s.Key, s.Value])));
+      const shown = res.data.filter((s) => !MANAGED_ELSEWHERE.has(s.Key));
+      setSettings(shown);
+      setDrafts(Object.fromEntries(shown.map((s) => [s.Key, s.Value])));
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Gagal memuat pengaturan sistem.");
     } finally {
@@ -186,8 +89,6 @@ export default function SystemSettingsPage() {
           Kelola nilai konfigurasi terpusat seperti Base URL API — perubahan berlaku langsung tanpa deploy ulang backend.
         </p>
       </div>
-
-      <TokenPricingCard />
 
       <Card>
         <CardHeader>

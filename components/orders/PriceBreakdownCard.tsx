@@ -11,6 +11,8 @@ export interface OrderMoney {
   MerchantServiceFeePercent?: number | null;
   MerchantServiceFeeAmount?: number | null;
   MerchantTaxAmount?: number | null;
+  /** Promo diskon dari pusat — paid by Petope, not taken from the seller. */
+  PlatformDiscountAmount?: number | null;
 }
 
 const n = (v: number | null | undefined) => Number(v) || 0;
@@ -40,6 +42,7 @@ export function PriceBreakdownCard({ order, shippingCost }: { order: OrderMoney;
   const merchantTax = n(order.MerchantTaxAmount);
   const legacyTax = order.MerchantServiceFeePercent == null ? tax : 0;
   const sellerNet = base + legacyTax - sellerFee - adminFee - merchantTax;
+  const promo = n(order.PlatformDiscountAmount);
 
   return (
     <Card>
@@ -56,8 +59,12 @@ export function PriceBreakdownCard({ order, shippingCost }: { order: OrderMoney;
             {discount > 0 && <Row label="Diskon tier" value={`− ${formatCurrency(discount)}`} tone="minus" />}
             {tax > 0 && <Row label="PPN" value={formatCurrency(tax)} />}
             <Row label="Ongkir" value={formatCurrency(shippingCost)} />
-            <Row label="Total dibayar" value={formatCurrency(n(order.TotalAmount) + shippingCost)} bold />
+            {promo > 0 && <Row label="Promo Petope (ditanggung pusat)" value={`− ${formatCurrency(promo)}`} tone="minus" />}
+            <Row label="Total dibayar" value={formatCurrency(n(order.TotalAmount) + shippingCost - promo)} bold />
           </dl>
+          {promo > 0 && (
+            <p className="mt-2 text-[11px] text-ink-faint">Promo dibayar oleh Petope pusat — tidak mengurangi hak seller.</p>
+          )}
         </div>
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-faint">Hak seller</p>

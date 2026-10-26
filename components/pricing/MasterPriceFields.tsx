@@ -55,7 +55,8 @@ export function MasterPriceFields({
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* items-end keeps both boxes level even if a label wraps on a narrow card. */}
+      <div className="grid gap-3 sm:grid-cols-2 sm:items-end">
         <div>
           <FieldLabel htmlFor={`${idPrefix}-material`} required>
             Bahan
@@ -71,7 +72,7 @@ export function MasterPriceFields({
         </div>
         <div>
           <FieldLabel htmlFor={`${idPrefix}-weight`} required>
-            Berat cetak per item (gram)
+            Berat per item (gram)
           </FieldLabel>
           <Input
             id={`${idPrefix}-weight`}
