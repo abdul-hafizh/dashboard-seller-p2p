@@ -25,6 +25,7 @@ import { DesignConfirmCard } from "@/components/orders/DesignConfirmCard";
 import { ColorTypeSelect, colorTypeLabel } from "@/components/orders/ColorTypeSelect";
 import { DesignSpecs, type DesignJobSpecs } from "@/components/orders/DesignSpecs";
 import { ModelDownloadButtons, type DownloadFormat } from "@/components/orders/ModelDownloadButtons";
+import { ShippingLabelButtons } from "@/components/orders/ShippingLabelButtons";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
 
 interface OrderStatus {
@@ -152,6 +153,8 @@ interface ShipmentInfo {
   PackageWeight: number | null;
   Status: string | null;
   TrackingNumber: string | null;
+  /** Set once the courier is booked with Biteship (after payment). */
+  BiteshipOrderId?: string | null;
   ShippingMethod?: ShipmentMethodInfo | null;
   ShippingService?: ShipmentServiceInfo | null;
 }
@@ -711,6 +714,12 @@ export default function OrderDetailPage() {
                     <Badge tone={shipment.Status === "DELIVERED" ? "success" : "info"} className="w-fit">
                       {shipment.Status ?? "PENDING"}
                     </Badge>
+                    {!isPickup &&
+                      (shipment.BiteshipOrderId && shipment.TrackingNumber && !["CANCELLED", "RETURNED"].includes(shipment.Status ?? "") ? (
+                        <ShippingLabelButtons orderId={order.Id} orderNumber={order.OrderNumber} />
+                      ) : isPaid && !shipment.BiteshipOrderId ? (
+                        <p className="text-xs text-ink-faint">Label resi tersedia setelah kurir dibooking ke Biteship.</p>
+                      ) : null)}
                     {isPaid && (shipment.Status ?? "PENDING") === "PENDING" && (
                       <Button size="sm" className="w-fit" onClick={markShipped} loading={shipping}>
                         {isPickup ? "Tandai Siap Diambil" : "Tandai Sudah Dikirim"}
