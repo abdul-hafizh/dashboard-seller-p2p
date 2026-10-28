@@ -14,6 +14,7 @@ import { Select } from "@/components/ui/Select";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { FieldLabel, FieldError } from "@/components/ui/FieldLabel";
+import { LocationField } from "./LocationField";
 
 type FormValues = Record<string, unknown>;
 
@@ -31,7 +32,8 @@ function dependsOnQueryKey(parentFieldName: string): string {
   return parentFieldName.charAt(0).toLowerCase() + parentFieldName.slice(1);
 }
 
-function useDynamicOptions(field: FieldConfig, parentValue: unknown): SelectOption[] {
+/** The select's options, and whether they're loaded for the current parent value. */
+function useDynamicOptions(field: FieldConfig, parentValue: unknown): { options: SelectOption[]; ready: boolean } {
   const hasParentValue = Boolean(parentValue);
   const shouldFetch =
     (field.type === "select" || field.type === "multiselect") && Boolean(field.optionsEndpoint) && (!field.dependsOn || hasParentValue);
@@ -47,46 +49,46 @@ function useDynamicOptions(field: FieldConfig, parentValue: unknown): SelectOpti
       }),
   );
 
-  if (field.options) return field.options;
-  if (!data) return [];
+  if (field.options) return { options: field.options, ready: true };
+  if (!data) return { options: [], ready: false };
 
   const valueKey = field.optionValueKey ?? "Id";
   const labelKey = field.optionLabelKey ?? "Name";
   const rows = Array.isArray(data.data) ? data.data : [];
-  return rows.map((row) => ({
-    value: row[valueKey] as string | number,
-    label: field.optionLabel ? field.optionLabel(row) : String(row[labelKey] ?? row[valueKey]),
-  }));
+  return {
+    options: rows.map((row) => ({
+      value: row[valueKey] as string | number,
+      label: field.optionLabel ? field.optionLabel(row) : String(row[labelKey] ?? row[valueKey]),
+    })),
+    ready: true,
+  };
 }
 
 function SelectField({ field, register, errors, watch, setValue }: FieldProps) {
   const parentValue = field.dependsOn ? watch(field.dependsOn) : undefined;
-  const options = useDynamicOptions(field, parentValue);
+  const { options, ready } = useDynamicOptions(field, parentValue);
+  const current = watch(field.name);
   const error = errors[field.name]?.message as string | undefined;
   const locked = Boolean(field.dependsOn) && !parentValue;
 
-  // Only clear this field when the parent's value actually changes after
-  // mount — not on the initial render, which would otherwise wipe out an
-  // already-consistent CountryId/ProvinceId/CityId trio loaded for editing.
-  const mountedRef = useRef(false);
-  const prevParentRef = useRef(parentValue);
+  // A dependent select keeps its value until the parent's options have
+  // loaded, then drops it only if it isn't one of them — so a consistent
+  // Country … Village set (loaded for editing, or filled from a map pin all
+  // at once) survives, while picking another parent by hand clears it.
   useEffect(() => {
-    if (!field.dependsOn) return;
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      prevParentRef.current = parentValue;
+    if (!field.dependsOn || current === "" || current === undefined || current === null) return;
+    if (!parentValue) {
+      setValue(field.name, "");
       return;
     }
-    if (parentValue !== prevParentRef.current) {
-      prevParentRef.current = parentValue;
-      setValue(field.name, "");
-    }
-  }, [field.dependsOn, field.name, parentValue, setValue]);
+    if (ready && !options.some((o) => String(o.value) === String(current))) setValue(field.name, "");
+  }, [field.dependsOn, field.name, parentValue, ready, options, current, setValue]);
 
   return (
     <div>
       <FieldLabel required={field.required}>{field.label}</FieldLabel>
-      <Select invalid={Boolean(error)} disabled={locked} {...register(field.name)}>
+      {/* Controlled by the form value, so a value set before its options arrive still shows once they do. */}
+      <Select invalid={Boolean(error)} disabled={locked} {...register(field.name)} value={String(current ?? "")}>
         <option value="">{locked ? "Pilih dahulu di atas..." : (field.placeholder ?? "Pilih...")}</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -101,7 +103,7 @@ function SelectField({ field, register, errors, watch, setValue }: FieldProps) {
 }
 
 function MultiSelectField({ field, errors, watch, setValue }: FieldProps) {
-  const options = useDynamicOptions(field, undefined);
+  const { options } = useDynamicOptions(field, undefined);
   const selected = ((watch(field.name) as string[] | undefined) ?? []).map(String);
   const error = errors[field.name]?.message as string | undefined;
 
@@ -229,6 +231,10 @@ export function FormField(props: FieldProps) {
 
   if (field.type === "image") {
     return <ImageField {...props} />;
+  }
+
+  if (field.type === "location") {
+    return <LocationField field={field} watch={props.watch} setValue={props.setValue} />;
   }
 
   if (field.type === "boolean") {

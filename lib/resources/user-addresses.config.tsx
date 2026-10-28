@@ -11,11 +11,11 @@ export function buildUserAddressesConfig(isAdmin: boolean): ResourceConfig {
     title: isAdmin ? "Alamat" : "Alamat Toko",
     description: isAdmin
       ? "Alamat milik seluruh pengguna (admin dan seller)."
-      : "Dipakai untuk ongkir, kurir instan, dan Toko Terdekat di aplikasi — isi kota dan titik peta (latitude/longitude).",
+      : "Dipakai untuk ongkir, kurir instan, dan Toko Terdekat di aplikasi — tandai titik lokasi di peta, alamatnya terisi otomatis.",
     searchPlaceholder: "Cari alamat...",
     columns: [
-      { key: "Label", label: "Label" },
-      { key: "RecipientName", label: "Penerima" },
+      { key: "Label", label: "Jenis Usaha" },
+      { key: "RecipientName", label: "Nama Seller" },
       { key: "Address", label: "Alamat" },
       ...(isAdmin
         ? [
@@ -48,11 +48,27 @@ export function buildUserAddressesConfig(isAdmin: boolean): ResourceConfig {
             },
           ]
         : []),
-      { name: "Label", label: "Label", type: "text", placeholder: "Toko / Gudang" },
-      { name: "RecipientName", label: "Nama Penerima", type: "text", placeholder: "Nama lengkap" },
-      { name: "Phone", label: "Telepon", type: "text", placeholder: "08xxxxxxxxxx" },
-      { name: "WhatsappNumber", label: "WhatsApp", type: "text", placeholder: "08xxxxxxxxxx" },
-      { name: "Address", label: "Alamat Lengkap", type: "textarea", required: true, placeholder: "Jalan, nomor, RT/RW, kelurahan..." },
+      {
+        name: "Label",
+        label: "Jenis Usaha",
+        type: "select",
+        required: true,
+        defaultValue: "Toko",
+        options: [
+          { value: "Toko", label: "Toko" },
+          { value: "Rumahan", label: "Rumahan" },
+        ],
+      },
+      { name: "RecipientName", label: "Nama Seller", type: "text", placeholder: "Nama lengkap" },
+      { name: "WhatsappNumber", label: "No. WhatsApp", type: "text", placeholder: "08xxxxxxxxxx" },
+      {
+        name: "__location",
+        label: "Titik Lokasi",
+        type: "location",
+        helpText:
+          "Klik peta atau geser pin ke lokasi toko, atau pakai lokasi kamu sekarang — negara sampai kelurahan, kode pos, dan alamat (bila kosong) terisi otomatis dan masih bisa diubah.",
+      },
+      { name: "Address", label: "Alamat Lengkap", type: "textarea", required: true, placeholder: "Nama jalan, nomor, RT/RW, patokan..." },
       { name: "CountryId", label: "Negara", type: "select", optionsEndpoint: "countries", optionLabelKey: "Name" },
       {
         name: "ProvinceId",
@@ -70,13 +86,36 @@ export function buildUserAddressesConfig(isAdmin: boolean): ResourceConfig {
         optionLabelKey: "Name",
         dependsOn: "ProvinceId",
       },
-      { name: "PostalCode", label: "Kode Pos", type: "text", placeholder: "12345" },
+      {
+        name: "DistrictId",
+        label: "Kecamatan",
+        type: "select",
+        optionsEndpoint: "districts",
+        optionLabelKey: "Name",
+        dependsOn: "CityId",
+        helpText: "Khusus Indonesia.",
+      },
+      {
+        name: "VillageId",
+        label: "Kelurahan / Desa",
+        type: "select",
+        optionsEndpoint: "villages",
+        optionLabelKey: "Name",
+        dependsOn: "DistrictId",
+      },
+      {
+        name: "PostalCode",
+        label: "Kode Pos",
+        type: "text",
+        placeholder: "12345",
+        helpText: "Kosongkan untuk memakai kode pos kelurahan yang dipilih.",
+      },
       {
         name: "Latitude",
         label: "Latitude",
         type: "number",
         placeholder: "-6.2441",
-        helpText: "Wajib diisi (bersama Longitude) agar kurir instan seperti Gojek/Grab muncul di ongkir pembeli. Salin dari Google Maps.",
+        helpText: "Terisi dari Titik Lokasi di atas. Wajib (bersama Longitude) agar kurir instan seperti Gojek/Grab muncul di ongkir pembeli.",
       },
       { name: "Longitude", label: "Longitude", type: "number", placeholder: "106.8003" },
       { name: "IsDefault", label: "Jadikan alamat utama", type: "boolean", defaultValue: false, intBoolean: true },

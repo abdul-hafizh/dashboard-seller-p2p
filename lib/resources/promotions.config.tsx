@@ -26,7 +26,8 @@ function DiscountCell({ r }: { r: Record<string, unknown> }) {
       <p className="text-ink-faint">{categories.map(categoryLabel).join(", ")}</p>
       <p className="text-ink-soft">
         Terpakai {formatCurrency(used)}
-        {reserved > 0 ? ` (+${formatCurrency(reserved)} sedang dibayar)` : ""} · {Number(r.DiscountCustomers) || 0} customer
+        {reserved > 0 ? ` (+${formatCurrency(reserved)} sedang dibayar)` : ""} · {Number(r.DiscountCustomers) || 0} customer ·{" "}
+        {Number(r.ParticipantCount) || 0} seller ikut
       </p>
     </div>
   );
@@ -46,7 +47,7 @@ export const promotionsConfig: ResourceConfig = {
   exportPath: "promotions/export",
   title: "Promosi",
   description:
-    "Iklan promo yang muncul sebagai pop-up di beranda aplikasi selama jangka waktu tayangnya. Promo juga bisa memberi diskon otomatis saat checkout yang dibayar Petope pusat — hak seller tidak berkurang.",
+    "Iklan promo yang muncul sebagai pop-up di beranda aplikasi selama jangka waktu tayangnya. Promo juga bisa memberi diskon otomatis saat checkout yang dibayar Petope pusat (hak seller tidak berkurang) — hanya untuk seller yang ikut, diatur di halaman utama dashboard. Setiap promo yang dibuat atau diubah dikirim ke Telegram semua seller.",
   searchPlaceholder: "Cari judul promo...",
   columns: [
     {
@@ -109,7 +110,7 @@ export const promotionsConfig: ResourceConfig = {
     { name: "IsActive", label: "Aktif", type: "boolean", defaultValue: true },
     {
       name: "DiscountEnabled",
-      label: "Beri diskon dari pusat (dibayar Petope, hak seller tidak berkurang)",
+      label: "Beri diskon dari pusat untuk seller yang ikut (dibayar Petope, hak seller tidak berkurang)",
       type: "boolean",
       defaultValue: false,
     },

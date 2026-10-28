@@ -33,6 +33,7 @@ import { formatCurrency, formatDateTime } from "@/lib/resources/format";
 import type { ItemCategory } from "@/lib/item-category";
 import { ItemCategoryBadge } from "@/components/orders/ItemCategoryBadge";
 import { ReportTabs } from "@/components/reports/ReportTabs";
+import { formatGrams } from "@/lib/order-weight";
 import { storeName, type MerchantRow } from "@/components/merchants/merchant-ui";
 
 interface SalesItem {
@@ -45,6 +46,9 @@ interface SalesItem {
   Quantity: number;
   UnitPrice: number;
   LineTotal: number;
+  /** Grams of one unit, and of the line (unit × qty). */
+  UnitWeightGrams: number | null;
+  WeightGrams: number | null;
 }
 
 interface SalesRow {
@@ -55,6 +59,8 @@ interface SalesRow {
   Customer: { Name: string | null; Phone: string | null; Email: string | null } | null;
   Items: SalesItem[];
   ItemCount: number;
+  /** All lines' grams. */
+  TotalWeightGrams: number | null;
   SubtotalAmount: number;
   DiscountAmount: number;
   TaxAmount: number;
@@ -87,6 +93,7 @@ interface SalesSummary {
   Revenue: number;
   GrossSales: number;
   ItemsSold: number;
+  WeightSoldGrams?: number;
   AvgRating: number | null;
   RatedOrders: number;
   PromoOrders?: number;
@@ -318,7 +325,12 @@ export default function SalesReportPage() {
           <SummaryCard icon={Wallet} label="Pendapatan" value={formatCurrency(summary.Revenue)} hint="Pesanan dibayar, tanpa ongkir" />
           <SummaryCard icon={Receipt} label="Penjualan Produk" value={formatCurrency(summary.GrossSales)} hint="Harga × qty, sebelum biaya" />
           <SummaryCard icon={PackageCheck} label="Pesanan Dibayar" value={String(summary.PaidOrders)} hint={`dari ${summary.TotalOrders} pesanan`} />
-          <SummaryCard icon={Boxes} label="Item Terjual" value={String(summary.ItemsSold)} />
+          <SummaryCard
+            icon={Boxes}
+            label="Item Terjual"
+            value={String(summary.ItemsSold)}
+            hint={summary.WeightSoldGrams ? `Total berat ${formatGrams(summary.WeightSoldGrams)}` : undefined}
+          />
           <SummaryCard icon={CircleCheck} label="Selesai" value={String(summary.CompletedOrders)} />
           <SummaryCard
             icon={TicketPercent}
@@ -358,6 +370,7 @@ export default function SalesReportPage() {
                   {isAdmin && <th className="whitespace-nowrap px-4 py-3">Seller</th>}
                   <th className="whitespace-nowrap px-4 py-3">Customer</th>
                   <th className="whitespace-nowrap px-4 py-3">Kategori Produk</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right">Berat</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Harga</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Total</th>
                   <th className="whitespace-nowrap px-4 py-3">Pengiriman</th>
@@ -405,6 +418,22 @@ export default function SalesReportPage() {
                             </li>
                           ))}
                         </ul>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        <ul className="space-y-1">
+                          {r.Items.map((it) => (
+                            <li
+                              key={it.Id}
+                              className="flex h-6 items-center justify-end text-ink"
+                              title={it.UnitWeightGrams !== null ? `${formatGrams(it.UnitWeightGrams)} × ${it.Quantity}` : undefined}
+                            >
+                              {formatGrams(it.WeightGrams)}
+                            </li>
+                          ))}
+                        </ul>
+                        {r.Items.length > 1 && r.TotalWeightGrams !== null && (
+                          <p className="mt-1 border-t border-border pt-1 text-xs font-semibold text-ink">Total {formatGrams(r.TotalWeightGrams)}</p>
+                        )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
                         <ul className="space-y-1">

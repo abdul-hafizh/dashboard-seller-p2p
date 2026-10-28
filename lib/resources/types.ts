@@ -1,6 +1,18 @@
 import type { ReactNode } from "react";
 
-export type FieldType = "text" | "password" | "number" | "textarea" | "boolean" | "select" | "multiselect" | "time" | "datetime" | "image";
+export type FieldType =
+  | "text"
+  | "password"
+  | "number"
+  | "textarea"
+  | "boolean"
+  | "select"
+  | "multiselect"
+  | "time"
+  | "datetime"
+  | "image"
+  /** Map pin for an address form — sets the form's Latitude/Longitude and fills its region pickers; not sent itself. */
+  | "location";
 
 export interface SelectOption {
   value: string | number;
@@ -26,7 +38,7 @@ export interface FieldConfig {
    * letter lowercased (CountryId -> countryId), matching every cascading
    * region endpoint's existing `?countryId=`/`?provinceId=` filter. The
    * select is disabled and empty until the parent has a value, and clears
-   * itself whenever the parent's value actually changes. */
+   * itself once the parent's options load without its current value. */
   dependsOn?: string;
   /** For a multiselect field: derives the initially-checked option values from the row being edited. */
   initialFromRow?: (row: Record<string, unknown>) => string[];

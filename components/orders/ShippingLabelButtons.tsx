@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Download, Printer } from "lucide-react";
+import { Download, Eye, EyeOff, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 async function fetchLabel(orderId: string, download: boolean): Promise<Blob> {
@@ -21,12 +21,35 @@ async function fetchLabel(orderId: string, download: boolean): Promise<Blob> {
 }
 
 /**
- * "Cetak Label Resi" (opens the 100 × 150 mm PDF in a new tab, ready for the
- * browser's print dialog) and "Unduh" — for a courier shipment booked
- * through Biteship (real waybill + barcode). Store and admin only (backend).
+ * "Lihat Label" (the 100 × 150 mm PDF shown right in the card), "Cetak Label
+ * Resi" (opens it in a new tab, ready for the browser's print dialog) and
+ * "Unduh" — for a courier shipment booked through Biteship (real waybill +
+ * barcode). Store and admin only (backend).
  */
 export function ShippingLabelButtons({ orderId, orderNumber }: { orderId: string; orderNumber?: string | null }) {
-  const [busy, setBusy] = useState<"print" | "download" | null>(null);
+  const [busy, setBusy] = useState<"view" | "print" | "download" | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Free the preview's blob when it's closed or the page goes away.
+  useEffect(() => {
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  const togglePreview = async () => {
+    if (previewUrl) {
+      setPreviewUrl(null);
+      return;
+    }
+    setBusy("view");
+    try {
+      setPreviewUrl(URL.createObjectURL(await fetchLabel(orderId, false)));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal memuat label resi.");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const print = async () => {
     // Opened right away (still inside the click) so the browser doesn't block it as a pop-up.
@@ -64,13 +87,26 @@ export function ShippingLabelButtons({ orderId, orderNumber }: { orderId: string
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button size="sm" className="w-fit" onClick={print} loading={busy === "print"} disabled={busy !== null}>
-        <Printer className="size-3.5" /> Cetak Label Resi
-      </Button>
-      <Button variant="outline" size="sm" className="w-fit" onClick={download} loading={busy === "download"} disabled={busy !== null}>
-        <Download className="size-3.5" /> Unduh
-      </Button>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" className="w-fit" onClick={togglePreview} loading={busy === "view"} disabled={busy !== null && busy !== "view"}>
+          {previewUrl ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />} {previewUrl ? "Tutup Label" : "Lihat Label"}
+        </Button>
+        <Button size="sm" className="w-fit" onClick={print} loading={busy === "print"} disabled={busy !== null}>
+          <Printer className="size-3.5" /> Cetak Label Resi
+        </Button>
+        <Button variant="outline" size="sm" className="w-fit" onClick={download} loading={busy === "download"} disabled={busy !== null}>
+          <Download className="size-3.5" /> Unduh
+        </Button>
+      </div>
+      {previewUrl && (
+        // 100 × 150 mm label — a 2:3 frame.
+        <iframe
+          src={previewUrl}
+          title={`Label resi ${orderNumber ?? orderId}`}
+          className="aspect-[2/3] w-full max-w-sm rounded-xl border border-border bg-white"
+        />
+      )}
     </div>
   );
 }

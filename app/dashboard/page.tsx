@@ -8,6 +8,7 @@ import { useResourceCount } from "@/lib/hooks/useResourceCount";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useState } from "react";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
+import { PromoParticipationCard } from "@/components/promotions/PromoParticipationCard";
 
 interface StatDef {
   label: string;
@@ -46,7 +47,7 @@ function StatCard({ label, endpoint, icon: Icon, periodic, period }: StatDef & {
 }
 
 export default function DashboardHomePage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isMerchant } = useAuth();
   const [period, setPeriod] = useState<Period>(ALL_TIME);
 
   return (
@@ -68,6 +69,8 @@ export default function DashboardHomePage() {
           <StatCard key={stat.endpoint} {...stat} period={period} />
         ))}
       </div>
+
+      {(isAdmin || isMerchant) && <PromoParticipationCard isAdmin={isAdmin} />}
 
       <Card>
         <CardBody>

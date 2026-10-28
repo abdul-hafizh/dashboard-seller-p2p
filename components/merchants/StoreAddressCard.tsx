@@ -21,6 +21,7 @@ interface AddressRow {
   Label: string | null;
   RecipientName: string | null;
   Phone: string | null;
+  WhatsappNumber: string | null;
   Address: string | null;
   PostalCode: string | null;
   Latitude: number | string | null;
@@ -28,6 +29,8 @@ interface AddressRow {
   IsDefault: boolean | number | null;
   City?: { Name: string | null } | null;
   Province?: { Name: string | null } | null;
+  District?: { Name: string | null } | null;
+  Village?: { Name: string | null } | null;
 }
 
 /** Read-only list of a seller's addresses, for the admin's seller detail page. */
@@ -75,8 +78,16 @@ export function SellerAddressList({ userId }: { userId: string }) {
                   </div>
                   <p className="mt-1 text-ink">{a.Address || "-"}</p>
                   <p className="mt-0.5 text-xs text-ink-soft">
-                    {[a.City?.Name, a.Province?.Name, a.PostalCode].filter(Boolean).join(", ") || "-"}
-                    {(a.RecipientName || a.Phone) && ` · ${[a.RecipientName, a.Phone].filter(Boolean).join(" · ")}`}
+                    {[
+                      a.Village?.Name && `Kel. ${a.Village.Name}`,
+                      a.District?.Name && `Kec. ${a.District.Name}`,
+                      a.City?.Name,
+                      a.Province?.Name,
+                      a.PostalCode,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"}
+                    {(a.RecipientName || a.WhatsappNumber || a.Phone) && ` · ${[a.RecipientName, a.WhatsappNumber || a.Phone].filter(Boolean).join(" · ")}`}
                   </p>
                 </li>
               );

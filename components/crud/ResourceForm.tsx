@@ -13,6 +13,7 @@ type FormValues = Record<string, unknown>;
 function buildSchema(fields: FieldConfig[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
   for (const field of fields) {
+    if (field.type === "location") continue;
     if (field.type === "boolean") {
       shape[field.name] = z.boolean().optional();
       continue;
@@ -37,6 +38,7 @@ function buildSchema(fields: FieldConfig[]) {
 function buildDefaultValues(fields: FieldConfig[], initial?: Record<string, unknown>): FormValues {
   const values: FormValues = {};
   for (const field of fields) {
+    if (field.type === "location") continue;
     const raw = initial?.[field.name] ?? field.defaultValue;
     if (field.type === "boolean") {
       values[field.name] = Boolean(raw);
@@ -56,6 +58,7 @@ function buildDefaultValues(fields: FieldConfig[], initial?: Record<string, unkn
 function toPayload(fields: FieldConfig[], values: FormValues): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
   for (const field of fields) {
+    if (field.type === "location") continue;
     const raw = values[field.name];
     if (field.type === "boolean") {
       payload[field.name] = field.intBoolean ? (raw ? 1 : 0) : Boolean(raw);

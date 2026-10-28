@@ -20,7 +20,6 @@ type TaxType = "PKP" | "NON_PKP";
 
 interface ProfileForm {
   FullName: string;
-  Phone: string;
   WhatsappNumber: string;
   TaxType: TaxType;
   NPWP: string;
@@ -28,7 +27,6 @@ interface ProfileForm {
 
 const EMPTY_FORM: ProfileForm = {
   FullName: "",
-  Phone: "",
   WhatsappNumber: "",
   TaxType: "NON_PKP",
   NPWP: "",
@@ -48,8 +46,8 @@ export default function ProfileSettingsPage() {
     if (!user) return;
     setForm({
       FullName: user.FullName ?? "",
-      Phone: user.Phone ?? "",
-      WhatsappNumber: user.WhatsappNumber ?? "",
+      // One contact number: WhatsApp (older accounts may only have a phone number).
+      WhatsappNumber: user.WhatsappNumber || user.Phone || "",
       TaxType: user.TaxProfile?.TaxType ?? "NON_PKP",
       NPWP: user.TaxProfile?.NPWP ?? "",
     });
@@ -70,7 +68,8 @@ export default function ProfileSettingsPage() {
         method: "PUT",
         json: {
           FullName: form.FullName,
-          Phone: form.Phone || null,
+          // Phone mirrors WhatsApp — labels and couriers still read it.
+          Phone: form.WhatsappNumber || null,
           WhatsappNumber: form.WhatsappNumber || null,
           ...(showTax && canEditTax
             ? { TaxType: form.TaxType, NPWP: form.TaxType === "PKP" || form.NPWP ? form.NPWP : null }
@@ -108,16 +107,11 @@ export default function ProfileSettingsPage() {
               />
             </div>
             <div>
-              <FieldLabel>No. Telepon</FieldLabel>
-              <Input
-                value={form.Phone}
-                onChange={(e) => setForm((f) => ({ ...f, Phone: e.target.value }))}
-              />
-            </div>
-            <div>
               <FieldLabel>No. WhatsApp</FieldLabel>
               <Input
                 value={form.WhatsappNumber}
+                inputMode="tel"
+                placeholder="08xxxxxxxxxx"
                 onChange={(e) => setForm((f) => ({ ...f, WhatsappNumber: e.target.value }))}
               />
             </div>

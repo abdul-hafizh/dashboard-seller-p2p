@@ -3,6 +3,7 @@ import { formatCurrency, toPublicAssetUrl } from "./format";
 import { Badge } from "@/components/ui/Badge";
 import { AlertTriangle, ImageOff, Star, Store } from "lucide-react";
 import { WeightPriceHint } from "@/components/pricing/WeightPriceHint";
+import { formatGrams } from "@/lib/order-weight";
 
 /** SellerId is only editable by admins — merchants always create products under themselves
  * (the backend defaults SellerId to the authenticated user when it's omitted). */
@@ -78,6 +79,11 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
             ) : null}
           </div>
         ),
+      },
+      {
+        key: "Weight",
+        label: "Berat",
+        render: (r) => <span className="whitespace-nowrap">{formatGrams(r.Weight as number | null)}</span>,
       },
       {
         key: "Price",

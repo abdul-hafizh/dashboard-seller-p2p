@@ -67,12 +67,6 @@ export const NAV_SECTIONS: NavSection[] = [
       // Meshy credit balance + every 3D generation.
       { href: "/dashboard/meshy", label: "Aktivitas Meshy AI", icon: Sparkles, roles: [ROLE.SUPER_ADMIN] },
       {
-        href: "/dashboard/ai-model-orders",
-        label: "Pesanan dari AI Model",
-        icon: Sparkles,
-        roles: [ROLE.MERCHANT],
-      },
-      {
         href: "/dashboard/custom-orders",
         label: "Pesanan Custom",
         icon: FilePlus2,

@@ -27,6 +27,8 @@ import { DesignSpecs, type DesignJobSpecs } from "@/components/orders/DesignSpec
 import { ModelDownloadButtons, type DownloadFormat } from "@/components/orders/ModelDownloadButtons";
 import { ShippingLabelButtons } from "@/components/orders/ShippingLabelButtons";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
+import { ReferenceFilesCard } from "@/components/orders/ReferenceFilesCard";
+import { formatGrams, lineGrams, orderGrams, unitGrams } from "@/lib/order-weight";
 
 interface OrderStatus {
   Id: number;
@@ -52,6 +54,8 @@ interface AIJobRef extends DesignJobSpecs {
   Prompt?: string | null;
   Type?: string | null;
   UploadedImageId?: string | null;
+  /** The customer's photos for an image-to-3d design. */
+  Images?: { Id: string; FileName: string | null }[];
 }
 
 interface AIModel {
@@ -72,7 +76,7 @@ interface OrderItem {
   PrintProfileId: number | null;
   ProductId?: string | null;
   AIModel?: AIModel | null;
-  Product?: { ProductName: string | null } | null;
+  Product?: { ProductName: string | null; Weight?: number | null } | null;
   Material?: { Name: string | null } | null;
   PrintProfile?: { Name: string | null } | null;
   WeightGrams?: number | null;
@@ -95,7 +99,6 @@ interface CustomerUser {
   Phone: string | null;
   WhatsappNumber: string | null;
   UserLevel?: string | null;
-  TotalSpent?: number | null;
 }
 
 interface OrderCustomer {
@@ -283,6 +286,13 @@ export default function OrderDetailPage() {
   const statuses = statusesData?.data ?? [];
   const statusName = (id: number | null) => statuses.find((s) => s.Id === id)?.Name ?? `#${id}`;
   const models = (order.Items ?? []).map((item) => item.AIModel).filter((m): m is AIModel => Boolean(m));
+  // File referensi toko — File Siap Print / File Via Prompt orders only.
+  const takesReferenceFiles =
+    (order.Items ?? []).length === 0 ||
+    (order.Items ?? []).some((item) => {
+      const category = itemCategory(item, order.Customer?.UserId);
+      return category === ITEM_CATEGORIES.PRINT_FILE || category === ITEM_CATEGORIES.PROMPT;
+    });
   // Once a payment is PAID, the customer already paid this exact amount —
   // changing it afterwards would no longer match what was actually charged
   // (see api-meshy's PaymentController.createCheckout, which locks the
@@ -507,17 +517,40 @@ export default function OrderDetailPage() {
                       </div>
                       <div className="flex flex-1 flex-col gap-2">
                         <p className="text-sm font-semibold text-ink">{isPromptDesign ? ITEM_CATEGORIES.PROMPT : (model.ModelName ?? "Model 3D")}</p>
-                        {isPromptDesign && model.Job && (
-                          <div className="rounded-xl border border-border bg-surface-muted/60 p-3">
-                            <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
-                              <Sparkles className="size-3.5 text-brand-purple" />
-                              {model.Job.Type === "image-to-3d" || model.Job.UploadedImageId ? "Dibuat dari foto customer" : "Prompt dari Customer"}
-                            </p>
-                            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink">
-                              {model.Job.Prompt?.trim() || (model.Job.UploadedImageId ? "Tanpa prompt teks." : "-")}
-                            </p>
-                          </div>
-                        )}
+                        {isPromptDesign && model.Job && (() => {
+                          const job = model.Job;
+                          const images = job.Images ?? [];
+                          const fromPhoto = job.Type === "image-to-3d" || Boolean(job.UploadedImageId) || images.length > 0;
+                          // Image-to-3d jobs store a placeholder instead of a real prompt.
+                          const prompt = job.Prompt?.trim() && job.Prompt.trim() !== "Image-to-3D Generation" ? job.Prompt.trim() : null;
+                          return (
+                            <div className="rounded-xl border border-border bg-surface-muted/60 p-3">
+                              <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
+                                <Sparkles className="size-3.5 text-brand-purple" />
+                                {fromPhoto ? "Dibuat dari foto customer" : "Prompt dari Customer"}
+                              </p>
+                              {images.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {images.map((img) => {
+                                    const src = `/api/backend/ai/jobs/${job.Id}/images/${img.Id}`;
+                                    return (
+                                      <a key={img.Id} href={src} target="_blank" rel="noreferrer" title={img.FileName ?? "Gambar referensi"}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element -- private file behind the authenticated API proxy */}
+                                        <img src={src} alt={img.FileName ?? "Gambar referensi customer"} className="size-24 rounded-lg border border-border object-cover" />
+                                      </a>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {fromPhoto && images.length === 0 && (
+                                <p className="mt-1 text-xs text-ink-faint">Gambar dari customer tidak tersimpan untuk desain ini (dibuat sebelum fitur ini ada).</p>
+                              )}
+                              {(prompt || !fromPhoto) && (
+                                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink">{prompt ?? "-"}</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <DesignSpecs job={model.Job} />
                         {model.Job?.Note && (
                           <div className="rounded-xl border border-brand-purple/20 bg-brand-purple/5 p-3">
@@ -559,6 +592,8 @@ export default function OrderDetailPage() {
             </Card>
           )}
 
+          {takesReferenceFiles && <ReferenceFilesCard orderId={order.Id} />}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -573,6 +608,7 @@ export default function OrderDetailPage() {
                       <th className="px-4 py-2.5">Item</th>
                       <th className="px-4 py-2.5">Qty</th>
                       <th className="px-4 py-2.5">Harga Satuan</th>
+                      <th className="px-4 py-2.5">Berat</th>
                       <th className="px-4 py-2.5">Material</th>
                     </tr>
                   </thead>
@@ -599,6 +635,14 @@ export default function OrderDetailPage() {
                           </td>
                           <td className="px-4 py-2.5 text-ink">{item.Quantity ?? "-"}</td>
                           <td className="px-4 py-2.5 text-ink">{unitPrice != null ? formatCurrency(unitPrice) : "-"}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 text-ink">
+                            {formatGrams(lineGrams(item))}
+                            {unitGrams(item) !== null && (item.Quantity ?? 1) > 1 && (
+                              <p className="text-xs text-ink-faint">
+                                {formatGrams(unitGrams(item))} × {item.Quantity}
+                              </p>
+                            )}
+                          </td>
                           <td className="px-4 py-2.5 text-ink-soft">
                             {item.Material?.Name ?? "-"}
                             {colorTypeLabel(item.ColorType) && <p className="text-xs text-ink-faint">{colorTypeLabel(item.ColorType)}</p>}
@@ -607,6 +651,15 @@ export default function OrderDetailPage() {
                       );
                     })}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border bg-surface-muted/40 text-sm">
+                      <td className="px-4 py-2.5 font-semibold text-ink" colSpan={3}>
+                        Total berat
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 font-bold text-ink">{formatGrams(orderGrams(order.Items))}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             ) : (
@@ -664,11 +717,6 @@ export default function OrderDetailPage() {
                 {(order.Customer?.User?.Phone || order.Customer?.User?.WhatsappNumber) && (
                   <p className="text-xs text-ink-soft">
                     {order.Customer?.User?.Phone ?? order.Customer?.User?.WhatsappNumber}
-                  </p>
-                )}
-                {order.Customer?.User?.TotalSpent != null && (
-                  <p className="mt-1 text-xs text-ink-soft">
-                    Total belanja: <span className="font-semibold text-ink">{formatCurrency(order.Customer.User.TotalSpent)}</span>
                   </p>
                 )}
               </div>

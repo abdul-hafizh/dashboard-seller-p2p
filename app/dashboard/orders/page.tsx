@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate } from "@/lib/resources/format";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 import { ItemCategoryBadge, orderCategories } from "@/components/orders/ItemCategoryBadge";
+import { formatGrams, orderGrams } from "@/lib/order-weight";
 import { ExportButton } from "@/components/ui/ExportButton";
 
 interface OrderRow {
@@ -32,7 +33,10 @@ interface OrderRow {
   Items?: {
     ProductId?: string | null;
     AIModelId?: string | null;
-    Product?: { ProductName: string | null } | null;
+    Quantity?: number | null;
+    /** One unit, grams. */
+    WeightGrams?: number | null;
+    Product?: { ProductName: string | null; Weight?: number | null } | null;
     AIModel?: { Job?: { UserId?: string | null } | null } | null;
   }[] | null;
   Merchant?: {
@@ -107,6 +111,7 @@ export default function OrdersPage() {
                 <th className="whitespace-nowrap px-4 py-3">Pelanggan</th>
                 {isAdmin && <th className="whitespace-nowrap px-4 py-3">Seller</th>}
                 <th className="whitespace-nowrap px-4 py-3">Kategori</th>
+                <th className="whitespace-nowrap px-4 py-3">Berat</th>
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
                 <th className="whitespace-nowrap px-4 py-3">Kurir</th>
                 <th className="whitespace-nowrap px-4 py-3">Total</th>
@@ -139,6 +144,7 @@ export default function OrdersPage() {
                       ))}
                     </div>
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-ink-soft">{formatGrams(orderGrams(order.Items))}</td>
                   <td className="whitespace-nowrap px-4 py-3">
                     {order.AwaitingMerchantConfirmation ? (
                       <Badge tone="warning">Perlu konfirmasi berat</Badge>
