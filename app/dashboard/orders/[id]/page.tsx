@@ -23,7 +23,7 @@ import { downloadInvoice } from "@/lib/download-invoice";
 import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
 import { DesignConfirmCard } from "@/components/orders/DesignConfirmCard";
 import { ColorTypeSelect, colorTypeLabel } from "@/components/orders/ColorTypeSelect";
-import { DesignSpecs, type DesignJobSpecs } from "@/components/orders/DesignSpecs";
+import { DesignSpecs, type DesignJobSpecs, type DesignModelSpecs } from "@/components/orders/DesignSpecs";
 import { ModelDownloadButtons, type DownloadFormat } from "@/components/orders/ModelDownloadButtons";
 import { ShippingLabelButtons } from "@/components/orders/ShippingLabelButtons";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
@@ -58,13 +58,13 @@ interface AIJobRef extends DesignJobSpecs {
   Images?: { Id: string; FileName: string | null }[];
 }
 
-interface AIModel {
+interface AIModel extends DesignModelSpecs {
   Id: string;
   ModelName: string | null;
   Previews?: AIModelPreview[];
   Files?: AIModelFile[];
   Job?: AIJobRef | null;
-  /** Active download types (Tipe File Unduhan) this design has. */
+  /** The design's file type: STL (satu warna) or 3MF (multicolor). */
   DownloadFormats?: DownloadFormat[];
 }
 
@@ -551,7 +551,7 @@ export default function OrderDetailPage() {
                             </div>
                           );
                         })()}
-                        <DesignSpecs job={model.Job} />
+                        <DesignSpecs job={model.Job} model={model} />
                         {model.Job?.Note && (
                           <div className="rounded-xl border border-brand-purple/20 bg-brand-purple/5 p-3">
                             <p className="text-xs font-semibold text-brand-purple">Catatan dari Customer</p>
