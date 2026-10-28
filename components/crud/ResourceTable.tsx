@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
+import { ExportButton } from "@/components/ui/ExportButton";
 import { ResourceForm } from "./ResourceForm";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 
@@ -138,6 +139,12 @@ export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverri
               />
             </div>
           )}
+          {config.exportPath && (
+            <ExportButton
+              path={config.exportPath}
+              query={{ search: search || undefined, ...(config.periodFilter ? periodQuery(period) : {}), ...extraQuery }}
+            />
+          )}
           <Button onClick={() => setModal({ mode: "create" })} className="shrink-0">
             <Plus className="size-4" />
             <span className="hidden sm:inline">Tambah</span>
@@ -229,8 +236,9 @@ export function ResourceTable({ config, toolbarExtra, filterRows, pageSizeOverri
       <Modal
         open={Boolean(modal)}
         onClose={closeModal}
-        title={modal?.mode === "edit" ? `Ubah ${config.title}` : `Tambah ${config.title}`}
+        title={modal?.mode === "edit" ? `Ubah ${config.formTitle ?? config.title}` : `Tambah ${config.formTitle ?? config.title}`}
       >
+        {modal && config.formNotice && <div className="mb-4">{config.formNotice}</div>}
         {modal && (
           <ResourceForm
             fields={config.fields}

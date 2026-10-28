@@ -6,6 +6,8 @@ export interface OrderMoney {
   SubtotalAmount?: number | null;
   DiscountAmount?: number | null;
   TaxAmount?: number | null;
+  /** Biaya jasa aplikasi — paid by the customer to Petope, once per payment; not the seller's. */
+  AppFeeAmount?: number | null;
   TotalAmount?: number | null;
   SellerFeeAmount?: number | null;
   MerchantServiceFeePercent?: number | null;
@@ -43,6 +45,7 @@ export function PriceBreakdownCard({ order, shippingCost }: { order: OrderMoney;
   const legacyTax = order.MerchantServiceFeePercent == null ? tax : 0;
   const sellerNet = base + legacyTax - sellerFee - adminFee - merchantTax;
   const promo = n(order.PlatformDiscountAmount);
+  const appFee = n(order.AppFeeAmount);
 
   return (
     <Card>
@@ -56,14 +59,18 @@ export function PriceBreakdownCard({ order, shippingCost }: { order: OrderMoney;
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-faint">Dibayar customer</p>
           <dl className="space-y-1.5 text-sm">
             <Row label="Subtotal produk" value={formatCurrency(subtotal)} />
-            {discount > 0 && <Row label="Diskon tier" value={`− ${formatCurrency(discount)}`} tone="minus" />}
+            {discount > 0 && <Row label="Diskon membership" value={`− ${formatCurrency(discount)}`} tone="minus" />}
             {tax > 0 && <Row label="PPN" value={formatCurrency(tax)} />}
+            {appFee > 0 && <Row label="Biaya jasa aplikasi (Petope)" value={formatCurrency(appFee)} />}
             <Row label="Ongkir" value={formatCurrency(shippingCost)} />
             {promo > 0 && <Row label="Promo Petope (ditanggung pusat)" value={`− ${formatCurrency(promo)}`} tone="minus" />}
             <Row label="Total dibayar" value={formatCurrency(n(order.TotalAmount) + shippingCost - promo)} bold />
           </dl>
           {promo > 0 && (
             <p className="mt-2 text-[11px] text-ink-faint">Promo dibayar oleh Petope pusat — tidak mengurangi hak seller.</p>
+          )}
+          {appFee > 0 && (
+            <p className="mt-2 text-[11px] text-ink-faint">Biaya jasa aplikasi masuk ke Petope — bukan bagian hak seller.</p>
           )}
         </div>
         <div>

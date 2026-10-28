@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw } from "lucide-react";
+import { ArrowLeft, Package, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw, Sparkles } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Model3DViewer } from "@/components/Model3DViewer";
@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/resources/format";
-import { itemCategory, itemDisplayName } from "@/lib/item-category";
+import { ITEM_CATEGORIES, itemCategory, itemDisplayName } from "@/lib/item-category";
 import { ItemCategoryBadge } from "@/components/orders/ItemCategoryBadge";
 import { PriceBreakdownCard } from "@/components/orders/PriceBreakdownCard";
 import { downloadInvoice } from "@/lib/download-invoice";
@@ -47,6 +47,11 @@ interface AIModelFile {
 interface AIJobRef extends DesignJobSpecs {
   Id: string;
   Note: string | null;
+  UserId?: string | null;
+  /** What the customer typed on the app's prompt screen. */
+  Prompt?: string | null;
+  Type?: string | null;
+  UploadedImageId?: string | null;
 }
 
 interface AIModel {
@@ -95,6 +100,7 @@ interface CustomerUser {
 
 interface OrderCustomer {
   Id: string;
+  UserId?: string | null;
   CompanyName: string | null;
   User?: CustomerUser | null;
 }
@@ -464,6 +470,8 @@ export default function OrderDetailPage() {
               </CardHeader>
               <CardBody className="flex flex-col gap-5">
                 {models.map((model) => {
+                  // File Via Prompt only — a legacy custom order's placeholder model carries someone else's prompt.
+                  const isPromptDesign = itemCategory({ AIModel: model }, order.Customer?.UserId) === ITEM_CATEGORIES.PROMPT;
                   const previewUrl = model.Previews?.[0]?.PreviewPath;
                   const previewExpired = expiredPreviews.has(model.Id);
                   const files = model.Files ?? [];
@@ -498,7 +506,18 @@ export default function OrderDetailPage() {
                         )}
                       </div>
                       <div className="flex flex-1 flex-col gap-2">
-                        <p className="text-sm font-semibold text-ink">{model.ModelName ?? "Model 3D"}</p>
+                        <p className="text-sm font-semibold text-ink">{isPromptDesign ? ITEM_CATEGORIES.PROMPT : (model.ModelName ?? "Model 3D")}</p>
+                        {isPromptDesign && model.Job && (
+                          <div className="rounded-xl border border-border bg-surface-muted/60 p-3">
+                            <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
+                              <Sparkles className="size-3.5 text-brand-purple" />
+                              {model.Job.Type === "image-to-3d" || model.Job.UploadedImageId ? "Dibuat dari foto customer" : "Prompt dari Customer"}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink">
+                              {model.Job.Prompt?.trim() || (model.Job.UploadedImageId ? "Tanpa prompt teks." : "-")}
+                            </p>
+                          </div>
+                        )}
                         <DesignSpecs job={model.Job} />
                         {model.Job?.Note && (
                           <div className="rounded-xl border border-brand-purple/20 bg-brand-purple/5 p-3">
@@ -808,7 +827,7 @@ export default function OrderDetailPage() {
                         <ColorTypeSelect id="order-price-color" value={colorTypeInput} onChange={setColorTypeInput} />
                       )}
                       <p className="text-xs text-ink-soft">
-                        Harga dihitung dari Master Harga admin; diskon tier pelanggan dipotong otomatis dan PPN ditambahkan ke tagihan customer. Fee transaksi dan admin fee dipotong dari hasil jualan Anda.
+                        Harga dihitung dari Master Harga admin; diskon membership pelanggan dipotong otomatis dan PPN ditambahkan ke tagihan customer. Fee transaksi dan admin fee dipotong dari hasil jualan Anda.
                       </p>
                     </>
                   ) : (

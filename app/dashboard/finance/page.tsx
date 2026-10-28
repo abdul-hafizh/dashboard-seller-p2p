@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency } from "@/lib/resources/format";
 import { ReportTabs } from "@/components/reports/ReportTabs";
+import { ExportButton } from "@/components/ui/ExportButton";
 import Link from "next/link";
 
 interface SellerFinance {
@@ -151,15 +152,18 @@ export default function FinancePage() {
                 : "Hasil jualan toko kamu dari pesanan yang sudah dibayar."}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:w-80">
-            <div>
-              <FieldLabel htmlFor="fin-from">Dari</FieldLabel>
-              <Input id="fin-from" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:w-80">
+              <div>
+                <FieldLabel htmlFor="fin-from">Dari</FieldLabel>
+                <Input id="fin-from" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
+              </div>
+              <div>
+                <FieldLabel htmlFor="fin-to">Sampai</FieldLabel>
+                <Input id="fin-to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
+              </div>
             </div>
-            <div>
-              <FieldLabel htmlFor="fin-to">Sampai</FieldLabel>
-              <Input id="fin-to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
-            </div>
+            <ExportButton path="reports/finance/export" query={{ from, to }} />
           </div>
         </div>
       </Card>
@@ -383,7 +387,7 @@ export default function FinancePage() {
 
               <Note>
                 <p>
-                  Penjualan bersih = harga produk setelah diskon tier (yang dibayar customer, tanpa ongkir). Pembayarannya masuk ke
+                  Penjualan bersih = harga produk setelah diskon membership (yang dibayar customer, tanpa ongkir). Pembayarannya masuk ke
                   rekening DOKU pusat. Hak seller hanya dihitung dari pesanan yang sudah selesai (diterima customer) dan sudah dipotong fee transaksi + admin fee; pesanan yang belum selesai tercatat sebagai tertahan; rinciannya per pesanan ada di detail pesanan. PPN dibayar customer dan disetor Petope.
                 </p>
                 <p>Periode dihitung dari tanggal pembayaran pesanan.</p>

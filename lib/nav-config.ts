@@ -65,7 +65,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/payouts", label: "Pencairan Dana", icon: Banknote },
       { href: "/dashboard/shipping-ledger", label: "Keuangan Ongkir", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
       // Meshy credit balance + every 3D generation.
-      { href: "/dashboard/meshy", label: "Aktivitas Meshy", icon: Sparkles, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/meshy", label: "Aktivitas Meshy AI", icon: Sparkles, roles: [ROLE.SUPER_ADMIN] },
       {
         href: "/dashboard/ai-model-orders",
         label: "Pesanan dari AI Model",
@@ -91,7 +91,7 @@ export const NAV_SECTIONS: NavSection[] = [
       // Materials & Printers are merchant-owned data (scoped server-side to
       // the merchant's own MerchantId/Branch) — both roles see them.
       { href: "/dashboard/printers", label: "Printer", icon: Printer },
-      { href: "/dashboard/user-tiers", label: "Master Tier", icon: Award, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/user-tiers", label: "Master Membership", icon: Award, roles: [ROLE.SUPER_ADMIN] },
       // Everything below is global reference data the backend now
       // restricts to Super Admin for create/update/delete.
       { href: "/dashboard/product-categories", label: "Kategori Produk", icon: Tags, roles: [ROLE.SUPER_ADMIN] },

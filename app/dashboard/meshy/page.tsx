@@ -15,6 +15,7 @@ import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/u
 import { MeshyBalanceCard } from "@/components/meshy/MeshyBalanceCard";
 import { TokenLedgerCard } from "@/components/meshy/TokenLedgerCard";
 import { ResourceTable } from "@/components/crud/ResourceTable";
+import { ExportButton } from "@/components/ui/ExportButton";
 import { modelFormatsConfig } from "@/lib/resources/model-formats.config";
 import { formatDateTime } from "@/lib/resources/format";
 import { cn } from "@/lib/utils";
@@ -96,17 +97,20 @@ export default function MeshyActivityPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold text-ink">Aktivitas Meshy</h1>
+          <h1 className="text-xl font-extrabold text-ink">Aktivitas Meshy AI</h1>
           <p className="mt-1 text-sm text-ink-soft">Saldo kredit akun Meshy Petope dan pembuatan model 3D AI oleh customer.</p>
         </div>
-        <PeriodFilter
-          label="Tanggal generate"
-          value={period}
-          onChange={(p) => {
-            setPeriod(p);
-            setPage(1);
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <PeriodFilter
+            label="Tanggal generate"
+            value={period}
+            onChange={(p) => {
+              setPeriod(p);
+              setPage(1);
+            }}
+          />
+          <ExportButton path="reports/meshy-activity/export" query={{ ...periodQuery(period), status: status || undefined }} />
+        </div>
       </div>
 
       <MeshyBalanceCard />

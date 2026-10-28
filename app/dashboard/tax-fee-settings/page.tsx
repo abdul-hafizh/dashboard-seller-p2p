@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ShieldAlert, Percent } from "lucide-react";
+import { ShieldAlert, Percent, Smartphone } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -17,6 +17,7 @@ interface TaxAndFees {
   serviceFeePercent: number;
   sellerFeeAmount: number;
   minPayoutAmount: number;
+  customerAppFeeAmount: number;
 }
 
 export default function TaxFeeSettingsPage() {
@@ -25,6 +26,7 @@ export default function TaxFeeSettingsPage() {
   const [serviceFeePercentDraft, setServiceFeePercentDraft] = useState("");
   const [sellerFeeAmountDraft, setSellerFeeAmountDraft] = useState("");
   const [minPayoutDraft, setMinPayoutDraft] = useState("");
+  const [appFeeDraft, setAppFeeDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -36,6 +38,7 @@ export default function TaxFeeSettingsPage() {
       setServiceFeePercentDraft(String(res.data.serviceFeePercent));
       setSellerFeeAmountDraft(String(res.data.sellerFeeAmount ?? 0));
       setMinPayoutDraft(String(res.data.minPayoutAmount ?? 50000));
+      setAppFeeDraft(String(res.data.customerAppFeeAmount ?? 0));
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Gagal memuat pengaturan pajak & biaya layanan.");
     } finally {
@@ -65,6 +68,11 @@ export default function TaxFeeSettingsPage() {
       toast.error("Fee transaksi seller harus berupa nominal Rupiah (0 atau lebih).");
       return;
     }
+    const customerAppFeeAmount = Math.round(Number(appFeeDraft));
+    if (!Number.isFinite(customerAppFeeAmount) || customerAppFeeAmount < 0) {
+      toast.error("Biaya jasa aplikasi harus berupa nominal Rupiah (0 atau lebih).");
+      return;
+    }
     const minPayoutAmount = Number(minPayoutDraft);
     if (!Number.isFinite(minPayoutAmount) || minPayoutAmount < 0) {
       toast.error("Minimal pencairan tidak valid.");
@@ -73,7 +81,7 @@ export default function TaxFeeSettingsPage() {
 
     setSaving(true);
     try {
-      await apiFetch("system-settings/tax-and-fees", { method: "PUT", json: { taxPercent, serviceFeePercent, sellerFeeAmount, minPayoutAmount } });
+      await apiFetch("system-settings/tax-and-fees", { method: "PUT", json: { taxPercent, serviceFeePercent, sellerFeeAmount, minPayoutAmount, customerAppFeeAmount } });
       toast.success("Pengaturan pajak & biaya layanan berhasil disimpan.");
       await load();
     } catch (error) {
@@ -101,8 +109,9 @@ export default function TaxFeeSettingsPage() {
         <h1 className="text-xl font-extrabold text-ink">Pajak & Biaya Layanan</h1>
         <p className="mt-1 text-sm text-ink-soft">
           <b>Admin fee</b> dan <b>fee transaksi</b> dibayar seller kepada Petope (dipotong dari hasil jualan seller).
-          <b> PPN</b> ditagihkan ke customer di atas harga dari Master Harga, pada semua pesanan kecuali pembelian token, dan
-          disetor oleh Petope. Perubahan berlaku untuk pesanan baru; pesanan lama memakai tarif saat dibuat.
+          <b> PPN</b> dan <b>biaya jasa aplikasi</b> dibayar customer: PPN di atas harga dari Master Harga (semua pesanan kecuali
+          pembelian token, disetor oleh Petope), biaya jasa aplikasi sekali per pembayaran. Perubahan berlaku untuk pesanan
+          baru; pesanan lama memakai tarif saat dibuat.
         </p>
       </div>
 
@@ -137,8 +146,9 @@ export default function TaxFeeSettingsPage() {
                 <FieldLabel>Persentase Pajak PPN (%)</FieldLabel>
                 <p className="text-xs text-ink-soft">
                   Ditagihkan ke <b>customer</b> di setiap pesanan (produk, desain AI, pesanan custom) — kecuali pembelian
-                  token AI. Dihitung dari Harga Dasar (setelah diskon tier, tanpa ongkir), tampil di checkout dan invoice, dan
-                  disetor oleh Petope. Contoh: harga Rp 100.000 dan PPN 11% → customer membayar Rp 111.000 + ongkir.
+                  token AI. Dihitung dari Harga Dasar (setelah diskon membership, tanpa ongkir) dan disetor oleh Petope. Di aplikasi
+                  dan invoice customer, harga sudah termasuk PPN (tanpa baris PPN terpisah). Contoh: harga Rp 100.000 dan PPN 11% →
+                  customer melihat dan membayar Rp 111.000 + ongkir.
                 </p>
                 <Input
                   type="number"
@@ -175,6 +185,25 @@ export default function TaxFeeSettingsPage() {
                   step="1000"
                   value={minPayoutDraft}
                   onChange={(e) => setMinPayoutDraft(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-2 border-t border-border pt-5">
+                <FieldLabel className="flex items-center gap-1.5">
+                  <Smartphone className="size-4" /> Biaya Jasa Aplikasi Customer (Rp)
+                </FieldLabel>
+                <p className="text-xs text-ink-soft">
+                  Nominal tetap yang dibayar <b>customer kepada Petope</b> sekali per pembayaran — checkout keranjang dari beberapa
+                  toko tetap dikenakan sekali. Tidak dikenakan PPN, tidak berlaku untuk pembelian token AI, dan bukan bagian hak
+                  seller. Tampil di checkout aplikasi, halaman pembayaran, dan invoice. Isi 0 untuk menonaktifkan. Contoh: Rp 1.000 →
+                  customer membayar harga barang + ongkir + Rp 1.000.
+                </p>
+                <Input
+                  type="number"
+                  min={0}
+                  step="500"
+                  value={appFeeDraft}
+                  onChange={(e) => setAppFeeDraft(e.target.value)}
                   className="max-w-xs"
                 />
               </div>

@@ -24,7 +24,7 @@ export const usersConfig: ResourceConfig = {
     },
     {
       key: "UserLevel",
-      label: "Tier",
+      label: "Membership",
       render: (r) => <Badge tone="brand">{(r.UserLevel as string) || "BRONZE"}</Badge>,
     },
     {

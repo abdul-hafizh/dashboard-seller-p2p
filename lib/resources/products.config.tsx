@@ -1,7 +1,7 @@
 import type { ResourceConfig } from "./types";
 import { formatCurrency, toPublicAssetUrl } from "./format";
 import { Badge } from "@/components/ui/Badge";
-import { ImageOff, Star, Store } from "lucide-react";
+import { AlertTriangle, ImageOff, Star, Store } from "lucide-react";
 import { WeightPriceHint } from "@/components/pricing/WeightPriceHint";
 
 /** SellerId is only editable by admins — merchants always create products under themselves
@@ -10,8 +10,23 @@ export function buildProductsConfig(isAdmin: boolean): ResourceConfig {
   return {
     key: "products",
     endpoint: "products",
+    exportPath: "products/export",
     periodFilter: "Tanggal produk ditambahkan",
     title: "Produk",
+    formTitle: "Produk Jadi",
+    formNotice: (
+      <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-error/25 bg-error/10 px-3.5 py-3 text-xs text-error">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+        <div className="space-y-1">
+          <p className="font-bold">Syarat &amp; Ketentuan Harga</p>
+          <p>
+            Dengan menyimpan produk ini, seller bertanggung jawab penuh atas kebenaran isian yang menentukan harga jual —
+            bahan, berat per item, dan jenis warna. Harga yang tampil ke customer dihitung dari isian tersebut, dan pesanan yang
+            sudah dibayar customer mengikuti harga saat dipesan. Kerugian akibat kesalahan isian menjadi tanggung jawab seller.
+          </p>
+        </div>
+      </div>
+    ),
     description: isAdmin
       ? "Seluruh produk dari semua seller. Semua produk di menu ini otomatis berkategori Barang Jadi."
       : "Produk yang kamu jual di marketplace — otomatis berkategori Barang Jadi.",

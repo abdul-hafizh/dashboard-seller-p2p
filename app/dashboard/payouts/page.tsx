@@ -18,6 +18,7 @@ import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency, formatDateTime } from "@/lib/resources/format";
 import { BankAccountCard, type BankAccount } from "@/components/merchants/BankAccountCard";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
+import { ExportButton } from "@/components/ui/ExportButton";
 
 interface Balance {
   CompletedOrders: number;
@@ -289,7 +290,10 @@ function MerchantPayouts() {
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Riwayat Pencairan</CardTitle>
-          <PeriodFilter label="Tanggal pengajuan" value={period} onChange={setPeriod} />
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodFilter label="Tanggal pengajuan" value={period} onChange={setPeriod} />
+            <ExportButton path="payouts/export" query={periodQuery(period)} />
+          </div>
         </CardHeader>
         <CardBody>
           {history.isLoading ? <Spinner className="size-5" /> : <PayoutTable rows={history.data?.data ?? []} admin={false} onCancel={cancel} />}
@@ -338,6 +342,7 @@ function AdminPayouts() {
           <CardTitle>Permintaan Pencairan</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <PeriodFilter label="Tanggal pengajuan" value={period} onChange={setPeriod} />
+            <ExportButton path="payouts/export" query={{ status: tab === "ALL" ? undefined : tab, ...periodQuery(period) }} />
             <Button size="sm" type="button" variant={tab === "REQUESTED" ? "primary" : "outline"} onClick={() => setTab("REQUESTED")}>
               Menunggu Transfer
             </Button>

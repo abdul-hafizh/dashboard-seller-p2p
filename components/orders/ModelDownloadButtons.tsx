@@ -20,7 +20,7 @@ export function ModelDownloadButtons({ jobId, formats }: { jobId: string | null 
   const [busy, setBusy] = useState<string | null>(null);
 
   if (!jobId || !formats || formats.length === 0) {
-    return <p className="text-xs text-ink-soft">Belum ada file yang bisa diunduh (lihat Aktivitas Meshy › Tipe File Unduhan).</p>;
+    return <p className="text-xs text-ink-soft">Belum ada file yang bisa diunduh (lihat Aktivitas Meshy AI › Tipe File Unduhan).</p>;
   }
 
   const download = async (code: string) => {

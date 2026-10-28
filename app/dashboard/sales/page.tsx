@@ -16,12 +16,14 @@ import {
   CircleCheck,
   CircleX,
   Star,
+  TicketPercent,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -57,6 +59,8 @@ interface SalesRow {
   DiscountAmount: number;
   TaxAmount: number;
   AppFeeAmount: number;
+  /** Promo diskon dari pusat (Promosi), paid by Petope — null = none. */
+  Promo: { Id: number | null; Title: string | null; Amount: number } | null;
   ShippingCost: number;
   TotalAmount: number;
   PaidAmount: number;
@@ -85,6 +89,8 @@ interface SalesSummary {
   ItemsSold: number;
   AvgRating: number | null;
   RatedOrders: number;
+  PromoOrders?: number;
+  PromoDiscount?: number;
 }
 
 const STATUS_OPTIONS = [
@@ -173,7 +179,11 @@ export default function SalesReportPage() {
   const [to, setTo] = useState(() => defaultRange().to);
   const [statusId, setStatusId] = useState("");
   const [shipping, setShipping] = useState("");
+  const [promo, setPromo] = useState("");
   const [merchantId, setMerchantId] = useState("");
+  const [merchantLabel, setMerchantLabel] = useState("");
+  // What's typed in the seller filter — searched on the server (store, name, email).
+  const [merchantQuery, setMerchantQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -186,14 +196,22 @@ export default function SalesReportPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const filters = { from, to, statusId, shipping, merchantId: isAdmin ? merchantId : "", search };
+  const filters = { from, to, statusId, shipping, promo, merchantId: isAdmin ? merchantId : "", search };
 
   const { data, isLoading, error } = useSWR(["sales-report", page, JSON.stringify(filters)], () =>
     apiFetch<SalesRow[]>("reports/sales", { query: { ...filters, page, limit: 20 } }),
   );
-  const { data: merchants } = useSWR(isAdmin ? "sales-merchant-options" : null, () =>
-    apiFetch<MerchantRow[]>("admin/merchants", { query: { status: "approved", limit: 100 } }),
+  const { data: merchants, isLoading: merchantsLoading } = useSWR(
+    isAdmin ? ["sales-merchant-options", merchantQuery] : null,
+    () => apiFetch<MerchantRow[]>("admin/merchants", { query: { status: "approved", limit: 100, search: merchantQuery || undefined } }),
+    { keepPreviousData: true },
   );
+  const merchantOptions = (merchants?.data ?? [])
+    .map((m) => {
+      const label = storeName(m) || m.FullName || m.Email || m.Id;
+      return { value: m.Id, label, hint: [m.FullName !== label && m.FullName, m.Email].filter(Boolean).join(" · ") };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   const rows = data?.data ?? [];
   const pagination = data?.pagination;
@@ -225,7 +243,7 @@ export default function SalesReportPage() {
           </a>
         </div>
 
-        <div className={`grid gap-3 p-4 sm:grid-cols-2 ${isAdmin ? "lg:grid-cols-6" : "lg:grid-cols-5"}`}>
+        <div className={`grid gap-3 p-4 sm:grid-cols-2 ${isAdmin ? "lg:grid-cols-7" : "lg:grid-cols-6"}`}>
           <div>
             <FieldLabel htmlFor="sr-from">Dari tanggal</FieldLabel>
             <Input id="sr-from" type="date" value={from} max={to || undefined} onChange={(e) => changeFilter(setFrom)(e.target.value)} />
@@ -252,17 +270,31 @@ export default function SalesReportPage() {
               <option value="PICKUP">Ambil di toko</option>
             </Select>
           </div>
+          <div>
+            <FieldLabel htmlFor="sr-promo">Promo</FieldLabel>
+            <Select id="sr-promo" value={promo} onChange={(e) => changeFilter(setPromo)(e.target.value)}>
+              <option value="">Semua</option>
+              <option value="PROMO">Dengan promo</option>
+              <option value="NONE">Tanpa promo</option>
+            </Select>
+          </div>
           {isAdmin && (
             <div>
-              <FieldLabel htmlFor="sr-seller">Seller</FieldLabel>
-              <Select id="sr-seller" value={merchantId} onChange={(e) => changeFilter(setMerchantId)(e.target.value)}>
-                <option value="">Semua seller</option>
-                {(merchants?.data ?? []).map((m) => (
-                  <option key={m.Id} value={m.Id}>
-                    {storeName(m) || m.FullName || m.Email}
-                  </option>
-                ))}
-              </Select>
+              <FieldLabel>Seller</FieldLabel>
+              <SearchableSelect
+                value={merchantId}
+                onChange={(id) => {
+                  setMerchantLabel(merchantOptions.find((o) => o.value === id)?.label ?? "");
+                  changeFilter(setMerchantId)(id);
+                }}
+                options={merchantOptions}
+                selectedLabel={merchantLabel}
+                placeholder="Semua seller"
+                searchPlaceholder="Cari nama toko, nama, atau email..."
+                onQueryChange={setMerchantQuery}
+                loading={merchantsLoading}
+                aria-label="Filter seller"
+              />
             </div>
           )}
           <div>
@@ -282,12 +314,18 @@ export default function SalesReportPage() {
       </Card>
 
       {summary && (
-        <div className="grid gap-3 sm:grid-cols-4 xl:grid-cols-7">
+        <div className="grid gap-3 sm:grid-cols-4 xl:grid-cols-8">
           <SummaryCard icon={Wallet} label="Pendapatan" value={formatCurrency(summary.Revenue)} hint="Pesanan dibayar, tanpa ongkir" />
           <SummaryCard icon={Receipt} label="Penjualan Produk" value={formatCurrency(summary.GrossSales)} hint="Harga × qty, sebelum biaya" />
           <SummaryCard icon={PackageCheck} label="Pesanan Dibayar" value={String(summary.PaidOrders)} hint={`dari ${summary.TotalOrders} pesanan`} />
           <SummaryCard icon={Boxes} label="Item Terjual" value={String(summary.ItemsSold)} />
           <SummaryCard icon={CircleCheck} label="Selesai" value={String(summary.CompletedOrders)} />
+          <SummaryCard
+            icon={TicketPercent}
+            label="Pesanan Promo"
+            value={String(summary.PromoOrders ?? 0)}
+            hint={`Diskon ditanggung Petope ${formatCurrency(summary.PromoDiscount ?? 0)}`}
+          />
           <SummaryCard
             icon={CircleX}
             label="Batal / Belum Bayar"
@@ -340,9 +378,17 @@ export default function SalesReportPage() {
                         <Link href={`/dashboard/orders/${r.Id}`} className="font-semibold text-ink hover:text-brand-purple">
                           {r.OrderNumber ?? r.Id.slice(0, 8)}
                         </Link>
-                        <div className="mt-1">
+                        <div className="mt-1 flex flex-wrap gap-1">
                           <Badge tone={status?.tone ?? "neutral"}>{status?.label ?? r.Status?.Name ?? "-"}</Badge>
+                          {r.Promo && (
+                            <span title={r.Promo.Title ?? undefined}>
+                              <Badge tone="warning">
+                                <TicketPercent className="size-3" /> Promo
+                              </Badge>
+                            </span>
+                          )}
                         </div>
+                        {r.Promo?.Title && <p className="mt-0.5 max-w-44 truncate text-[11px] text-ink-faint">{r.Promo.Title}</p>}
                       </td>
                       {isAdmin && <td className="whitespace-nowrap px-4 py-3 text-ink">{r.Seller.StoreName}</td>}
                       <td className="whitespace-nowrap px-4 py-3">
@@ -370,11 +416,12 @@ export default function SalesReportPage() {
                         </ul>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <p className="font-semibold text-ink">{formatCurrency(r.TotalAmount + r.ShippingCost)}</p>
+                        <p className="font-semibold text-ink">{formatCurrency(r.TotalAmount + r.ShippingCost - (r.Promo?.Amount ?? 0))}</p>
                         <p className="text-[11px] text-ink-faint">
                           Produk {formatCurrency(r.SubtotalAmount)}
                           {r.ShippingCost > 0 && ` · Ongkir ${formatCurrency(r.ShippingCost)}`}
                         </p>
+                        {r.Promo && <p className="text-[11px] font-semibold text-brand-orange-deep">Promo Petope −{formatCurrency(r.Promo.Amount)}</p>}
                         {r.PaymentMethod && <p className="text-[11px] text-ink-faint">{r.PaymentMethod}</p>}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">

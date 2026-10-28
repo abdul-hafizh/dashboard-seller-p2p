@@ -15,14 +15,14 @@ import { formatCurrency } from "@/lib/resources/format";
 import type { FieldConfig } from "@/lib/resources/types";
 
 const FIELDS: FieldConfig[] = [
-  { name: "Label", label: "Label Tier", type: "text", required: true, placeholder: "Gold" },
+  { name: "Label", label: "Label Membership", type: "text", required: true, placeholder: "Gold" },
   {
     name: "MinSpent",
     label: "Minimal Total Transaksi (Rp)",
     type: "number",
     required: true,
     placeholder: "1000000",
-    helpText: "Customer naik ke tier ini setelah total belanjanya (pesanan dibayar) mencapai nominal ini.",
+    helpText: "Customer naik ke membership ini setelah total belanjanya (pesanan dibayar) mencapai nominal ini.",
   },
   {
     name: "DiscountPercent",
@@ -30,7 +30,7 @@ const FIELDS: FieldConfig[] = [
     type: "number",
     required: true,
     placeholder: "10",
-    helpText: "Dipotong otomatis dari harga produk setiap kali customer di tier ini belanja.",
+    helpText: "Dipotong otomatis dari harga produk setiap kali customer di membership ini belanja.",
   },
 ];
 
@@ -51,21 +51,21 @@ export default function UserTiersPage() {
     if (!editing) return;
     try {
       await apiFetch(`user-tiers/${editing.Id}`, { method: "PUT", json: payload });
-      toast.success("Tier diperbarui. Tier semua customer dihitung ulang.");
+      toast.success("Membership diperbarui. Membership semua customer dihitung ulang.");
       setEditing(null);
       mutate();
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Gagal menyimpan tier");
+      toast.error(e instanceof ApiError ? e.message : "Gagal menyimpan membership");
     }
   };
 
   return (
     <Card>
       <div className="border-b border-border p-4">
-        <h1 className="text-base font-extrabold text-ink">Master Tier</h1>
+        <h1 className="text-base font-extrabold text-ink">Master Membership</h1>
         <p className="mt-0.5 text-xs text-ink-soft">
           Tingkatan customer berdasarkan total belanja. Label, syarat nominal, dan diskon di sini dipakai di aplikasi, harga
-          pesanan, dan invoice. Urutan tier tetap (dari terendah ke tertinggi).
+          pesanan, dan invoice. Urutan membership tetap (dari terendah ke tertinggi).
         </p>
       </div>
       {isLoading && !data ? (
@@ -73,14 +73,14 @@ export default function UserTiersPage() {
           <Spinner className="size-6" />
         </div>
       ) : tiers.length === 0 ? (
-        <EmptyState icon={Award} title="Master tier belum ada" description="Jalankan script add-user-tiers.js di server terlebih dahulu." />
+        <EmptyState icon={Award} title="Master membership belum ada" description="Jalankan script add-user-tiers.js di server terlebih dahulu." />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
                 <th className="whitespace-nowrap px-4 py-3">Urutan</th>
-                <th className="whitespace-nowrap px-4 py-3">Label Tier</th>
+                <th className="whitespace-nowrap px-4 py-3">Label Membership</th>
                 <th className="whitespace-nowrap px-4 py-3">Kode</th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">Syarat Total Transaksi</th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">Diskon</th>
@@ -125,7 +125,7 @@ export default function UserTiersPage() {
         </div>
       )}
 
-      <Modal open={Boolean(editing)} onClose={() => setEditing(null)} title={editing ? `Ubah Tier ${editing.Label}` : ""}>
+      <Modal open={Boolean(editing)} onClose={() => setEditing(null)} title={editing ? `Ubah Membership ${editing.Label}` : ""}>
         {editing && (
           <ResourceForm
             key={editing.Id}

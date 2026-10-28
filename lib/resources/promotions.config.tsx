@@ -12,27 +12,21 @@ const CATEGORY_OPTIONS = [
 ];
 const categoryLabel = (code: string) => CATEGORY_OPTIONS.find((o) => o.value === code)?.label ?? code;
 
-/** "20% · maks Rp100.000/customer" + categories + budget used, for a promo with a discount. */
+/** "20% · maks Rp100.000/transaksi" + categories + discount given so far, for a promo with a discount. */
 function DiscountCell({ r }: { r: Record<string, unknown> }) {
   if (!r.DiscountEnabled) return <span className="text-xs text-ink-faint">Iklan saja</span>;
-  const budget = Number(r.Budget) || 0;
   const used = Number(r.DiscountUsed) || 0;
   const reserved = Number(r.DiscountReserved) || 0;
-  const pct = budget > 0 ? Math.min(100, ((used + reserved) / budget) * 100) : 0;
   const categories = (r.DiscountCategories as string[] | undefined) ?? [];
   return (
     <div className="min-w-48 space-y-1 text-xs">
       <p className="font-semibold text-ink">
-        {String(r.DiscountPercent).replace(".", ",")}% · maks {formatCurrency(r.MaxDiscountPerCustomer)}/customer
+        {String(r.DiscountPercent).replace(".", ",")}% · maks {formatCurrency(r.MaxDiscountPerTransaction)}/transaksi
       </p>
       <p className="text-ink-faint">{categories.map(categoryLabel).join(", ")}</p>
-      <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
-        <div className="h-full rounded-full bg-brand-purple" style={{ width: `${pct}%` }} />
-      </div>
       <p className="text-ink-soft">
         Terpakai {formatCurrency(used)}
-        {reserved > 0 ? ` (+${formatCurrency(reserved)} sedang dibayar)` : ""} dari {formatCurrency(budget)} ·{" "}
-        {Number(r.DiscountCustomers) || 0} customer
+        {reserved > 0 ? ` (+${formatCurrency(reserved)} sedang dibayar)` : ""} · {Number(r.DiscountCustomers) || 0} customer
       </p>
     </div>
   );
@@ -49,6 +43,7 @@ const STATUS: Record<string, { label: string; tone: "success" | "info" | "neutra
 export const promotionsConfig: ResourceConfig = {
   key: "promotions",
   endpoint: "promotions",
+  exportPath: "promotions/export",
   title: "Promosi",
   description:
     "Iklan promo yang muncul sebagai pop-up di beranda aplikasi selama jangka waktu tayangnya. Promo juga bisa memberi diskon otomatis saat checkout yang dibayar Petope pusat — hak seller tidak berkurang.",
@@ -131,21 +126,15 @@ export const promotionsConfig: ResourceConfig = {
       label: "Diskon (%)",
       type: "number",
       placeholder: "20",
-      helpText: "Dari harga item (setelah diskon tier), tidak termasuk PPN dan ongkir. Dipotong otomatis saat checkout.",
+      helpText: "Dari harga item (setelah diskon membership), tidak termasuk PPN dan ongkir. Dipotong otomatis saat checkout.",
     },
     {
-      name: "MaxDiscountPerCustomer",
-      label: "Maksimal Diskon per Customer (Rp)",
+      name: "MaxDiscountPerTransaction",
+      label: "Maksimal Diskon per Transaksi (Rp)",
       type: "number",
       placeholder: "100000",
-      helpText: "Total diskon yang bisa dinikmati satu customer selama promo, dari semua transaksinya.",
-    },
-    {
-      name: "Budget",
-      label: "Anggaran Promo (Rp)",
-      type: "number",
-      placeholder: "5000000",
-      helpText: "Total yang siap dibayar Petope untuk promo ini. Diskon berhenti otomatis saat anggaran habis.",
+      helpText:
+        "Diskon terbesar untuk satu kali pembayaran. Checkout keranjang dari beberapa toko dihitung satu transaksi. Tidak ada batas jumlah transaksi atau anggaran total.",
     },
   ],
 };

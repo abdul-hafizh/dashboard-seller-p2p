@@ -44,7 +44,7 @@ export function MeshyBalanceCard() {
     <Card>
       <CardHeader className="flex items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="size-4" /> Saldo Kredit Meshy
+          <Sparkles className="size-4" /> Saldo Kredit Meshy AI
         </CardTitle>
         <Button variant="ghost" size="sm" type="button" onClick={refresh} loading={refreshing}>
           {!refreshing && <RefreshCw className="size-4" />} Perbarui

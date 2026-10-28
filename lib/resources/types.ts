@@ -53,12 +53,18 @@ export interface ResourceConfig<T = Record<string, unknown>> {
   /** Express API endpoint, relative, e.g. "materials". */
   endpoint: string;
   title: string;
+  /** Name in the create/edit dialog ("Tambah …" / "Ubah …") when it differs from the page title. */
+  formTitle?: string;
+  /** Shown above the create/edit form (e.g. terms the user accepts by saving). */
+  formNotice?: ReactNode;
   description?: string;
   idKey?: string;
   searchable?: boolean;
   /** Shows a "Periode" filter (?from=&to=); the text says what it's measured on, e.g. "Tanggal ditambahkan". */
   periodFilter?: string;
   searchPlaceholder?: string;
+  /** Backend .xlsx export of this list (e.g. "products/export") — shows an "Ekspor Excel" button using the current filters. */
+  exportPath?: string;
   columns: ColumnConfig<T>[];
   fields: FieldConfig[];
   pageSize?: number;

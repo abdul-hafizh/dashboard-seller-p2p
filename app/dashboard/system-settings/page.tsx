@@ -26,6 +26,7 @@ const MANAGED_ELSEWHERE = new Set([
   "PRICE_MASTER", // Master Harga
   "SERVICE_FEE_PERCENT", // Pajak & Biaya Layanan
   "TAX_PERCENT", // Pajak & Biaya Layanan
+  "CUSTOMER_APP_FEE_AMOUNT", // Pajak & Biaya Layanan
   "TOKEN_ALLOWED_PACKAGES", // token prices: Google Play Console
   "TOKEN_PRICE_PER_UNIT",
 ]);

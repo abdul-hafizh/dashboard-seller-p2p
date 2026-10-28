@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate } from "@/lib/resources/format";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
 import { ItemCategoryBadge, orderCategories } from "@/components/orders/ItemCategoryBadge";
+import { ExportButton } from "@/components/ui/ExportButton";
 
 interface OrderRow {
   Id: string;
@@ -87,6 +88,7 @@ export default function OrdersPage() {
               className="w-full pl-9 sm:w-64"
             />
           </div>
+          <ExportButton path="orders/export" query={{ search: search || undefined, ...periodQuery(period) }} />
         </div>
       </div>
 

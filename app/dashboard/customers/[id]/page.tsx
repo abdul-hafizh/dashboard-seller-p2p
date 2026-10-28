@@ -158,7 +158,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
           <dl className="grid gap-1 border-t border-border pt-2 text-xs sm:max-w-sm">
             {order.SubtotalAmount != null && <div className="flex justify-between"><dt className="text-ink-soft">Subtotal</dt><dd>{formatCurrency(order.SubtotalAmount)}</dd></div>}
             {Number(order.DiscountAmount) > 0 && <div className="flex justify-between"><dt className="text-ink-soft">Diskon</dt><dd>− {formatCurrency(order.DiscountAmount)}</dd></div>}
-            {Number(order.AppFeeAmount) > 0 && <div className="flex justify-between"><dt className="text-ink-soft">Biaya layanan</dt><dd>{formatCurrency(order.AppFeeAmount)}</dd></div>}
+            {Number(order.AppFeeAmount) > 0 && <div className="flex justify-between"><dt className="text-ink-soft">Biaya jasa aplikasi</dt><dd>{formatCurrency(order.AppFeeAmount)}</dd></div>}
             {Number(order.TaxAmount) > 0 && <div className="flex justify-between"><dt className="text-ink-soft">PPN</dt><dd>{formatCurrency(order.TaxAmount)}</dd></div>}
             {order.ShippingCost > 0 && <div className="flex justify-between"><dt className="text-ink-soft">Ongkir</dt><dd>{formatCurrency(order.ShippingCost)}</dd></div>}
             <div className="flex justify-between font-bold"><dt>Total</dt><dd>{formatCurrency(total)}</dd></div>
