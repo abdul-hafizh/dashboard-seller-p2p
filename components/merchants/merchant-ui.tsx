@@ -46,9 +46,8 @@ export function MerchantStatusBadge({ merchant }: { merchant: MerchantRow }) {
   return isMerchantActive(merchant) ? <Badge tone="success">Aktif</Badge> : <Badge tone="neutral">Nonaktif</Badge>;
 }
 
-/** Setujui / Tolak buttons for a merchant sign-up that isn't approved yet
- * (pending, or rejected earlier and being reconsidered). Renders nothing
- * for approved merchants. */
+/** Setujui / Tolak buttons for a merchant sign-up that is still pending.
+ * Rejecting is final, so approved and rejected merchants get nothing. */
 export function MerchantApprovalActions({
   merchant,
   onChanged,
@@ -60,9 +59,7 @@ export function MerchantApprovalActions({
 }) {
   const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
   const [confirmReject, setConfirmReject] = useState(false);
-  const pending = merchant.ApprovalStatus === "PENDING";
-  const rejected = merchant.ApprovalStatus === "REJECTED";
-  if (!pending && !rejected) return null;
+  if (merchant.ApprovalStatus !== "PENDING") return null;
 
   const run = async (action: "approve" | "reject") => {
     setBusy(action);
@@ -85,15 +82,13 @@ export function MerchantApprovalActions({
       <Button size={size} onClick={() => run("approve")} loading={busy === "approve"} disabled={busy !== null}>
         <Check className="size-4" /> Setujui
       </Button>
-      {pending && (
-        <Button size={size} variant="outline" onClick={() => setConfirmReject(true)} disabled={busy !== null}>
-          <X className="size-4" /> Tolak
-        </Button>
-      )}
+      <Button size={size} variant="outline" onClick={() => setConfirmReject(true)} disabled={busy !== null}>
+        <X className="size-4" /> Tolak
+      </Button>
       <ConfirmDialog
         open={confirmReject}
         title="Tolak pendaftaran seller?"
-        description={`${name} tidak akan bisa masuk ke dashboard. Kamu masih bisa menyetujuinya nanti dari tab Ditolak.`}
+        description={`${name} tidak akan bisa masuk ke dashboard. Keputusan ini final — pendaftaran yang ditolak tidak bisa disetujui lagi.`}
         confirmLabel="Tolak"
         loading={busy === "reject"}
         onConfirm={() => run("reject")}

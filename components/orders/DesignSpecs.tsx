@@ -1,4 +1,4 @@
-import { Ruler, Palette, Box, Scale, AlertTriangle } from "lucide-react";
+import { Ruler, Palette, Box, Scale, AlertTriangle, PencilRuler } from "lucide-react";
 import { colorTypeLabel } from "./ColorTypeSelect";
 
 /** What the customer asked for on the app's prompt screen (AIJobs). */
@@ -8,6 +8,8 @@ export interface DesignJobSpecs {
   TargetHeight?: number | null;
   /** SINGLE (satu warna → STL) / MULTI (multicolor → 3MF), chosen by the customer. */
   ColorPreference?: string | null;
+  /** "Gunakan jasa edit" ticked on the prompt screen — the store prices it. */
+  EditServiceRequested?: boolean | null;
 }
 
 /** The generated model as measured from its file (AIModels; Depth = panjang, mm). */
@@ -41,7 +43,7 @@ export function DesignSpecs({ job, model }: { job: DesignJobSpecs | null | undef
   const measured = Boolean(model?.MeasuredAt);
   const weight = measured && Number(model?.Weight) > 0 ? Number(model!.Weight) : null;
   const totalFilament = Number(model?.DetailedWeightEstimate?.TotalFilamentNeededGrams?.standard_print_total) || null;
-  if (!hasDims && !colorType && !measured) return null;
+  if (!hasDims && !colorType && !measured && !job?.EditServiceRequested) return null;
 
   return (
     <div className="space-y-1.5 rounded-xl border border-border bg-surface-muted/60 px-3 py-2 text-xs text-ink">
@@ -66,6 +68,12 @@ export function DesignSpecs({ job, model }: { job: DesignJobSpecs | null | undef
           <Palette className="size-3.5 text-ink-soft" />
           Jenis warna: <b>{colorType ? `${colorType} (${isMulti ? "3MF" : "STL"})` : "tidak dipilih"}</b>
         </span>
+        {job?.EditServiceRequested && (
+          <span className="inline-flex items-center gap-1.5">
+            <PencilRuler className="size-3.5 text-ink-soft" />
+            <b>Customer meminta jasa edit</b>
+          </span>
+        )}
         {weight != null && (
           <span className="inline-flex items-center gap-1.5">
             <Scale className="size-3.5 text-ink-soft" />

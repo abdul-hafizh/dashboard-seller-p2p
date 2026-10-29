@@ -6,6 +6,8 @@ import { Scale } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency } from "@/lib/resources/format";
 import { ITEM_CATEGORIES } from "@/lib/item-category";
 import { MasterPriceFields, quoteFromMaster, usePriceMaster } from "@/components/pricing/MasterPriceFields";
@@ -28,7 +30,11 @@ interface Line {
   material: string;
   weight: string;
   colorType: string;
+  /** Rupiah, only for a design whose customer asked for jasa edit. */
+  editFee: string;
 }
+
+const wantsEdit = (d: DesignLine) => Boolean(d.AIModel?.Job?.EditServiceRequested);
 
 /**
  * "Konfirmasi Berat & Harga" — an AI-design order from the cart waits here
@@ -48,6 +54,7 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
           weight: d.WeightGrams ? String(Math.round(Number(d.WeightGrams))) : "",
           // The customer's wish (if any) as a starting point — the store decides.
           colorType: d.ColorType ?? d.AIModel?.Job?.ColorPreference ?? "",
+          editFee: "",
         },
       ]),
     ),
@@ -59,12 +66,16 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
   const set = (id: string, patch: Partial<Line>) =>
     setValues((v) => ({ ...v, [id]: { ...v[id], ...patch } }));
 
+  const editFeeOf = (d: DesignLine) => (wantsEdit(d) ? Math.round(Number(values[d.Id]?.editFee) || 0) : 0);
   const designTotal = designs.reduce((sum, d) => {
     const q = quoteFromMaster(master, values[d.Id]?.material ?? "", Number(values[d.Id]?.weight));
-    return q && sum !== null ? sum + q.unitPrice * Math.max(1, d.Quantity ?? 1) : null;
+    return q && sum !== null ? sum + q.unitPrice * Math.max(1, d.Quantity ?? 1) + editFeeOf(d) : null;
   }, 0 as number | null);
+  const editTotal = designs.reduce((sum, d) => sum + editFeeOf(d), 0);
   const productTotal = products.reduce((sum, p) => sum + Number(p.UnitPrice ?? 0) * Math.max(1, p.Quantity ?? 1), 0);
-  const ready = designs.every((d) => values[d.Id]?.material && Number(values[d.Id]?.weight) > 0 && values[d.Id]?.colorType);
+  const ready = designs.every(
+    (d) => values[d.Id]?.material && Number(values[d.Id]?.weight) > 0 && values[d.Id]?.colorType && (!wantsEdit(d) || editFeeOf(d) > 0),
+  );
 
   const confirm = async () => {
     setSaving(true);
@@ -77,6 +88,7 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
             WeightGrams: Number(values[d.Id].weight),
             MaterialName: values[d.Id].material,
             ColorType: values[d.Id].colorType,
+            ...(wantsEdit(d) ? { EditServiceFee: editFeeOf(d) } : {}),
           })),
         },
       });
@@ -101,6 +113,7 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
           Customer menunggu konfirmasi Anda sebelum bisa membayar. Berat dari aplikasi hanya <b>perkiraan</b> dari ukuran
           desain — cek file 3D-nya, sesuaikan berat cetak dan bahan, tentukan jenis warna, lalu konfirmasi. Harga mengikuti
           Master Harga.
+          {designs.some(wantsEdit) && <> Customer juga meminta <b>jasa edit</b> — isi harganya; customer belum bisa membayar sebelum harga jasa edit diisi.</>}
         </p>
         {designs.map((d, i) => (
           <div key={d.Id} className="space-y-2 rounded-xl border border-border p-3">
@@ -128,9 +141,33 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
               value={values[d.Id]?.colorType ?? ""}
               onChange={(colorType) => set(d.Id, { colorType })}
             />
+            {wantsEdit(d) && (
+              <div>
+                <FieldLabel htmlFor={`confirm-edit-${d.Id}`} required>
+                  Harga Jasa Edit (Rp)
+                </FieldLabel>
+                <Input
+                  id={`confirm-edit-${d.Id}`}
+                  type="number"
+                  min={1}
+                  value={values[d.Id]?.editFee ?? ""}
+                  onChange={(e) => set(d.Id, { editFee: e.target.value })}
+                  placeholder="Contoh: 25000"
+                />
+                <p className="mt-1 text-xs text-ink-faint">
+                  Customer meminta jasa edit model 3D. Dihitung sekali untuk desain ini (bukan per pcs) dan menjadi hak Anda.
+                </p>
+              </div>
+            )}
           </div>
         ))}
         <dl className="space-y-1 text-sm">
+          {editTotal > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-ink-soft">Termasuk jasa edit</dt>
+              <dd className="text-ink">{formatCurrency(editTotal)}</dd>
+            </div>
+          )}
           {products.length > 0 && (
             <div className="flex justify-between">
               <dt className="text-ink-soft">Produk lain di pesanan ini</dt>

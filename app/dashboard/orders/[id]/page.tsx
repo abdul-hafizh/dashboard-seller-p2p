@@ -72,6 +72,8 @@ interface OrderItem {
   Id: string;
   Quantity: number | null;
   UnitPrice: number | null;
+  /** Jasa edit the store priced for this design (once per line); a decimal string from the API. */
+  EditServiceFee?: number | string | null;
   MaterialId: number | null;
   PrintProfileId: number | null;
   ProductId?: string | null;
@@ -634,7 +636,14 @@ export default function OrderDetailPage() {
                             )}
                           </td>
                           <td className="px-4 py-2.5 text-ink">{item.Quantity ?? "-"}</td>
-                          <td className="px-4 py-2.5 text-ink">{unitPrice != null ? formatCurrency(unitPrice) : "-"}</td>
+                          <td className="px-4 py-2.5 text-ink">
+                            {unitPrice != null ? formatCurrency(unitPrice) : "-"}
+                            {Number(item.EditServiceFee) > 0 ? (
+                              <p className="text-xs text-ink-soft">+ Jasa edit {formatCurrency(Number(item.EditServiceFee))}</p>
+                            ) : (
+                              item.AIModel?.Job?.EditServiceRequested && <p className="text-xs text-ink-faint">Jasa edit: belum diisi</p>
+                            )}
+                          </td>
                           <td className="whitespace-nowrap px-4 py-2.5 text-ink">
                             {formatGrams(lineGrams(item))}
                             {unitGrams(item) !== null && (item.Quantity ?? 1) > 1 && (
