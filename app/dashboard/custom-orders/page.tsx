@@ -60,6 +60,10 @@ interface CreatedOrderSummary {
 }
 
 /** One Biteship rate (same fields the app's checkout reads). */
+// The customer picks the courier when paying, so the seller's Biteship
+// courier picker is hidden (kept for later — set true to show it again).
+const SELLER_PICKS_COURIER = false;
+
 interface ShippingRate {
   key: string;
   courierCode: string;
@@ -153,8 +157,9 @@ export default function CustomOrdersPage() {
     // Runs once, on arrival from the chat link.
   }, []);
 
-  // Rates follow the address and package weight (debounced while typing).
-  const ratesQueryKey = selectedCustomer && form.shippingAddressId && Number(form.packageWeight) > 0
+  // Rates follow the address and package weight (debounced while typing) —
+  // only while the seller picks the courier (see SELLER_PICKS_COURIER).
+  const ratesQueryKey = SELLER_PICKS_COURIER && selectedCustomer && form.shippingAddressId && Number(form.packageWeight) > 0
     ? `${selectedCustomer.Id}|${form.shippingAddressId}|${Math.round(Number(form.packageWeight))}`
     : "";
   useEffect(() => {
@@ -279,7 +284,7 @@ export default function CustomOrdersPage() {
     setRatesError(null);
   };
 
-  const chosenRate = rates?.find((r) => r.key === rateKey) ?? null;
+  const chosenRate = SELLER_PICKS_COURIER ? (rates?.find((r) => r.key === rateKey) ?? null) : null;
 
   // Package weight is required: the customer's courier quote at checkout is
   // based on it (customers never enter a weight themselves).
@@ -332,8 +337,8 @@ export default function CustomOrdersPage() {
         <h1 className="text-xl font-extrabold text-ink">Pesanan Custom (File Siap Print)</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Buat pesanan dari file siap cetak yang dikirim customer lewat chat. Harga dihitung otomatis dari bahan & berat
-          (Master Harga), ongkir langsung dari Biteship, lalu kartu tagihan dikirim ke chat. Customer membayar harga + PPN +
-          ongkir; fee transaksi dan admin fee dipotong dari hasil jualan Anda.
+          (Master Harga), lalu kartu tagihan dikirim ke chat. Customer memilih jasa kirim sendiri saat membayar, lalu membayar
+          harga + PPN + ongkir; fee transaksi dan admin fee dipotong dari hasil jualan Anda.
         </p>
       </div>
 
@@ -537,7 +542,12 @@ export default function CustomOrdersPage() {
                   </Select>
                 )}
               </div>
-              <div className="sm:col-span-2">
+              {!SELLER_PICKS_COURIER && (
+                <p className="flex items-center gap-2 rounded-xl bg-surface-muted/60 px-3 py-2 text-xs text-ink-soft sm:col-span-2">
+                  <Truck className="size-4 shrink-0" /> Jasa kirim dipilih customer sendiri saat membayar, berdasarkan berat paket di atas.
+                </p>
+              )}
+              {SELLER_PICKS_COURIER && <div className="sm:col-span-2">
                 <div className="flex items-center justify-between gap-2">
                   <FieldLabel>Jasa Kirim (Biteship)</FieldLabel>
                   {ratesQueryKey && (
@@ -594,7 +604,7 @@ export default function CustomOrdersPage() {
                     {rates?.length === 0 && <p className="text-sm text-ink-faint">Biteship tidak mengembalikan kurir untuk rute ini.</p>}
                   </div>
                 )}
-              </div>
+              </div>}
               <div className="sm:col-span-2">
                 <FieldLabel>Catatan</FieldLabel>
                 <Textarea
