@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw, Sparkles } from "lucide-react";
+import { ArrowLeft, Package, PackageCheck, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw, Sparkles } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Model3DViewer } from "@/components/Model3DViewer";
@@ -267,6 +267,7 @@ export default function OrderDetailPage() {
   const [updatingPrice, setUpdatingPrice] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [shipping, setShipping] = useState(false);
+  const [pickingUp, setPickingUp] = useState(false);
   const [tracking, setTracking] = useState<Record<string, TrackingResult>>({});
   const [trackingLoading, setTrackingLoading] = useState<Record<string, boolean>>({});
 
@@ -384,6 +385,20 @@ export default function OrderDetailPage() {
       toast.error(error instanceof ApiError ? error.message : "Gagal menandai pesanan dikirim.");
     } finally {
       setShipping(false);
+    }
+  };
+
+  // "Ambil di Toko": the customer collected it — the order is completed and the customer asked to rate it.
+  const markPickedUp = async () => {
+    setPickingUp(true);
+    try {
+      await apiFetch(`orders/${orderId}/picked-up`, { method: "POST", json: {} });
+      toast.success("Pesanan ditandai sudah diambil dan selesai");
+      mutate();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Gagal menandai pesanan sudah diambil.");
+    } finally {
+      setPickingUp(false);
     }
   };
 
@@ -788,7 +803,10 @@ export default function OrderDetailPage() {
                       <p className="text-xs text-ink-soft">No. Resi: {shipment.TrackingNumber}</p>
                     )}
                     <Badge tone={shipment.Status === "DELIVERED" ? "success" : "info"} className="w-fit">
-                      {shipment.Status ?? "PENDING"}
+                      {isPickup
+                        ? ({ SHIPPED: "Siap Diambil", DELIVERED: "Sudah Diambil" } as Record<string, string>)[shipment.Status ?? ""] ??
+                          "Disiapkan"
+                        : (shipment.Status ?? "PENDING")}
                     </Badge>
                     {!isPickup &&
                       (shipment.BiteshipOrderId && shipment.TrackingNumber && !["CANCELLED", "RETURNED"].includes(shipment.Status ?? "") ? (
@@ -796,11 +814,22 @@ export default function OrderDetailPage() {
                       ) : isPaid && !shipment.BiteshipOrderId ? (
                         <p className="text-xs text-ink-faint">Label resi tersedia setelah kurir dibooking ke Biteship.</p>
                       ) : null)}
-                    {isPaid && (shipment.Status ?? "PENDING") === "PENDING" && (
-                      <Button size="sm" className="w-fit" onClick={markShipped} loading={shipping}>
-                        {isPickup ? "Tandai Siap Diambil" : "Tandai Sudah Dikirim"}
-                      </Button>
-                    )}
+                    {(isPaid && (shipment.Status ?? "PENDING") === "PENDING") ||
+                    (isPickup && isPaid && !["DELIVERED", "CANCELLED", "RETURNED"].includes(shipment.Status ?? "")) ? (
+                      <div className="flex flex-wrap gap-2">
+                        {(shipment.Status ?? "PENDING") === "PENDING" && (
+                          <Button size="sm" variant={isPickup ? "outline" : "primary"} className="w-fit" onClick={markShipped} loading={shipping}>
+                            {isPickup ? "Tandai Siap Diambil" : "Tandai Sudah Dikirim"}
+                          </Button>
+                        )}
+                        {/* Ambil di Toko: handing it over completes the order and asks the customer for a rating. */}
+                        {isPickup && (
+                          <Button size="sm" className="w-fit" onClick={markPickedUp} loading={pickingUp}>
+                            <PackageCheck className="size-4" /> Tandai Sudah Diambil
+                          </Button>
+                        )}
+                      </div>
+                    ) : null}
                     {!isPickup && (
                       <Button
                         variant="outline"
