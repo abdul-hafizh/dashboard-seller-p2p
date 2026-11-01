@@ -45,6 +45,7 @@ export const promotionsConfig: ResourceConfig = {
   key: "promotions",
   endpoint: "promotions",
   exportPath: "promotions/export",
+  periodFilter: "Periode tayang",
   title: "Promosi",
   description:
     "Iklan promo yang muncul sebagai pop-up di beranda aplikasi selama jangka waktu tayangnya. Promo juga bisa memberi diskon otomatis saat checkout yang dibayar Petope pusat (hak seller tidak berkurang) — hanya untuk seller yang ikut, diatur di halaman utama dashboard. Setiap promo yang dibuat atau diubah dikirim ke Telegram semua seller.",

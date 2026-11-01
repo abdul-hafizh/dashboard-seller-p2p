@@ -15,6 +15,7 @@ import { BankAccountCard } from "@/components/merchants/BankAccountCard";
 import { ProfilePhotosCard } from "@/components/merchants/ProfilePhotosCard";
 import { StoreAddressCard } from "@/components/merchants/StoreAddressCard";
 import { TelegramCard } from "@/components/merchants/TelegramCard";
+import { ChangeEmailDialog } from "@/components/profile/ChangeEmailDialog";
 
 type TaxType = "PKP" | "NON_PKP";
 
@@ -41,6 +42,7 @@ export default function ProfileSettingsPage() {
   const { user, loading, refresh, isMerchant } = useAuth();
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [changingEmail, setChangingEmail] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -96,7 +98,13 @@ export default function ProfileSettingsPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <FieldLabel>Email</FieldLabel>
-              <Input value={user.Email} disabled />
+              <div className="flex gap-2">
+                <Input value={user.Email} disabled className="flex-1" />
+                <Button type="button" variant="outline" onClick={() => setChangingEmail(true)}>
+                  Ubah Email
+                </Button>
+              </div>
+              <p className="mt-1 text-xs text-ink-faint">Mengubah email perlu verifikasi kode yang dikirim ke email baru.</p>
             </div>
             <div>
               <FieldLabel required>Nama Lengkap</FieldLabel>
@@ -165,6 +173,12 @@ export default function ProfileSettingsPage() {
           </form>
         </CardBody>
       </Card>
+      <ChangeEmailDialog
+        open={changingEmail}
+        currentEmail={user.Email}
+        onClose={() => setChangingEmail(false)}
+        onChanged={() => void refresh()}
+      />
       {isMerchant && <TelegramCard />}
       {isMerchant && <StoreAddressCard />}
       {isMerchant && <OperatingHoursCard />}

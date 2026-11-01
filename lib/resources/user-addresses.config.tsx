@@ -54,10 +54,10 @@ export function buildUserAddressesConfig(isAdmin: boolean): ResourceConfig {
         type: "select",
         required: true,
         defaultValue: "Toko",
-        options: [
-          { value: "Toko", label: "Toko" },
-          { value: "Rumahan", label: "Rumahan" },
-        ],
+        // Admin › Label Alamat Toko — the label's name is what's saved.
+        optionsEndpoint: "store-labels/active",
+        optionValueKey: "Name",
+        optionLabelKey: "Name",
       },
       { name: "RecipientName", label: "Nama Seller", type: "text", placeholder: "Nama lengkap" },
       { name: "WhatsappNumber", label: "No. WhatsApp", type: "text", placeholder: "08xxxxxxxxxx" },

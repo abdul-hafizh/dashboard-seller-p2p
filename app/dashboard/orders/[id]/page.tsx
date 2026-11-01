@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, PackageCheck, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw, Sparkles } from "lucide-react";
+import { ArrowLeft, Package, PackageCheck, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw, Sparkles, Undo2 } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Model3DViewer } from "@/components/Model3DViewer";
@@ -26,6 +26,7 @@ import { ColorTypeSelect, colorTypeLabel } from "@/components/orders/ColorTypeSe
 import { DesignSpecs, type DesignJobSpecs, type DesignModelSpecs } from "@/components/orders/DesignSpecs";
 import { ModelDownloadButtons, type DownloadFormat } from "@/components/orders/ModelDownloadButtons";
 import { ShippingLabelButtons } from "@/components/orders/ShippingLabelButtons";
+import { BookCourierPanel, collectionMethodLabel } from "@/components/orders/BookCourierPanel";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
 import { ReferenceFilesCard } from "@/components/orders/ReferenceFilesCard";
 import { formatGrams, lineGrams, orderGrams, unitGrams } from "@/lib/order-weight";
@@ -164,8 +165,10 @@ interface ShipmentInfo {
   PackageWeight: number | null;
   Status: string | null;
   TrackingNumber: string | null;
-  /** Set once the courier is booked with Biteship (after payment). */
+  /** Set once the seller booked the courier with Biteship ("Pesan Kurir"). */
   BiteshipOrderId?: string | null;
+  /** How the parcel reaches the courier: "pickup" | "drop_off" (chosen when booking). */
+  CollectionMethod?: string | null;
   ShippingMethod?: ShipmentMethodInfo | null;
   ShippingService?: ShipmentServiceInfo | null;
 }
@@ -213,6 +216,8 @@ interface OrderDetail {
   ShippingAddress?: ShippingAddress | null;
   Payments?: PaymentSummary[];
   Shipments?: ShipmentInfo[];
+  /** Pengembalian the customer asked for (handled in the Pengembalian menu). */
+  Return?: { Id: string; Status: string; StatusLabel?: string; Reason: string; Description: string } | null;
   /** Ready-to-print files the customer sent from the app's chat. */
   PrintFiles?: {
     Id: string;
@@ -221,6 +226,7 @@ interface OrderDetail {
     MaterialName: string | null;
     Quantity: number;
     Notes: string | null;
+    EditServiceRequested?: boolean | null;
   }[];
 }
 
@@ -435,6 +441,20 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      {order.Return && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-orange/30 bg-brand-orange/5 p-4 text-sm">
+          <div>
+            <p className="font-bold text-ink">Pengembalian: {order.Return.StatusLabel ?? order.Return.Status}</p>
+            <p className="text-ink-soft">
+              {order.Return.Reason} — {order.Return.Description}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/returns")}>
+            <Undo2 className="size-4" /> Buka Pengembalian
+          </Button>
+        </div>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="flex flex-col gap-5 lg:col-span-2">
           <Card>
@@ -602,6 +622,7 @@ export default function OrderDetailPage() {
                       materialName: f.MaterialName,
                       quantity: f.Quantity,
                       notes: f.Notes,
+                      editServiceRequested: f.EditServiceRequested,
                     }}
                   />
                 ))}
@@ -808,13 +829,19 @@ export default function OrderDetailPage() {
                           "Disiapkan"
                         : (shipment.Status ?? "PENDING")}
                     </Badge>
+                    {!isPickup && collectionMethodLabel(shipment.CollectionMethod) && (
+                      <p className="text-xs text-ink-soft">Serah ke kurir: {collectionMethodLabel(shipment.CollectionMethod)}</p>
+                    )}
                     {!isPickup &&
                       (shipment.BiteshipOrderId && shipment.TrackingNumber && !["CANCELLED", "RETURNED"].includes(shipment.Status ?? "") ? (
                         <ShippingLabelButtons orderId={order.Id} orderNumber={order.OrderNumber} />
-                      ) : isPaid && !shipment.BiteshipOrderId ? (
-                        <p className="text-xs text-ink-faint">Label resi tersedia setelah kurir dibooking ke Biteship.</p>
                       ) : null)}
-                    {(isPaid && (shipment.Status ?? "PENDING") === "PENDING") ||
+                    {/* Courier order, paid, not booked yet: the seller books it and picks pickup / drop-off. */}
+                    {!isPickup && isPaid && !shipment.BiteshipOrderId && shipment.CourierCompany &&
+                      !["CANCELLED", "RETURNED"].includes(shipment.Status ?? "") && (
+                        <BookCourierPanel orderId={order.Id} onBooked={() => mutate()} />
+                      )}
+                    {(isPaid && (shipment.Status ?? "PENDING") === "PENDING" && (isPickup || !!shipment.BiteshipOrderId || !shipment.CourierCompany)) ||
                     (isPickup && isPaid && !["DELIVERED", "CANCELLED", "RETURNED"].includes(shipment.Status ?? "")) ? (
                       <div className="flex flex-wrap gap-2">
                         {(shipment.Status ?? "PENDING") === "PENDING" && (

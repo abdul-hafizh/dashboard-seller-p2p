@@ -31,6 +31,8 @@ interface PrintFileRow {
   MaterialName: string | null;
   Quantity: number;
   Notes: string | null;
+  /** The customer ticked "Gunakan jasa edit" in the app. */
+  EditServiceRequested?: boolean | null;
   CreatedAt: string;
   Customer?: CustomerUser | null;
 }
@@ -99,6 +101,9 @@ function parseRate(raw: Record<string, unknown>): ShippingRate {
 
 const PRINT_FILE_ACCEPT = ".stl,.obj,.3mf,.step,.stp";
 
+// The seller types the package weight in kg; Biteship and the backend take grams.
+const packageGrams = (kg: string) => Math.round(Number(kg) * 1000);
+
 export default function CustomOrdersPage() {
   const [search, setSearch] = useState("");
   const [customers, setCustomers] = useState<CustomerUser[] | null>(null);
@@ -115,6 +120,7 @@ export default function CustomOrdersPage() {
     packageWeight: "",
     shippingAddressId: "",
     notes: "",
+    editServiceFee: "",
     sendToChat: true,
   });
   // Biteship rates for the chosen address + package weight. No rate picked =
@@ -134,6 +140,9 @@ export default function CustomOrdersPage() {
     () => apiFetch<PrintFileRow[]>("print-files", { query: { customerUserId: selectedCustomer!.Id, unlinked: 1 } }),
   );
   const customerFiles = filesData?.data ?? [];
+  // A picked file asked for jasa edit: the store must price it before the order is made.
+  const editRequested = customerFiles.some((f) => f.EditServiceRequested && selectedFileIds.includes(f.Id));
+  const editFee = Math.round(Number(form.editServiceFee));
 
   // Opened from a chat's "Buat Pesanan Manual" (?printFileId=): preselect
   // that customer and file, and prefill item, quantity and material.
@@ -160,7 +169,7 @@ export default function CustomOrdersPage() {
   // Rates follow the address and package weight (debounced while typing) —
   // only while the seller picks the courier (see SELLER_PICKS_COURIER).
   const ratesQueryKey = SELLER_PICKS_COURIER && selectedCustomer && form.shippingAddressId && Number(form.packageWeight) > 0
-    ? `${selectedCustomer.Id}|${form.shippingAddressId}|${Math.round(Number(form.packageWeight))}`
+    ? `${selectedCustomer.Id}|${form.shippingAddressId}|${packageGrams(form.packageWeight)}`
     : "";
   useEffect(() => {
     if (!ratesQueryKey) return;
@@ -182,7 +191,7 @@ export default function CustomOrdersPage() {
         json: {
           customerUserId: selectedCustomer.Id,
           userAddressId: form.shippingAddressId,
-          packageWeight: Math.round(Number(form.packageWeight)),
+          packageWeight: packageGrams(form.packageWeight),
         },
       });
       const list = (res.data ?? []).map(parseRate).filter((r) => r.courierCode && r.price > 0).sort((a, b) => a.price - b.price);
@@ -277,6 +286,7 @@ export default function CustomOrdersPage() {
       packageWeight: "",
       shippingAddressId: "",
       notes: "",
+      editServiceFee: "",
       sendToChat: true,
     });
     setRates(null);
@@ -293,7 +303,8 @@ export default function CustomOrdersPage() {
     form.materialName.length > 0 &&
     form.colorType.length > 0 &&
     Number(form.itemWeight) > 0 &&
-    Number(form.packageWeight) > 0 &&
+    packageGrams(form.packageWeight) > 0 &&
+    (!editRequested || editFee > 0) &&
     !submitting;
 
   const handleSubmit = async () => {
@@ -308,7 +319,7 @@ export default function CustomOrdersPage() {
           materialName: form.materialName,
           colorType: form.colorType,
           itemWeight: Number(form.itemWeight),
-          packageWeight: Math.round(Number(form.packageWeight)),
+          packageWeight: packageGrams(form.packageWeight),
           // A picked Biteship rate; none = the customer picks a courier at checkout.
           courierCompany: chosenRate?.courierCode,
           courierType: chosenRate?.serviceCode,
@@ -318,6 +329,7 @@ export default function CustomOrdersPage() {
           notes: form.notes || undefined,
           sendToChat: form.sendToChat,
           printFileIds: selectedFileIds,
+          editServiceFee: editRequested ? editFee : undefined,
         },
       });
       setCreatedOrder(res.data);
@@ -467,6 +479,11 @@ export default function CustomOrdersPage() {
                           {formatFileSize(f.FileSize)} · {f.MaterialName ? `Bahan ${f.MaterialName}` : "Bahan belum dipilih"} ·{" "}
                           {f.Quantity} pcs{f.Notes ? ` · “${f.Notes}”` : ""}
                         </p>
+                        {f.EditServiceRequested && (
+                          <Badge tone="warning" className="mt-1">
+                            Minta jasa edit
+                          </Badge>
+                        )}
                       </div>
                       <a href={printFileUrl(f.Id)} download aria-label={`Unduh ${f.FileName}`}>
                         <Button type="button" size="icon" variant="ghost">
@@ -511,16 +528,33 @@ export default function CustomOrdersPage() {
                 onChange={(colorType) => setForm((f) => ({ ...f, colorType }))}
               />
               <div>
-                <FieldLabel required>Berat Paket (gram)</FieldLabel>
+                <FieldLabel required>Berat Paket (kg)</FieldLabel>
                 <Input
                   type="number"
-                  min={1}
+                  min={0.01}
+                  step={0.01}
                   value={form.packageWeight}
                   onChange={(e) => setForm((f) => ({ ...f, packageWeight: e.target.value }))}
-                  placeholder="500"
+                  placeholder="0.5"
                 />
                 <p className="mt-1 text-xs text-ink-faint">Total berat semua item termasuk kemasan — dipakai untuk ongkos kirim.</p>
               </div>
+              {editRequested && (
+                <div className="rounded-xl border border-brand-orange/30 bg-brand-orange/10 p-3 sm:col-span-2">
+                  <FieldLabel required>Harga Jasa Edit (Rp)</FieldLabel>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={form.editServiceFee}
+                    onChange={(e) => setForm((f) => ({ ...f, editServiceFee: e.target.value }))}
+                    placeholder="25000"
+                  />
+                  <p className="mt-1 text-xs text-ink-soft">
+                    Customer mencentang jasa edit untuk file ini. Harga jasa edit ditambahkan ke total pesanan (kena PPN) — customer
+                    melihat totalnya di aplikasi, lalu setuju dan bayar atau membatalkan pesanan.
+                  </p>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <FieldLabel>Alamat Pengiriman Customer</FieldLabel>
                 {loadingAddresses ? (

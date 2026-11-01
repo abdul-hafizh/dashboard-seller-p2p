@@ -26,6 +26,9 @@ import {
   Contact,
   Megaphone,
   CalendarCheck2,
+  ScrollText,
+  Tag,
+  Undo2,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -55,6 +58,8 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/products", label: "Produk", icon: Package },
       { href: "/dashboard/orders", label: "Pesanan", icon: ShoppingCart },
+      // Merchant: own store · Super Admin: every store (+ marks the refund).
+      { href: "/dashboard/returns", label: "Pengembalian", icon: Undo2 },
       // Laporan = two tabs: Rekap Keuangan (/finance) and Detail Penjualan (/sales).
       // Merchant: own store · Super Admin: Petope + every seller (scoped server-side).
       { href: "/dashboard/finance", label: "Laporan", icon: BarChart3, alsoActiveOn: ["/dashboard/sales"] },
@@ -93,6 +98,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/payment-methods", label: "Metode Pembayaran", icon: CreditCard, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/shipping-methods", label: "Kurir & Layanan", icon: Truck, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/order-statuses", label: "Status Pesanan", icon: ListChecks, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/terms-conditions", label: "Syarat & Ketentuan", icon: ScrollText, roles: [ROLE.SUPER_ADMIN] },
+      { href: "/dashboard/store-labels", label: "Label Alamat Toko", icon: Tag, roles: [ROLE.SUPER_ADMIN] },
     ],
   },
   {

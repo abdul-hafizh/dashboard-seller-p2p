@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Box, Download, FilePlus2 } from "lucide-react";
+import { Box, Download, FilePlus2, PencilRuler } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatFileSize } from "@/components/merchants/MerchantDocumentsCard";
 
@@ -13,6 +13,8 @@ export interface PrintFileInfo {
   quantity?: number | null;
   notes?: string | null;
   orderNumber?: string | null;
+  /** The customer ticked "Gunakan jasa edit" — the store prices it in Pesanan Custom. */
+  editServiceRequested?: boolean | null;
 }
 
 /** Downloaded through the authenticated `/api/backend` proxy — the file
@@ -45,6 +47,11 @@ export function PrintFileCard({ file, showCreateOrder = false }: { file: PrintFi
               .join(" · ")}
           </p>
           {file.notes && <p className="mt-1 text-xs italic text-ink-soft">“{file.notes}”</p>}
+          {file.editServiceRequested && (
+            <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-brand-orange/10 px-1.5 py-0.5 text-xs font-semibold text-brand-orange-deep">
+              <PencilRuler className="size-3" /> Minta jasa edit — isi harganya saat membuat pesanan
+            </p>
+          )}
           {file.orderNumber && <p className="mt-1 text-xs font-semibold text-success">Pesanan {file.orderNumber}</p>}
         </div>
       </div>

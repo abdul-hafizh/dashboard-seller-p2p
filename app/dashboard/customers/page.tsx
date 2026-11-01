@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Search, Users, Download, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { Search, Users, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/Card";
@@ -12,6 +12,7 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { TierBadge } from "@/components/customers/TierBadge";
 import { Button } from "@/components/ui/Button";
+import { ExportButton } from "@/components/ui/ExportButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { formatCurrency, formatDate } from "@/lib/resources/format";
@@ -75,11 +76,7 @@ export default function CustomersPage() {
             <option value="MALE">Laki-laki</option>
             <option value="FEMALE">Perempuan</option>
           </Select>
-          <a href="/api/backend/admin/customers/export" download>
-            <Button type="button" variant="outline" size="sm">
-              <Download className="size-4" /> Ekspor Excel
-            </Button>
-          </a>
+          <ExportButton path="admin/customers/export" query={{ search: search || undefined, gender: gender || undefined, ...periodQuery(period) }} />
         </div>
       </div>
 

@@ -370,7 +370,8 @@ export default function SalesReportPage() {
                   {isAdmin && <th className="whitespace-nowrap px-4 py-3">Seller</th>}
                   <th className="whitespace-nowrap px-4 py-3">Customer</th>
                   <th className="whitespace-nowrap px-4 py-3">Kategori Produk</th>
-                  <th className="whitespace-nowrap px-4 py-3 text-right">Berat</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right">Qty</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right">Berat Total</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Harga</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Total</th>
                   <th className="whitespace-nowrap px-4 py-3">Pengiriman</th>
@@ -414,7 +415,15 @@ export default function SalesReportPage() {
                             <li key={it.Id} className="flex h-6 items-center gap-1.5">
                               <ItemCategoryBadge category={it.Category} />
                               {it.Material && <span className="text-xs text-ink-faint">{it.Material}</span>}
-                              <span className="text-xs text-ink-soft">× {it.Quantity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        <ul className="space-y-1">
+                          {r.Items.map((it) => (
+                            <li key={it.Id} className="flex h-6 items-center justify-end text-ink">
+                              {it.Quantity}
                             </li>
                           ))}
                         </ul>

@@ -36,6 +36,7 @@ export type LinkAttachment = StreamAttachment & {
   materialName?: string | null;
   quantity?: number;
   notes?: string | null;
+  editServiceRequested?: boolean;
 };
 
 /** Renders `PRODUCT_LINK`/`ORDER_LINK` attachments (sent from this dashboard's
@@ -70,6 +71,7 @@ export function CustomAttachment(props: AttachmentProps) {
                 materialName: a.materialName,
                 quantity: a.quantity,
                 notes: a.notes,
+                editServiceRequested: a.editServiceRequested,
               }}
             />
           ) : null

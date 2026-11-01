@@ -1,19 +1,118 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
-import { MapPin, MapPinOff } from "lucide-react";
-import { apiFetch } from "@/lib/api-client";
-import { ResourceTable } from "@/components/crud/ResourceTable";
+import { toast } from "sonner";
+import { MapPin, MapPinOff, Pencil, Store } from "lucide-react";
+import { apiFetch, ApiError } from "@/lib/api-client";
+import { ResourceForm } from "@/components/crud/ResourceForm";
 import { buildUserAddressesConfig } from "@/lib/resources/user-addresses.config";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 
-const sellerAddressConfig = buildUserAddressesConfig(false);
+// One store address: the same fields as the admin's address form, minus
+// "alamat utama" (a seller has just this one).
+const storeAddressFields = buildUserAddressesConfig(false).fields.filter((f) => f.name !== "IsDefault");
 
-/** The signed-in seller's store addresses (add / edit / delete) — used for pickup, shipping quotes and nearby stores. */
+const regionLine = (a: AddressRow) =>
+  [a.Village?.Name && `Kel. ${a.Village.Name}`, a.District?.Name && `Kec. ${a.District.Name}`, a.City?.Name, a.Province?.Name, a.PostalCode]
+    .filter(Boolean)
+    .join(", ");
+
+const hasPin = (a: AddressRow) => a.Latitude != null && a.Longitude != null && a.Latitude !== "" && a.Longitude !== "";
+
+/**
+ * The signed-in seller's store address — one per store, used for pickup,
+ * shipping quotes, instant couriers and "Toko Terdekat". Shown as a summary;
+ * "Isi / Ubah Alamat" opens the form right in the card.
+ */
 export function StoreAddressCard() {
-  return <ResourceTable config={sellerAddressConfig} />;
+  const { data, isLoading, mutate } = useSWR("my-store-address", () => apiFetch<AddressRow[]>("user-addresses", { query: { limit: 1 } }));
+  // Newest default first — the same address the backend ships from.
+  const address = data?.data?.[0] ?? null;
+  const [editing, setEditing] = useState(false);
+
+  const save = async (payload: Record<string, unknown>) => {
+    try {
+      const body = { ...payload, IsDefault: 1 };
+      if (address) await apiFetch(`user-addresses/${address.Id}`, { method: "PUT", json: body });
+      else await apiFetch("user-addresses", { method: "POST", json: body });
+      toast.success("Alamat toko disimpan");
+      setEditing(false);
+      await mutate();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Gagal menyimpan alamat toko");
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="size-4" /> Alamat Toko
+        </CardTitle>
+        {address && !editing && (
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+            <Pencil className="size-3.5" /> Ubah Alamat
+          </Button>
+        )}
+      </CardHeader>
+      <CardBody>
+        {isLoading ? (
+          <div className="flex justify-center py-6">
+            <Spinner className="size-5" />
+          </div>
+        ) : editing ? (
+          <ResourceForm
+            fields={storeAddressFields}
+            initialValues={address ? (address as unknown as Record<string, unknown>) : undefined}
+            submitLabel="Simpan Alamat Toko"
+            onSubmit={save}
+            onCancel={() => setEditing(false)}
+          />
+        ) : !address ? (
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-sm text-ink-soft">
+              Toko belum punya alamat. Alamat dipakai untuk ongkir, kurir instan (Gojek/Grab), dan Toko Terdekat di aplikasi —
+              tandai titik lokasinya di peta agar terisi otomatis.
+            </p>
+            <Button size="sm" onClick={() => setEditing(true)}>
+              <MapPin className="size-4" /> Isi Alamat Toko
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Store className="size-4 text-ink-soft" />
+              <span className="font-semibold text-ink">{address.RecipientName || "-"}</span>
+              {address.Label && <Badge tone="brand">{address.Label}</Badge>}
+            </div>
+            <p className="text-ink">{address.Address || "-"}</p>
+            {regionLine(address) && <p className="text-xs text-ink-soft">{regionLine(address)}</p>}
+            {(address.WhatsappNumber || address.Phone) && (
+              <p className="text-xs text-ink-soft">WhatsApp: {address.WhatsappNumber || address.Phone}</p>
+            )}
+            {hasPin(address) ? (
+              <a
+                href={`https://www.google.com/maps?q=${address.Latitude},${address.Longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-purple hover:underline"
+              >
+                <MapPin className="size-3" /> Lihat titik lokasi di peta
+              </a>
+            ) : (
+              <p className="inline-flex items-center gap-1 text-xs text-error">
+                <MapPinOff className="size-3" /> Belum ada titik lokasi — kurir instan tidak bisa dipakai. Ubah alamat dan tandai di peta.
+              </p>
+            )}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
 }
 
 interface AddressRow {
