@@ -73,6 +73,8 @@ interface CustomerDetail {
   BirthDate: string | null;
   Avatar: string | null;
   UserLevel: string | null;
+  /** Sisa token AI. */
+  AICredits?: number | null;
   CreatedAt: string | null;
   LastLogin: string | null;
   Addresses: Address[];
@@ -221,6 +223,7 @@ export default function CustomerDetailPage() {
               <Info icon={User} label="Jenis kelamin" value={genderLabel(c.Gender)} />
               <Info icon={Cake} label="Tanggal lahir" value={c.BirthDate ? `${formatDate(c.BirthDate)}${age !== null ? ` (${age} th)` : ""}` : "-"} />
               <Info icon={User} label="Terdaftar" value={c.CreatedAt ? formatDate(c.CreatedAt) : "-"} />
+              <Info icon={Coins} label="Sisa token AI" value={`${(c.AICredits ?? 0).toLocaleString("id-ID")} token`} />
             </div>
           </div>
         </CardBody>

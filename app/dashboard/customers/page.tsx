@@ -96,6 +96,7 @@ export default function CustomersPage() {
                 <th className="whitespace-nowrap px-4 py-3">No HP</th>
                 <th className="whitespace-nowrap px-4 py-3">Gender / Usia</th>
                 <th className="whitespace-nowrap px-4 py-3">Kota</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">Token AI</th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">Pesanan</th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">Total Belanja</th>
                 <th className="whitespace-nowrap px-4 py-3">Terakhir Belanja</th>
@@ -139,6 +140,7 @@ export default function CustomersPage() {
                       )}
                       {c.DefaultAddress?.HasPin && <MapPin className="ml-1 inline size-3.5 text-success" aria-label="Alamat sudah di-pin" />}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-ink">{(c.AICredits ?? 0).toLocaleString("id-ID")}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-ink">
                       {c.Stats.PaidOrders}
                       <span className="text-xs text-ink-faint"> / {c.Stats.Orders}</span>

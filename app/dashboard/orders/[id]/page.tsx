@@ -207,6 +207,8 @@ interface OrderDetail {
   Notes: string | null;
   Rating: number | null;
   RatingNotes: string | null;
+  /** Given by Rating Otomatis, not the customer. */
+  AutoRated?: boolean;
   CreatedAt: string | null;
   Status: OrderStatus | null;
   Items?: OrderItem[];
@@ -490,7 +492,9 @@ export default function OrderDetailPage() {
               {order.Rating != null && (
                 <div>
                   <p className="text-xs font-semibold text-ink-soft">Rating</p>
-                  <p className="mt-0.5 text-ink">{order.Rating} / 5</p>
+                  <p className="mt-0.5 text-ink">
+                    {order.Rating} / 5 {order.AutoRated && <Badge tone="neutral">Otomatis oleh sistem</Badge>}
+                  </p>
                 </div>
               )}
               {order.Rating != null && order.RatingNotes && (

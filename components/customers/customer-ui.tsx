@@ -12,6 +12,8 @@ export interface CustomerRow {
   BirthDate: string | null;
   Avatar: string | null;
   UserLevel: string | null;
+  /** Sisa token AI. */
+  AICredits?: number | null;
   IsActive: boolean | null;
   CreatedAt: string | null;
   Stats: { Orders: number; PaidOrders: number; Spent: number; LastOrderAt: string | null };

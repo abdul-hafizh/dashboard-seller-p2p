@@ -29,6 +29,7 @@ import {
   ScrollText,
   Tag,
   Undo2,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -127,6 +128,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       // Shipped orders the customer never confirmed complete themselves after N days.
       { href: "/dashboard/order-auto-complete", label: "Selesai Otomatis", icon: CalendarCheck2, roles: [ROLE.SUPER_ADMIN] },
+      // Orders the customer never rated get the default rating after a set duration.
+      { href: "/dashboard/order-auto-rating", label: "Rating Otomatis", icon: Star, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/system-settings", label: "Pengaturan Sistem", icon: Settings2, roles: [ROLE.SUPER_ADMIN] },
     ],
   },
