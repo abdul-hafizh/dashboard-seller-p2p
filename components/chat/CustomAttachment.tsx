@@ -11,6 +11,7 @@ import { formatCurrency, toPublicAssetUrl } from "@/lib/resources/format";
 import { orderDisplay, type OrderDisplaySource } from "@/lib/order-display";
 import { Modal } from "@/components/ui/Modal";
 import { PrintFileCard } from "@/components/printfiles/PrintFileCard";
+import { QuoteCard } from "@/components/chat/QuoteCard";
 
 /** `stream-chat`'s `Attachment` type carries no custom fields by default
  * (`CustomAttachmentData` is an empty interface) — this widens it locally for
@@ -37,6 +38,14 @@ export type LinkAttachment = StreamAttachment & {
   quantity?: number;
   notes?: string | null;
   editServiceRequested?: boolean;
+  imageIds?: string[];
+  /** CUSTOM_QUOTE (a penawaran from Pesanan Custom). */
+  quoteId?: string;
+  quoteNumber?: string;
+  revision?: number;
+  payableAmount?: number;
+  fileNames?: string[];
+  colorType?: string | null;
 };
 
 /** Renders `PRODUCT_LINK`/`ORDER_LINK` attachments (sent from this dashboard's
@@ -44,7 +53,7 @@ export type LinkAttachment = StreamAttachment & {
  * falls back to the SDK's own `Attachment` for everything else (images,
  * files, link previews, ...). Installed via `ComponentProvider` in
  * `app/dashboard/chat/page.tsx`. */
-const CUSTOM_TYPES = new Set(["PRODUCT_LINK", "ORDER_LINK", "PRINT_FILE"]);
+const CUSTOM_TYPES = new Set(["PRODUCT_LINK", "ORDER_LINK", "PRINT_FILE", "CUSTOM_QUOTE"]);
 
 export function CustomAttachment(props: AttachmentProps) {
   const linkAttachments = props.attachments.filter((a): a is LinkAttachment =>
@@ -59,6 +68,17 @@ export function CustomAttachment(props: AttachmentProps) {
       {linkAttachments.map((a, i) =>
         a.type === "PRODUCT_LINK" ? (
           <ProductLinkCard key={i} attachment={a} />
+        ) : a.type === "CUSTOM_QUOTE" ? (
+          a.quoteId ? (
+            <QuoteCard
+              key={i}
+              quoteId={a.quoteId}
+              quoteNumber={a.quoteNumber}
+              revision={a.revision}
+              payableAmount={a.payableAmount}
+              summary={[a.fileNames?.join(", "), a.materialName, a.quantity ? `${a.quantity} pcs` : null].filter(Boolean).join(" · ")}
+            />
+          ) : null
         ) : a.type === "PRINT_FILE" ? (
           a.printFileId ? (
             <PrintFileCard
@@ -72,6 +92,7 @@ export function CustomAttachment(props: AttachmentProps) {
                 quantity: a.quantity,
                 notes: a.notes,
                 editServiceRequested: a.editServiceRequested,
+                imageIds: a.imageIds,
               }}
             />
           ) : null

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { Search, FilePlus2, User, CheckCircle2, RotateCcw, Box, Download, Upload, Truck, RefreshCw } from "lucide-react";
+import { Search, FilePlus2, User, CheckCircle2, RotateCcw, Box, Download, Upload, Truck, RefreshCw, Send, Pencil, XCircle } from "lucide-react";
+import Link from "next/link";
+import { formatDateTime } from "@/lib/resources/format";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { formatCurrency } from "@/lib/resources/format";
 import { MasterPriceFields } from "@/components/pricing/MasterPriceFields";
-import { printFileUrl } from "@/components/printfiles/PrintFileCard";
+import { PrintFileImages, printFileUrl } from "@/components/printfiles/PrintFileCard";
 import { formatFileSize } from "@/components/merchants/MerchantDocumentsCard";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
@@ -33,6 +35,10 @@ interface PrintFileRow {
   Notes: string | null;
   /** The customer ticked "Gunakan jasa edit" in the app. */
   EditServiceRequested?: boolean | null;
+  /** Gambar referensi the customer sent with it. */
+  Images?: { Id: string }[];
+  /** The penawaran it's quoted in (until that becomes an order). */
+  QuoteId?: string | null;
   CreatedAt: string;
   Customer?: CustomerUser | null;
 }
@@ -53,13 +59,38 @@ interface AddressOption {
   IsDefault: boolean;
 }
 
-interface CreatedOrderSummary {
-  OrderNumber: string | null;
-  TotalAmount: number | null;
-  SubtotalAmount: number | null;
-  TaxAmount: number | null;
-  AppFeeAmount: number | null;
+type QuoteStatus = "SENT" | "ACCEPTED" | "REJECTED" | "ORDERED" | "CANCELLED";
+
+/** A penawaran (api-meshy CustomQuoteController quoteJson). */
+interface Quote {
+  Id: string;
+  QuoteNumber: string;
+  Status: QuoteStatus;
+  StatusLabel: string;
+  Revision: number;
+  CustomerUserId: string;
+  MaterialName: string | null;
+  ColorType: string | null;
+  Quantity: number;
+  WeightGrams: number | null;
+  PackageWeight: number | null;
+  EditServiceFee: number | null;
+  Notes: string | null;
+  RejectReason: string | null;
+  OrderId: string | null;
+  UpdatedAt: string;
+  Customer?: CustomerUser | null;
+  PrintFiles?: { Id: string; FileName: string }[];
+  Pricing: { PayableAmount: number; SubtotalAmount: number; EditServiceFee: number };
 }
+
+const QUOTE_TONE: Record<QuoteStatus, "warning" | "success" | "error" | "neutral" | "info"> = {
+  SENT: "warning",
+  ACCEPTED: "info",
+  REJECTED: "error",
+  ORDERED: "success",
+  CANCELLED: "neutral",
+};
 
 /** One Biteship rate (same fields the app's checkout reads). */
 // The customer picks the courier when paying, so the seller's Biteship
@@ -132,7 +163,11 @@ export default function CustomOrdersPage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [createdOrder, setCreatedOrder] = useState<CreatedOrderSummary | null>(null);
+  const [createdOrder, setCreatedOrder] = useState<Quote | null>(null);
+  // Set while changing a sent / declined penawaran ("Ubah & Kirim Ulang").
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  const { data: quotesData, mutate: mutateQuotes } = useSWR("custom-quotes", () => apiFetch<Quote[]>("custom-quotes"));
+  const quotes = quotesData?.data ?? [];
   // Ready-to-print files this customer sent from the app (not yet in an order).
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const { data: filesData, mutate: mutateFiles } = useSWR(
@@ -143,6 +178,48 @@ export default function CustomOrdersPage() {
   // A picked file asked for jasa edit: the store must price it before the order is made.
   const editRequested = customerFiles.some((f) => f.EditServiceRequested && selectedFileIds.includes(f.Id));
   const editFee = Math.round(Number(form.editServiceFee));
+
+  async function editQuote(q: Quote) {
+    if (!q.Customer) return;
+    await pickCustomer(q.Customer);
+    setEditingQuote(q);
+    setSelectedFileIds((q.PrintFiles ?? []).map((f) => f.Id));
+    setForm((prev) => ({
+      ...prev,
+      quantity: String(q.Quantity || 1),
+      materialName: q.MaterialName || "",
+      colorType: q.ColorType || "",
+      itemWeight: q.WeightGrams != null ? String(q.WeightGrams) : "",
+      packageWeight: q.PackageWeight ? String(q.PackageWeight / 1000) : "",
+      notes: q.Notes || "",
+      editServiceFee: q.EditServiceFee ? String(q.EditServiceFee) : "",
+    }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function cancelQuote(q: Quote) {
+    if (!window.confirm(`Batalkan penawaran ${q.QuoteNumber}? Bila sudah di keranjang customer, item itu ikut dihapus.`)) return;
+    try {
+      await apiFetch(`custom-quotes/${q.Id}/cancel`, { method: "POST" });
+      toast.success("Penawaran dibatalkan.");
+      await Promise.all([mutateQuotes(), mutateFiles()]);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Gagal membatalkan penawaran.");
+    }
+  }
+
+  useEffect(() => {
+    const quoteId = new URLSearchParams(window.location.search).get("quoteId");
+    if (!quoteId) return;
+    apiFetch<Quote>(`custom-quotes/${quoteId}`)
+      .then((res) => {
+        if (res.data.Status === "SENT" || res.data.Status === "REJECTED") return editQuote(res.data);
+        toast.info(`Penawaran ${res.data.QuoteNumber}: ${res.data.StatusLabel}`);
+      })
+      .catch((error) => toast.error(error instanceof ApiError ? error.message : "Penawaran tidak ditemukan."));
+    // Runs once, on arrival from the chat card.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Opened from a chat's "Buat Pesanan Manual" (?printFileId=): preselect
   // that customer and file, and prefill item, quantity and material.
@@ -253,6 +330,7 @@ export default function CustomOrdersPage() {
     setSelectedCustomer(customer);
     setSelectedFileIds([]);
     setCreatedOrder(null);
+    setEditingQuote(null);
     setForm((f) => ({ ...f, shippingAddressId: "" }));
     setRates(null);
     setRateKey("");
@@ -276,6 +354,7 @@ export default function CustomOrdersPage() {
     setSelectedCustomer(null);
     setAddresses([]);
     setCreatedOrder(null);
+    setEditingQuote(null);
     setSearch("");
     setCustomers(null);
     setForm({
@@ -294,8 +373,6 @@ export default function CustomOrdersPage() {
     setRatesError(null);
   };
 
-  const chosenRate = SELLER_PICKS_COURIER ? (rates?.find((r) => r.key === rateKey) ?? null) : null;
-
   // Package weight is required: the customer's courier quote at checkout is
   // based on it (customers never enter a weight themselves).
   const canSubmit =
@@ -307,37 +384,32 @@ export default function CustomOrdersPage() {
     (!editRequested || editFee > 0) &&
     !submitting;
 
+  // Sends the penawaran to the customer's chat (or the changed one again).
+  // The order is only made once the customer agrees and checks out.
   const handleSubmit = async () => {
     if (!selectedCustomer) return;
     setSubmitting(true);
     try {
-      const res = await apiFetch<CreatedOrderSummary>("orders/custom-quote", {
-        method: "POST",
-        json: {
-          customerUserId: selectedCustomer.Id,
-          quantity: Number(form.quantity) || 1,
-          materialName: form.materialName,
-          colorType: form.colorType,
-          itemWeight: Number(form.itemWeight),
-          packageWeight: packageGrams(form.packageWeight),
-          // A picked Biteship rate; none = the customer picks a courier at checkout.
-          courierCompany: chosenRate?.courierCode,
-          courierType: chosenRate?.serviceCode,
-          courierServiceName: chosenRate ? `${chosenRate.courierName} ${chosenRate.serviceName}` : undefined,
-          shippingCost: chosenRate?.price ?? 0,
-          shippingAddressId: form.shippingAddressId || undefined,
-          notes: form.notes || undefined,
-          sendToChat: form.sendToChat,
-          printFileIds: selectedFileIds,
-          editServiceFee: editRequested ? editFee : undefined,
-        },
-      });
+      const json = {
+        customerUserId: selectedCustomer.Id,
+        quantity: Number(form.quantity) || 1,
+        materialName: form.materialName,
+        colorType: form.colorType,
+        itemWeight: Number(form.itemWeight),
+        packageWeight: packageGrams(form.packageWeight),
+        notes: form.notes || undefined,
+        printFileIds: selectedFileIds,
+        editServiceFee: editRequested ? editFee : undefined,
+      };
+      const res = editingQuote
+        ? await apiFetch<Quote>(`custom-quotes/${editingQuote.Id}`, { method: "PUT", json })
+        : await apiFetch<Quote>("custom-quotes", { method: "POST", json });
       setCreatedOrder(res.data);
-      toast.success(
-        form.sendToChat ? "Pesanan dibuat dan kartu tagihan dikirim ke chat customer." : "Pesanan berhasil dibuat.",
-      );
+      setEditingQuote(null);
+      await Promise.all([mutateQuotes(), mutateFiles()]);
+      toast.success(res.message || "Penawaran terkirim ke chat customer.");
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Gagal membuat pesanan.");
+      toast.error(error instanceof ApiError ? error.message : "Gagal mengirim penawaran.");
     } finally {
       setSubmitting(false);
     }
@@ -348,9 +420,10 @@ export default function CustomOrdersPage() {
       <div>
         <h1 className="text-xl font-extrabold text-ink">Pesanan Custom (File Siap Print)</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Buat pesanan dari file siap cetak yang dikirim customer lewat chat. Harga dihitung otomatis dari bahan & berat
-          (Master Harga), lalu kartu tagihan dikirim ke chat. Customer memilih jasa kirim sendiri saat membayar, lalu membayar
-          harga + PPN + ongkir; fee transaksi dan admin fee dipotong dari hasil jualan Anda.
+          Kirim penawaran harga untuk file siap cetak yang dikirim customer lewat chat. Harga dihitung otomatis dari bahan &
+          berat (Master Harga). Customer menyetujui penawaran di chat sehingga masuk ke keranjangnya, lalu memilih jasa kirim
+          dan membayar saat checkout — pesanan baru dibuat saat itu. Bila customer menolak, ubah harganya dan kirim ulang.
+          Fee transaksi dan admin fee dipotong dari hasil jualan Anda.
         </p>
       </div>
 
@@ -358,16 +431,15 @@ export default function CustomOrdersPage() {
         <Card>
           <CardBody className="flex flex-col items-center gap-3 py-10 text-center">
             <CheckCircle2 className="size-10 text-success" />
-            <h2 className="text-lg font-bold text-ink">Pesanan berhasil dibuat</h2>
+            <h2 className="text-lg font-bold text-ink">Penawaran terkirim ke chat customer</h2>
             <p className="text-sm text-ink-soft">
-              Nomor Pesanan <span className="font-semibold text-ink">{createdOrder.OrderNumber}</span>
+              No. Penawaran <span className="font-semibold text-ink">{createdOrder.QuoteNumber}</span>
+              {createdOrder.Revision > 1 ? ` (revisi ${createdOrder.Revision})` : ""}
             </p>
-            <p className="text-2xl font-extrabold text-ink">{formatCurrency(createdOrder.TotalAmount)}</p>
-            <p className="text-xs text-ink-faint">
-              Subtotal {formatCurrency(createdOrder.SubtotalAmount)}
-            </p>
+            <p className="text-2xl font-extrabold text-ink">{formatCurrency(createdOrder.Pricing.PayableAmount)}</p>
+            <p className="text-xs text-ink-faint">Belum termasuk ongkir — dipilih customer saat checkout.</p>
             <Button variant="outline" className="mt-2" onClick={resetAll}>
-              <RotateCcw className="size-4" /> Buat Pesanan Lain
+              <RotateCcw className="size-4" /> Buat Penawaran Lain
             </Button>
           </CardBody>
         </Card>
@@ -415,7 +487,7 @@ export default function CustomOrdersPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FilePlus2 className="size-4" /> Detail Pesanan Custom
+              <FilePlus2 className="size-4" /> {editingQuote ? `Ubah Penawaran ${editingQuote.QuoteNumber}` : "Penawaran Harga"}
             </CardTitle>
           </CardHeader>
           <CardBody className="flex flex-col gap-5">
@@ -467,6 +539,7 @@ export default function CustomOrdersPage() {
                   {customerFiles.map((f) => (
                     <li key={f.Id} className="flex items-center gap-3 rounded-lg bg-surface-muted/60 px-3 py-2">
                       <Checkbox
+                        disabled={!!f.QuoteId && f.QuoteId !== editingQuote?.Id}
                         checked={selectedFileIds.includes(f.Id)}
                         onChange={(e) =>
                           setSelectedFileIds((ids) => (e.target.checked ? [...ids, f.Id] : ids.filter((x) => x !== f.Id)))
@@ -484,6 +557,12 @@ export default function CustomOrdersPage() {
                             Minta jasa edit
                           </Badge>
                         )}
+                        {f.QuoteId && f.QuoteId !== editingQuote?.Id && (
+                          <p className="mt-1 text-xs font-semibold text-ink-faint">
+                            Sudah ada di penawaran {quotes.find((q) => q.Id === f.QuoteId)?.QuoteNumber ?? "lain"}
+                          </p>
+                        )}
+                        <PrintFileImages printFileId={f.Id} imageIds={f.Images?.map((img) => img.Id)} size="sm" />
                       </div>
                       <a href={printFileUrl(f.Id)} download aria-label={`Unduh ${f.FileName}`}>
                         <Button type="button" size="icon" variant="ghost">
@@ -550,12 +629,12 @@ export default function CustomOrdersPage() {
                     placeholder="25000"
                   />
                   <p className="mt-1 text-xs text-ink-soft">
-                    Customer mencentang jasa edit untuk file ini. Harga jasa edit ditambahkan ke total pesanan (kena PPN) — customer
-                    melihat totalnya di aplikasi, lalu setuju dan bayar atau membatalkan pesanan.
+                    Customer mencentang jasa edit untuk file ini. Harga jasa edit ditambahkan ke total penawaran (kena PPN) — customer
+                    melihat totalnya di chat, lalu setuju (masuk keranjang) atau menolak.
                   </p>
                 </div>
               )}
-              <div className="sm:col-span-2">
+              {SELLER_PICKS_COURIER && <div className="sm:col-span-2">
                 <FieldLabel>Alamat Pengiriman Customer</FieldLabel>
                 {loadingAddresses ? (
                   <p className="text-sm text-ink-faint">Memuat alamat...</p>
@@ -575,10 +654,10 @@ export default function CustomOrdersPage() {
                     ))}
                   </Select>
                 )}
-              </div>
+              </div>}
               {!SELLER_PICKS_COURIER && (
                 <p className="flex items-center gap-2 rounded-xl bg-surface-muted/60 px-3 py-2 text-xs text-ink-soft sm:col-span-2">
-                  <Truck className="size-4 shrink-0" /> Jasa kirim dipilih customer sendiri saat membayar, berdasarkan berat paket di atas.
+                  <Truck className="size-4 shrink-0" /> Alamat & jasa kirim dipilih customer sendiri saat checkout, berdasarkan berat paket di atas.
                 </p>
               )}
               {SELLER_PICKS_COURIER && <div className="sm:col-span-2">
@@ -647,26 +726,87 @@ export default function CustomOrdersPage() {
                   placeholder="Warna Hitam Glossy - Hasil Nego Chat"
                 />
               </div>
-              <label className="flex items-center gap-2 sm:col-span-2">
-                <Checkbox
-                  checked={form.sendToChat}
-                  onChange={(e) => setForm((f) => ({ ...f, sendToChat: e.target.checked }))}
-                />
-                <span className="text-sm text-ink">Kirim kartu tagihan ke chat customer setelah pesanan dibuat</span>
-              </label>
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setSelectedCustomer(null)}>
+              <Button variant="outline" onClick={resetAll}>
                 Batal
               </Button>
               <Button loading={submitting} disabled={!canSubmit} onClick={handleSubmit}>
-                Buat Pesanan
+                <Send className="size-4" /> {editingQuote ? "Kirim Ulang Penawaran" : "Kirim Penawaran ke Chat"}
               </Button>
             </div>
           </CardBody>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="size-4" /> Daftar Penawaran
+          </CardTitle>
+        </CardHeader>
+        {quotes.length === 0 ? (
+          <EmptyState icon={Send} title="Belum ada penawaran" description="Penawaran yang dikirim ke chat customer muncul di sini." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold uppercase tracking-wide text-ink-soft">
+                  <th className="whitespace-nowrap px-4 py-3">Penawaran</th>
+                  <th className="whitespace-nowrap px-4 py-3">Customer</th>
+                  <th className="whitespace-nowrap px-4 py-3">Isi</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right">Total</th>
+                  <th className="whitespace-nowrap px-4 py-3">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {quotes.map((q) => (
+                  <tr key={q.Id} className="border-b border-border align-top last:border-0">
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <p className="font-semibold text-ink">{q.QuoteNumber}</p>
+                      <p className="text-xs text-ink-faint">
+                        {formatDateTime(q.UpdatedAt)}
+                        {q.Revision > 1 ? ` · revisi ${q.Revision}` : ""}
+                      </p>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-ink">{q.Customer?.FullName ?? "-"}</td>
+                    <td className="max-w-64 px-4 py-3 text-xs text-ink-soft">
+                      {(q.PrintFiles ?? []).map((f) => f.FileName).join(", ") || ITEM_CATEGORIES.PRINT_FILE} · {q.MaterialName} · {q.Quantity} pcs
+                      {q.Pricing.EditServiceFee > 0 && <span> · jasa edit {formatCurrency(q.Pricing.EditServiceFee)}</span>}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatCurrency(q.Pricing.PayableAmount)}</td>
+                    <td className="px-4 py-3">
+                      <Badge tone={QUOTE_TONE[q.Status]}>{q.StatusLabel}</Badge>
+                      {q.Status === "REJECTED" && q.RejectReason && <p className="mt-1 text-xs text-ink-soft">“{q.RejectReason}”</p>}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        {(q.Status === "SENT" || q.Status === "REJECTED") && (
+                          <Button size="sm" variant={q.Status === "REJECTED" ? "primary" : "outline"} onClick={() => editQuote(q)}>
+                            <Pencil className="size-4" /> Ubah & Kirim Ulang
+                          </Button>
+                        )}
+                        {q.Status === "ORDERED" && q.OrderId && (
+                          <Link href={`/dashboard/orders/${q.OrderId}`}>
+                            <Button size="sm" variant="outline">Lihat Pesanan</Button>
+                          </Link>
+                        )}
+                        {q.Status !== "ORDERED" && q.Status !== "CANCELLED" && (
+                          <Button size="sm" variant="ghost" onClick={() => cancelQuote(q)} aria-label={`Batalkan ${q.QuoteNumber}`}>
+                            <XCircle className="size-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

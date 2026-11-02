@@ -64,10 +64,6 @@ export function DesignSpecs({ job, model }: { job: DesignJobSpecs | null | undef
             </b>
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5">
-          <Palette className="size-3.5 text-ink-soft" />
-          Jenis warna: <b>{colorType ? `${colorType} (${isMulti ? "3MF" : "STL"})` : "tidak dipilih"}</b>
-        </span>
         {job?.EditServiceRequested && (
           <span className="inline-flex items-center gap-1.5">
             <PencilRuler className="size-3.5 text-ink-soft" />
@@ -86,6 +82,11 @@ export function DesignSpecs({ job, model }: { job: DesignJobSpecs | null | undef
             )}
           </span>
         )}
+        {/* Under the weight: satu warna or multicolor. */}
+        <span className="inline-flex items-center gap-1.5">
+          <Palette className="size-3.5 text-ink-soft" />
+          Jenis warna: <b>{colorType ? `${colorType} (${isMulti ? "3MF" : "STL"})` : "tidak dipilih"}</b>
+        </span>
       </div>
       {measured && (
         <p className="text-ink-faint">Proporsi model dijaga, jadi hanya sisi terpanjang yang sama dengan ukuran diminta.</p>

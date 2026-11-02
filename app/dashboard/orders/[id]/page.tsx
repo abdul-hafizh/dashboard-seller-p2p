@@ -229,6 +229,7 @@ interface OrderDetail {
     Quantity: number;
     Notes: string | null;
     EditServiceRequested?: boolean | null;
+    Images?: { Id: string }[];
   }[];
 }
 
@@ -627,6 +628,7 @@ export default function OrderDetailPage() {
                       quantity: f.Quantity,
                       notes: f.Notes,
                       editServiceRequested: f.EditServiceRequested,
+                      imageIds: f.Images?.map((img) => img.Id),
                     }}
                   />
                 ))}

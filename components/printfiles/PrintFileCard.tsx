@@ -15,11 +15,36 @@ export interface PrintFileInfo {
   orderNumber?: string | null;
   /** The customer ticked "Gunakan jasa edit" — the store prices it in Pesanan Custom. */
   editServiceRequested?: boolean | null;
+  /** Gambar referensi the customer sent with the file. */
+  imageIds?: string[] | null;
 }
 
 /** Downloaded through the authenticated `/api/backend` proxy — the file
  * lives in a private folder on the API server, never at a public URL. */
 export const printFileUrl = (id: string) => `/api/backend/print-files/${id}/file`;
+export const printFileImageUrl = (id: string, imageId: string) => `/api/backend/print-files/${id}/images/${imageId}`;
+
+/** The customer's reference photos for a print file — click one to open it full size. */
+export function PrintFileImages({ printFileId, imageIds, size = "md" }: { printFileId: string; imageIds?: string[] | null; size?: "sm" | "md" }) {
+  if (!imageIds?.length) return null;
+  return (
+    <div className="mt-2">
+      <p className="mb-1 text-[11px] font-semibold text-ink-soft">Gambar referensi ({imageIds.length})</p>
+      <div className="flex flex-wrap gap-1.5">
+        {imageIds.map((imageId) => (
+          <a key={imageId} href={printFileImageUrl(printFileId, imageId)} target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element -- private file behind the authenticated proxy */}
+            <img
+              src={printFileImageUrl(printFileId, imageId)}
+              alt="Gambar referensi"
+              className={`${size === "sm" ? "size-10" : "size-14"} rounded-lg border border-border object-cover`}
+            />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /**
  * A ready-to-print file a customer sent from the app's chat: download it,
@@ -53,6 +78,7 @@ export function PrintFileCard({ file, showCreateOrder = false }: { file: PrintFi
             </p>
           )}
           {file.orderNumber && <p className="mt-1 text-xs font-semibold text-success">Pesanan {file.orderNumber}</p>}
+          <PrintFileImages printFileId={file.id} imageIds={file.imageIds} />
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -64,7 +90,7 @@ export function PrintFileCard({ file, showCreateOrder = false }: { file: PrintFi
         {showCreateOrder && !file.orderNumber && (
           <Link href={`/dashboard/custom-orders?printFileId=${encodeURIComponent(file.id)}`}>
             <Button type="button" size="sm">
-              <FilePlus2 className="size-4" /> Buat Pesanan Manual
+              <FilePlus2 className="size-4" /> Buat Penawaran
             </Button>
           </Link>
         )}
