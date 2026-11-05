@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatCurrency, formatDateTime } from "@/lib/resources/format";
 import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/ui/PeriodFilter";
+import { ExportButton } from "@/components/ui/ExportButton";
 
 // Pengembalian (retur): the customer asks from the app; the store (or an
 // admin) approves or rejects; an admin transfers the money back and marks it
@@ -102,6 +103,10 @@ export default function ReturnsPage() {
               <Input className="pl-9" placeholder="Cari no. pesanan" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <PeriodFilter value={period} onChange={setPeriod} label="Tanggal pengajuan" />
+            <ExportButton
+              path="order-returns/export"
+              query={{ status: status || undefined, search: search.trim() || undefined, ...periodQuery(period) }}
+            />
           </div>
         </CardHeader>
         <CardBody className="space-y-4">

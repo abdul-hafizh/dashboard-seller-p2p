@@ -148,7 +148,7 @@ export default function CustomOrdersPage() {
     materialName: "",
     colorType: "",
     itemWeight: "",
-    packageWeight: "",
+    packageWeight: "1",
     shippingAddressId: "",
     notes: "",
     editServiceFee: "",
@@ -190,7 +190,7 @@ export default function CustomOrdersPage() {
       materialName: q.MaterialName || "",
       colorType: q.ColorType || "",
       itemWeight: q.WeightGrams != null ? String(q.WeightGrams) : "",
-      packageWeight: q.PackageWeight ? String(q.PackageWeight / 1000) : "",
+      packageWeight: q.PackageWeight ? String(q.PackageWeight / 1000) : "1",
       notes: q.Notes || "",
       editServiceFee: q.EditServiceFee ? String(q.EditServiceFee) : "",
     }));
@@ -362,7 +362,7 @@ export default function CustomOrdersPage() {
       materialName: "",
       colorType: "",
       itemWeight: "",
-      packageWeight: "",
+      packageWeight: "1",
       shippingAddressId: "",
       notes: "",
       editServiceFee: "",
@@ -614,7 +614,7 @@ export default function CustomOrdersPage() {
                   step={0.01}
                   value={form.packageWeight}
                   onChange={(e) => setForm((f) => ({ ...f, packageWeight: e.target.value }))}
-                  placeholder="0.5"
+                  placeholder="1"
                 />
                 <p className="mt-1 text-xs text-ink-faint">Total berat semua item termasuk kemasan — dipakai untuk ongkos kirim.</p>
               </div>

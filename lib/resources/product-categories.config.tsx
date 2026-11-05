@@ -80,7 +80,7 @@ export const productCategoriesConfig: ResourceConfig = {
     },
     {
       name: "HomeSortOrder",
-      label: "Urutan Kartu",
+      label: "Urutan Kategori Produk",
       type: "number",
       defaultValue: 0,
       placeholder: "1",
