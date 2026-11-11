@@ -11,6 +11,7 @@ import { FieldLabel } from "@/components/ui/FieldLabel";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { MerchantDocumentsCard } from "@/components/merchants/MerchantDocumentsCard";
 import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
+import { ProductScopesCard } from "@/components/merchants/ProductScopesCard";
 import { BankAccountCard } from "@/components/merchants/BankAccountCard";
 import { ProfilePhotosCard } from "@/components/merchants/ProfilePhotosCard";
 import { StoreAddressCard } from "@/components/merchants/StoreAddressCard";
@@ -180,6 +181,7 @@ export default function ProfileSettingsPage() {
         onChanged={() => void refresh()}
       />
       {isMerchant && <TelegramCard />}
+      {isMerchant && <ProductScopesCard />}
       {isMerchant && <StoreAddressCard />}
       {isMerchant && <OperatingHoursCard />}
       {isMerchant && <BankAccountCard />}

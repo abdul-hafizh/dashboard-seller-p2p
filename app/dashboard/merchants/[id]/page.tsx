@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Package, ShieldAlert, ShoppingCart, Store, CalendarDays, LogIn, FolderOpen } from "lucide-react";
 import { DocumentRow, type MerchantDocument } from "@/components/merchants/MerchantDocumentsCard";
 import { OperatingHoursCard } from "@/components/merchants/OperatingHoursCard";
+import { ProductScopesCard } from "@/components/merchants/ProductScopesCard";
 import { SellerAddressList } from "@/components/merchants/StoreAddressCard";
 import { MerchantBankInfo } from "@/components/merchants/BankAccountCard";
 import { apiFetch } from "@/lib/api-client";
@@ -140,6 +141,8 @@ export default function MerchantDetailPage() {
       />
 
       <SellerAddressList userId={id} />
+
+      <ProductScopesCard merchantId={id} />
 
       <OperatingHoursCard merchantId={id} />
 
