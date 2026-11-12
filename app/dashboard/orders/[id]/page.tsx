@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeft, Package, PackageCheck, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw, Sparkles, Undo2 } from "lucide-react";
+import { ArrowLeft, Package, PackageCheck, History, FileText, Box, ImageOff, Clock, User, MapPin, Tag, Truck, RefreshCw, Sparkles, Undo2, Hourglass } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Model3DViewer } from "@/components/Model3DViewer";
@@ -218,6 +218,9 @@ interface OrderDetail {
   ShippingAddress?: ShippingAddress | null;
   Payments?: PaymentSummary[];
   Shipments?: ShipmentInfo[];
+  /** Batas Kirim Seller: until when the seller has to book the courier / mark it ready (null when not waiting on the seller). */
+  ShipDeadlineAt?: string | null;
+  ShipOverdue?: boolean;
   /** Pengembalian the customer asked for (handled in the Pengembalian menu). */
   Return?: { Id: string; Status: string; StatusLabel?: string; Reason: string; Description: string } | null;
   /** Ready-to-print files the customer sent from the app's chat. */
@@ -443,6 +446,27 @@ export default function OrderDetailPage() {
           <Badge tone="info">{order.Status?.Name ?? "-"}</Badge>
         </div>
       </div>
+
+      {order.ShipDeadlineAt && (
+        <div
+          className={`flex items-start gap-3 rounded-xl border p-4 text-sm ${
+            order.ShipOverdue ? "border-error/40 bg-error/5" : "border-brand-orange/30 bg-brand-orange/5"
+          }`}
+        >
+          <Hourglass className={`mt-0.5 size-5 shrink-0 ${order.ShipOverdue ? "text-error" : "text-brand-orange"}`} />
+          <div>
+            <p className="font-bold text-ink">
+              {order.ShipOverdue ? "Pesanan melewati batas kirim" : "Batas kirim"}: {formatDateTime(order.ShipDeadlineAt)}
+            </p>
+            <p className="text-ink-soft">
+              {order.Shipments?.[0]?.ShipmentType === "PICKUP"
+                ? "Tandai pesanan siap diambil"
+                : "Pesan kurir di bagian Pengiriman"}
+              {order.ShipOverdue ? " sekarang — customer sudah menunggu melewati batas waktu." : " sebelum batas waktu ini."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {order.Return && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-orange/30 bg-brand-orange/5 p-4 text-sm">
