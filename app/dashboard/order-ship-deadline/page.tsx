@@ -26,6 +26,7 @@ interface AwaitingOrder {
   CourierServiceName: string | null;
   PaidAt: string;
   ShipReminderLevel: number;
+  Stage: ShipStage;
   CustomerName: string | null;
   MerchantName: string | null;
   ShipDeadlineAt: string | null;
@@ -39,6 +40,16 @@ interface ShipDeadlineData {
 }
 
 const ENDPOINT = "system-settings/order-ship-deadline";
+
+type ShipStage = "READY" | "SHIP" | "BOOK" | "PICKUP" | "DROP_OFF";
+/** What the seller still has to do (backend orderShipDeadline.service stageOf). */
+const STAGE_LABELS: Record<ShipStage, string> = {
+  READY: "Belum siap diambil",
+  SHIP: "Belum ditandai dikirim",
+  BOOK: "Kurir belum dipesan",
+  PICKUP: "Menunggu dijemput kurir",
+  DROP_OFF: "Belum diantar ke agen",
+};
 
 /** Admin › Batas Kirim Seller: sellers are reminded on Telegram to ship a paid order within N days. */
 export default function OrderShipDeadlinePage() {
@@ -103,8 +114,9 @@ export default function OrderShipDeadlinePage() {
       <div>
         <h1 className="text-xl font-extrabold text-ink">Batas Kirim Seller</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Setelah customer membayar, seller harus <b>memesan kurir</b> (atau menandai pesanan <b>siap diambil</b> untuk ambil di
-          toko) dalam jumlah hari di bawah. Seller mendapat pengingat lewat <b>Telegram</b> dan notifikasi saat batas waktu
+          Setelah customer membayar, paket harus <b>sudah diterima kurir</b> (dijemput atau diantar seller ke agen) dalam jumlah
+          hari di bawah, atau ditandai <b>siap diambil</b> untuk ambil di toko. Memesan kurir saja belum cukup, dan resi yang
+          dibatalkan Biteship dihitung belum dipesan. Seller mendapat pengingat lewat <b>Telegram</b> dan notifikasi saat batas waktu
           tinggal sebentar, lalu sekali lagi bila sudah terlewat. Pesanan tidak dibatalkan otomatis. Sistem memeriksa setiap jam.
         </p>
       </div>
@@ -158,7 +170,7 @@ export default function OrderShipDeadlinePage() {
           <div>
             <h2 className="text-base font-extrabold text-ink">Menunggu Dikirim Seller</h2>
             <p className="mt-0.5 text-xs text-ink-soft">
-              {awaiting.length} pesanan sudah dibayar tapi kurirnya belum dipesan / belum siap diambil
+              {awaiting.length} pesanan sudah dibayar tapi paketnya belum diterima kurir / belum siap diambil
               {config?.Enabled && overdue > 0 ? ` · ${overdue} sudah melewati batas kirim` : ""}.
             </p>
           </div>
@@ -169,7 +181,7 @@ export default function OrderShipDeadlinePage() {
           )}
         </div>
         {awaiting.length === 0 ? (
-          <EmptyState icon={Hourglass} title="Tidak ada pesanan menunggu" description="Semua pesanan yang dibayar sudah diproses seller." />
+          <EmptyState icon={Hourglass} title="Tidak ada pesanan menunggu" description="Semua pesanan yang dibayar sudah diterima kurir atau siap diambil." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -179,6 +191,7 @@ export default function OrderShipDeadlinePage() {
                   <th className="whitespace-nowrap px-4 py-3">Customer</th>
                   <th className="whitespace-nowrap px-4 py-3">Seller</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Total</th>
+                  <th className="whitespace-nowrap px-4 py-3">Tahap</th>
                   <th className="whitespace-nowrap px-4 py-3">Dibayar</th>
                   <th className="whitespace-nowrap px-4 py-3">Batas Kirim</th>
                   <th className="whitespace-nowrap px-4 py-3">Pengingat</th>
@@ -200,6 +213,7 @@ export default function OrderShipDeadlinePage() {
                     <td className="whitespace-nowrap px-4 py-3 text-ink">{o.CustomerName || "-"}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-ink">{o.MerchantName || "-"}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-ink">{formatCurrency(o.TotalAmount)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-ink">{STAGE_LABELS[o.Stage] ?? o.Stage}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-ink">{formatDateTime(o.PaidAt)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs">
                       {!o.ShipDeadlineAt ? (

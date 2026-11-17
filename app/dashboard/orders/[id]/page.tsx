@@ -221,6 +221,8 @@ interface OrderDetail {
   /** Batas Kirim Seller: until when the seller has to book the courier / mark it ready (null when not waiting on the seller). */
   ShipDeadlineAt?: string | null;
   ShipOverdue?: boolean;
+  /** What the seller still has to do before the deadline. */
+  ShipStage?: "READY" | "SHIP" | "BOOK" | "PICKUP" | "DROP_OFF" | null;
   /** Pengembalian the customer asked for (handled in the Pengembalian menu). */
   Return?: { Id: string; Status: string; StatusLabel?: string; Reason: string; Description: string } | null;
   /** Ready-to-print files the customer sent from the app's chat. */
@@ -254,6 +256,15 @@ function shippingCategoryLabel(shippingType: string | null | undefined): string 
       return "Lainnya";
   }
 }
+
+/** Batas Kirim Seller: what the seller still has to do (backend orderShipDeadline.service stageOf). */
+const SHIP_STAGE_ACTIONS: Record<NonNullable<OrderDetail["ShipStage"]>, string> = {
+  READY: "Tandai pesanan siap diambil",
+  SHIP: "Tandai pesanan dikirim",
+  BOOK: "Pesan kurir di bagian Pengiriman",
+  PICKUP: "Kurir sudah dipesan — siapkan paket untuk dijemput kurir",
+  DROP_OFF: "Kurir sudah dipesan dengan antar ke agen — bawa paket ke agen kurir",
+};
 
 export default function OrderDetailPage() {
   const { isAdmin } = useAuth();
@@ -459,9 +470,7 @@ export default function OrderDetailPage() {
               {order.ShipOverdue ? "Pesanan melewati batas kirim" : "Batas kirim"}: {formatDateTime(order.ShipDeadlineAt)}
             </p>
             <p className="text-ink-soft">
-              {order.Shipments?.[0]?.ShipmentType === "PICKUP"
-                ? "Tandai pesanan siap diambil"
-                : "Pesan kurir di bagian Pengiriman"}
+              {SHIP_STAGE_ACTIONS[order.ShipStage ?? "BOOK"]}
               {order.ShipOverdue ? " sekarang — customer sudah menunggu melewati batas waktu." : " sebelum batas waktu ini."}
             </p>
           </div>

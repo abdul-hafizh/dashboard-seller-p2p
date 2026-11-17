@@ -1,17 +1,20 @@
 import type { ResourceConfig } from "./types";
 import { Badge } from "@/components/ui/Badge";
 
-export const TERMS_PLACEMENTS = [{ value: "PRODUCT_FORM", label: "Form Produk (tambah & ubah produk)" }];
+export const TERMS_PLACEMENTS = [
+  { value: "PRODUCT_FORM", label: "Form Produk (tambah & ubah produk)" },
+  { value: "NO_EDIT_SERVICE", label: "Aplikasi — pesan tanpa jasa edit (prompt & file siap print)" },
+];
 
 const placementLabel = (v: unknown) => TERMS_PLACEMENTS.find((p) => p.value === v)?.label ?? String(v ?? "-");
 
-/** Admin › Syarat & Ketentuan: terms shown as a warning on a dashboard form — e.g. the seller's product form. */
+/** Admin › Syarat & Ketentuan: terms shown as a warning on a form — the seller's product form, or the app's no-jasa-edit disclaimer. */
 export const termsConditionsConfig: ResourceConfig = {
   key: "terms-conditions",
   endpoint: "terms-conditions",
   title: "Syarat & Ketentuan",
   description:
-    "Syarat & ketentuan yang tampil sebagai peringatan di form produk saat seller menambah atau mengubah produk — misalnya bahwa isian berat (gram) menjadi tanggung jawab seller. Hanya yang aktif yang ditampilkan, sesuai urutan.",
+    "Syarat & ketentuan yang tampil sebagai peringatan: di form produk saat seller menambah atau mengubah produk (misalnya isian berat menjadi tanggung jawab seller), atau sebagai disklaimer di aplikasi saat customer memesan produk via prompt / file siap print tanpa jasa edit (file dicetak apa adanya). Hanya yang aktif yang ditampilkan, sesuai urutan.",
   searchPlaceholder: "Cari judul atau isi...",
   columns: [
     { key: "Title", label: "Judul", render: (r) => <span className="font-semibold text-ink">{String(r.Title ?? "-")}</span> },
@@ -36,7 +39,7 @@ export const termsConditionsConfig: ResourceConfig = {
       type: "textarea",
       required: true,
       placeholder: "Berat per item (gram) yang diisi seller menjadi tanggung jawab seller sepenuhnya...",
-      helpText: "Baris baru (Enter) ikut tampil sebagai baris baru di form produk.",
+      helpText: "Baris baru (Enter) ikut tampil sebagai baris baru.",
     },
     { name: "Placement", label: "Tampil di", type: "select", required: true, options: TERMS_PLACEMENTS, defaultValue: "PRODUCT_FORM" },
     { name: "SortOrder", label: "Urutan", type: "number", defaultValue: 0, helpText: "Angka kecil tampil lebih dulu." },

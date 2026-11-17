@@ -31,6 +31,7 @@ import {
   Undo2,
   Star,
   Hourglass,
+  PencilRuler,
   type LucideIcon,
 } from "lucide-react";
 import { ROLE } from "./constants";
@@ -128,6 +129,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/price-master", label: "Master Harga", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       // Shipped orders the customer never confirmed complete themselves after N days.
+      // Which kategori + colour type require the customer to tick jasa edit.
+      { href: "/dashboard/edit-service-rules", label: "Aturan Jasa Edit", icon: PencilRuler, roles: [ROLE.SUPER_ADMIN] },
       // Sellers are reminded on Telegram to ship a paid order within N days.
       { href: "/dashboard/order-ship-deadline", label: "Batas Kirim Seller", icon: Hourglass, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/order-auto-complete", label: "Selesai Otomatis", icon: CalendarCheck2, roles: [ROLE.SUPER_ADMIN] },
