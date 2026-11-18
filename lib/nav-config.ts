@@ -127,6 +127,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/users", label: "Pengguna", icon: Users, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/merchants", label: "Seller", icon: Store, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/price-master", label: "Master Harga", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
+      // Accounting item codes the master harga's cells point at (and its material columns come from).
+      { href: "/dashboard/item-codes", label: "Master Item Code", icon: ListOrdered, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       // Shipped orders the customer never confirmed complete themselves after N days.
       // Which kategori + colour type require the customer to tick jasa edit.

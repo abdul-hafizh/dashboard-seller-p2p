@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { Calculator, Plus, Tags, Trash2 } from "lucide-react";
+import { Calculator, ListOrdered, Plus, Tags, Trash2 } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -19,12 +20,34 @@ interface PriceMaster {
   Materials: string[];
   Tiers: { MinGrams: number; MaxGrams: number | null }[];
   Prices: Record<string, (number | null)[]>;
+  /** Master Item Code per cell (one per tier), null = none yet. */
+  ItemCodes?: Record<string, (string | null)[]>;
+}
+
+/** A Master Item Code row (dashboard › Master Item Code). */
+interface ItemCodeRow {
+  Id: string;
+  ItemCode: string;
+  Name: string;
+  Material: string;
+  IsActive: boolean;
 }
 
 interface MaterialColumn {
   key: number;
   name: string;
   prices: string[];
+  /** Item code per tier ("" = none). */
+  codes: string[];
+}
+
+const sameMaterial = (a: string, b: string) => a.trim().toUpperCase() === b.trim().toUpperCase();
+
+/** The materials of the active item codes, in their first-seen order. */
+function itemMaterials(items: ItemCodeRow[]) {
+  const out: string[] = [];
+  for (const it of items) if (it.IsActive && !out.some((m) => sameMaterial(m, it.Material))) out.push(it.Material);
+  return out;
 }
 
 interface EditorState {
@@ -45,6 +68,7 @@ function toEditor(master: PriceMaster): EditorState {
         const v = master.Prices[name]?.[i];
         return v === null || v === undefined ? "" : String(v);
       }),
+      codes: master.Tiers.map((_, i) => master.ItemCodes?.[name]?.[i] ?? ""),
     })),
   };
 }
@@ -62,18 +86,24 @@ function toPayload(state: EditorState): PriceMaster {
     Prices: Object.fromEntries(
       state.columns.map((c) => [c.name.trim(), c.prices.map((p) => (p.trim() === "" ? null : Number(p)))]),
     ),
+    ItemCodes: Object.fromEntries(state.columns.map((c) => [c.name.trim(), c.codes.map((code) => code || null)])),
   };
 }
 
 /**
  * Master Harga — the super admin sets the price per gram for each printing
- * material by weight range (ranges and materials are editable). AI designs
- * in the app are priced from this: weight × the per-gram price of the range
- * the weight falls into. Stores' own material prices are not used.
+ * material by weight range (ranges are editable; materials come from the
+ * Master Item Code, and each cell points at one of that material's item codes).
+ * AI designs in the app are priced from this: weight × the per-gram price of
+ * the range the weight falls into. Stores' own material prices are not used.
  */
 export default function PriceMasterPage() {
   const { isAdmin } = useAuth();
   const { data, isLoading, mutate } = useSWR(isAdmin ? "price-master" : null, () => apiFetch<PriceMaster>("price-master"));
+  const { data: itemData, isLoading: itemsLoading } = useSWR(isAdmin ? "item-codes?limit=200" : null, () =>
+    apiFetch<ItemCodeRow[]>("item-codes?limit=200"),
+  );
+  const items = itemData?.data ?? [];
 
   if (!isAdmin) {
     return (
@@ -90,11 +120,11 @@ export default function PriceMasterPage() {
           <h1 className="text-base font-extrabold text-ink">Master Harga</h1>
           <p className="mt-0.5 text-xs text-ink-soft">
             Harga <b>per gram</b> untuk setiap bahan berdasarkan rentang berat. Harga desain AI di aplikasi = berat × harga per gram
-            sesuai rentang beratnya. Rentang berat dan bahan bisa diubah kapan saja.
+            sesuai rentang beratnya. Bahan diambil dari <b>Master Item Code</b>, dan setiap sel memilih item code bahan tersebut.
           </p>
         </div>
       </Card>
-      {isLoading || !data ? (
+      {isLoading || !data || itemsLoading ? (
         <div className="flex justify-center py-16">
           <Spinner className="size-6" />
         </div>
@@ -102,15 +132,82 @@ export default function PriceMasterPage() {
         <PriceMasterEditor
           key={JSON.stringify(data.data)}
           initial={data.data}
+          items={items}
           onSaved={(saved) => mutate({ ...data, data: saved }, { revalidate: false })}
         />
       )}
+      <ItemCodeTable items={items} loading={itemsLoading} />
     </div>
   );
 }
 
-function PriceMasterEditor({ initial, onSaved }: { initial: PriceMaster; onSaved: (m: PriceMaster) => void }) {
+/** The Master Item Code (managed in its own menu). */
+function ItemCodeTable({ items, loading }: { items: ItemCodeRow[]; loading: boolean }) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+        <CardTitle className="flex items-center gap-2">
+          <ListOrdered className="size-4" /> Master Item Code
+        </CardTitle>
+        <Link href="/dashboard/item-codes" className="text-sm font-semibold text-brand-purple hover:underline">
+          Kelola Item Code →
+        </Link>
+      </CardHeader>
+      <CardBody>
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border bg-surface-muted/60 text-xs font-bold text-ink-soft">
+                <th className="whitespace-nowrap px-4 py-3">Item Code</th>
+                <th className="px-4 py-3">Nama</th>
+                <th className="whitespace-nowrap px-4 py-3">Bahan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-6 text-center">
+                    <Spinner className="mx-auto size-5" />
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-6 text-center text-ink-faint">
+                    Belum ada item code.
+                  </td>
+                </tr>
+              ) : (
+                items.map((item) => (
+                  <tr key={item.Id} className="border-b border-border last:border-0 hover:bg-surface-muted/40">
+                    <td className="whitespace-nowrap px-4 py-2.5 font-mono text-ink">{item.ItemCode}</td>
+                    <td className="px-4 py-2.5 text-ink">
+                      {item.Name}
+                      {!item.IsActive && <span className="ml-2 text-xs text-ink-faint">(nonaktif)</span>}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-ink">{item.Material}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function PriceMasterEditor({
+  initial,
+  items,
+  onSaved,
+}: {
+  initial: PriceMaster;
+  items: ItemCodeRow[];
+  onSaved: (m: PriceMaster) => void;
+}) {
   const [state, setState] = useState<EditorState>(() => toEditor(initial));
+  const materials = itemMaterials(items);
+  const codesOf = (material: string) => items.filter((it) => it.IsActive && sameMaterial(it.Material, material));
   const [saving, setSaving] = useState(false);
   const mins = minsOf(state.maxes);
   const lastIndex = state.maxes.length - 1;
@@ -130,7 +227,7 @@ function PriceMasterEditor({ initial, onSaved }: { initial: PriceMaster; onSaved
       // "and up" range follows it.
       const lastMin = minsOf(s.maxes)[s.maxes.length - 1];
       const maxes = [...s.maxes.slice(0, -1), lastMin + 99, null];
-      return { maxes, columns: s.columns.map((c) => ({ ...c, prices: [...c.prices, ""] })) };
+      return { maxes, columns: s.columns.map((c) => ({ ...c, prices: [...c.prices, ""], codes: [...c.codes, ""] })) };
     });
 
   const removeTier = (i: number) =>
@@ -138,13 +235,37 @@ function PriceMasterEditor({ initial, onSaved }: { initial: PriceMaster; onSaved
       if (s.maxes.length <= 1) return s;
       const maxes = s.maxes.filter((_, j) => j !== i);
       maxes[maxes.length - 1] = null;
-      return { maxes, columns: s.columns.map((c) => ({ ...c, prices: c.prices.filter((_, j) => j !== i) })) };
+      return {
+        maxes,
+        columns: s.columns.map((c) => ({ ...c, prices: c.prices.filter((_, j) => j !== i), codes: c.codes.filter((_, j) => j !== i) })),
+      };
     });
 
-  const addMaterial = () =>
+  const setCode = (key: number, i: number, value: string) =>
     setState((s) => ({
       ...s,
-      columns: [...s.columns, { key: nextKey++, name: "", prices: s.maxes.map(() => "") }],
+      columns: s.columns.map((c) => (c.key === key ? { ...c, codes: c.codes.map((x, j) => (j === i ? value : x)) } : c)),
+    }));
+
+  // A new column takes the next material of the Master Item Code not in the table yet.
+  const unusedMaterials = materials.filter((m) => !state.columns.some((c) => sameMaterial(c.name, m)));
+  const addMaterial = () => {
+    const next = unusedMaterials[0];
+    if (!next) {
+      toast.error("Semua bahan di Master Item Code sudah ada di tabel. Tambahkan item code bahan baru dulu.");
+      return;
+    }
+    setState((s) => ({
+      ...s,
+      columns: [...s.columns, { key: nextKey++, name: next, prices: s.maxes.map(() => ""), codes: s.maxes.map(() => "") }],
+    }));
+  };
+
+  // Picking another material for a column clears its item codes (they belong to the old material).
+  const setMaterial = (key: number, name: string) =>
+    setState((s) => ({
+      ...s,
+      columns: s.columns.map((c) => (c.key === key ? { ...c, name, codes: c.codes.map(() => "") } : c)),
     }));
 
   const removeMaterial = (key: number) =>
@@ -188,19 +309,23 @@ function PriceMasterEditor({ initial, onSaved }: { initial: PriceMaster; onSaved
                   {state.columns.map((c) => (
                     <th key={c.key} className="min-w-40 px-3 py-2">
                       <div className="flex items-center gap-1">
-                        <Input
+                        <Select
                           value={c.name}
-                          maxLength={30}
-                          onChange={(e) =>
-                            setState((s) => ({
-                              ...s,
-                              columns: s.columns.map((x) => (x.key === c.key ? { ...x, name: e.target.value } : x)),
-                            }))
-                          }
-                          placeholder="Nama bahan"
-                          aria-label="Nama bahan"
+                          onChange={(e) => setMaterial(c.key, e.target.value)}
+                          aria-label="Bahan"
                           className="h-9 font-bold"
-                        />
+                        >
+                          {!materials.some((m) => sameMaterial(m, c.name)) && (
+                            <option value={c.name}>{c.name || "(pilih bahan)"} — tidak ada di Master Item Code</option>
+                          )}
+                          {materials
+                            .filter((m) => sameMaterial(m, c.name) || !state.columns.some((x) => sameMaterial(x.name, m)))
+                            .map((m) => (
+                              <option key={m} value={m}>
+                                {m}
+                              </option>
+                            ))}
+                        </Select>
                         <Button
                           type="button"
                           variant="ghost"
@@ -252,6 +377,22 @@ function PriceMasterEditor({ initial, onSaved }: { initial: PriceMaster; onSaved
                             className="h-9 pl-9"
                           />
                         </div>
+                        <Select
+                          value={c.codes[i] ?? ""}
+                          onChange={(e) => setCode(c.key, i, e.target.value)}
+                          aria-label={`Item code ${c.name} rentang ${i + 1}`}
+                          className="mt-1.5 h-8 font-mono text-xs"
+                        >
+                          <option value="">— tanpa item code —</option>
+                          {c.codes[i] && !codesOf(c.name).some((it) => it.ItemCode === c.codes[i]) && (
+                            <option value={c.codes[i]}>{c.codes[i]} (tidak ada / nonaktif)</option>
+                          )}
+                          {codesOf(c.name).map((it) => (
+                            <option key={it.Id} value={it.ItemCode}>
+                              {it.ItemCode} · {it.Name}
+                            </option>
+                          ))}
+                        </Select>
                       </td>
                     ))}
                     <td className="px-2 py-2">
@@ -276,9 +417,10 @@ function PriceMasterEditor({ initial, onSaved }: { initial: PriceMaster; onSaved
             <li>Isi harga per gram. Contoh: PLA 1–100 g = Rp2.000 → desain PLA 30 g = Rp60.000.</li>
             <li>Kosongkan harga jika bahan itu belum dijual pada rentang tersebut; customer tidak bisa memilihnya.</li>
             <li>
-              Nama bahan dicocokkan dengan nama material milik toko (tidak membedakan huruf besar/kecil). Toko harus punya material
-              dengan nama yang sama agar bisa dipilih customer.
+              Bahan diambil dari <b>Master Item Code</b>. Untuk menambah bahan baru, tambahkan dulu item code-nya di menu Master Item
+              Code, lalu klik &quot;+ Bahan&quot;.
             </li>
+            <li>Pilih item code untuk setiap sel (bahan × rentang berat). Boleh dikosongkan bila item code-nya belum ada.</li>
           </ul>
 
           <div className="flex justify-end">
