@@ -1,10 +1,16 @@
-/** Same rules as the backend's utils/orderWeight.js — grams. */
+/**
+ * Same rules as the backend's utils/orderWeight.js — grams — plus one more
+ * fallback: an AI design line without its own grams shows the AI estimate
+ * (AIModel.Weight) until the store confirms the weight.
+ */
 interface WeighableItem {
   /** One unit when ordered. */
   WeightGrams?: number | null;
   Quantity?: number | null;
   /** Backs up older lines that didn't record their own weight. */
   Product?: { Weight?: number | null } | null;
+  /** AI design: the generator's estimated grams. */
+  AIModel?: { Weight?: number | null } | null;
 }
 
 const qtyOf = (item: WeighableItem) => Math.max(1, Number(item.Quantity) || 1);
@@ -15,7 +21,9 @@ export function unitGrams(item: WeighableItem): number | null {
   const own = Number(item.WeightGrams);
   if (Number.isFinite(own) && own > 0) return round2(own);
   const product = Number(item.Product?.Weight);
-  return Number.isFinite(product) && product > 0 ? product : null;
+  if (Number.isFinite(product) && product > 0) return product;
+  const estimate = Number(item.AIModel?.Weight);
+  return Number.isFinite(estimate) && estimate > 0 ? round2(estimate) : null;
 }
 
 /** Grams of the whole line — unit × quantity (2 × 30 g = 60 g). */

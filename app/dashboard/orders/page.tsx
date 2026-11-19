@@ -37,7 +37,7 @@ interface OrderRow {
     /** One unit, grams. */
     WeightGrams?: number | null;
     Product?: { ProductName: string | null; Weight?: number | null } | null;
-    AIModel?: { Job?: { UserId?: string | null } | null } | null;
+    AIModel?: { Weight?: number | null; Job?: { UserId?: string | null } | null } | null;
   }[] | null;
   Merchant?: {
     FullName: string | null;
