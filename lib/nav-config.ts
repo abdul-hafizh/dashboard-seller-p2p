@@ -18,6 +18,7 @@ import {
   ListOrdered,
   UserCog,
   Settings2,
+  SlidersHorizontal,
   Sparkles,
   FilePlus2,
   Percent,
@@ -129,6 +130,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/price-master", label: "Master Harga", icon: Tags, roles: [ROLE.SUPER_ADMIN] },
       // Accounting item codes the master harga's cells point at (and its material columns come from).
       { href: "/dashboard/item-codes", label: "Master Item Code", icon: ListOrdered, roles: [ROLE.SUPER_ADMIN] },
+      // Slicer set-up the AI design weight estimate assumes (infill, support, printer, material).
+      { href: "/dashboard/slicer-settings", label: "Setting Slicer", icon: SlidersHorizontal, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/tax-fee-settings", label: "Pajak & Biaya Layanan", icon: Percent, roles: [ROLE.SUPER_ADMIN] },
       // Shipped orders the customer never confirmed complete themselves after N days.
       // Which kategori + colour type require the customer to tick jasa edit.
