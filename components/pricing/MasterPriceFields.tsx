@@ -77,10 +77,11 @@ export function MasterPriceFields({
           <Input
             id={`${idPrefix}-weight`}
             type="number"
-            min={1}
+            min={0.01}
+            step="0.01"
             value={weight}
             onChange={(e) => onWeight(e.target.value)}
-            placeholder="Contoh: 80"
+            placeholder="Contoh: 80,25"
           />
         </div>
       </div>

@@ -41,5 +41,7 @@ export function orderGrams(items: WeighableItem[] | null | undefined): number | 
 /** "60 g" / "1.250 g" — "-" when unknown. */
 export function formatGrams(grams: number | null | undefined): string {
   if (grams === null || grams === undefined || !Number.isFinite(Number(grams))) return "-";
-  return `${Number(grams).toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
+  const n = Number(grams);
+  const digits = Number.isInteger(n) ? 0 : 2;
+  return `${n.toLocaleString("id-ID", { minimumFractionDigits: digits, maximumFractionDigits: 2 })} g`;
 }

@@ -138,6 +138,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/edit-service-rules", label: "Aturan Jasa Edit", icon: PencilRuler, roles: [ROLE.SUPER_ADMIN] },
       // Sellers are reminded on Telegram to ship a paid order within N days.
       { href: "/dashboard/order-ship-deadline", label: "Batas Kirim Seller", icon: Hourglass, roles: [ROLE.SUPER_ADMIN] },
+      // What is cut from a return refund, and the return time limits.
+      { href: "/dashboard/return-settings", label: "Pengaturan Retur", icon: Undo2, roles: [ROLE.SUPER_ADMIN] },
       { href: "/dashboard/order-auto-complete", label: "Selesai Otomatis", icon: CalendarCheck2, roles: [ROLE.SUPER_ADMIN] },
       // Orders the customer never rated get the default rating after a set duration.
       { href: "/dashboard/order-auto-rating", label: "Rating Otomatis", icon: Star, roles: [ROLE.SUPER_ADMIN] },

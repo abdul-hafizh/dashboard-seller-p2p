@@ -51,7 +51,7 @@ export function DesignConfirmCard({ orderId, items, onConfirmed }: { orderId: st
         d.Id,
         {
           material: d.Material?.Name ?? "",
-          weight: d.WeightGrams ? String(Math.round(Number(d.WeightGrams))) : "",
+          weight: d.WeightGrams ? String(Math.round(Number(d.WeightGrams) * 100) / 100) : "",
           // The customer's wish (if any) as a starting point — the store decides.
           colorType: d.ColorType ?? d.AIModel?.Job?.ColorPreference ?? "",
           editFee: "",

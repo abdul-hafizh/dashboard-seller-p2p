@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { Undo2, CheckCircle2, XCircle, Banknote, Search } from "lucide-react";
+import { Undo2, CheckCircle2, XCircle, Banknote, Search, PackageCheck, Settings2, Truck } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -21,10 +21,19 @@ import { ALL_TIME, PeriodFilter, periodQuery, type Period } from "@/components/u
 import { ExportButton } from "@/components/ui/ExportButton";
 
 // Pengembalian (retur): the customer asks from the app; the store (or an
-// admin) approves or rejects; an admin transfers the money back and marks it
-// "Dana Dikembalikan". See api-meshy OrderReturnController.
+// admin) approves or rejects; the customer sends the item back (own courier,
+// own cost) and enters the resi; the store confirms it arrived; an admin
+// transfers the money back (paid without shipping, minus the Pengaturan Retur
+// cuts) and marks it "Dana Dikembalikan". See api-meshy OrderReturnController.
 
-type ReturnStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "REFUNDED";
+type ReturnStatus = "REQUESTED" | "APPROVED" | "ITEM_SHIPPED" | "ITEM_RECEIVED" | "REJECTED" | "REFUNDED";
+
+interface RefundBreakdown {
+  PaidAmount: number;
+  Deductions: { Code: string; Label: string; Amount: number }[];
+  DeductionAmount: number;
+  RefundAmount: number;
+}
 
 interface OrderReturn {
   Id: string;
@@ -39,6 +48,15 @@ interface OrderReturn {
   ProcessedAt: string | null;
   RefundedAt: string | null;
   CreatedAt: string;
+  ItemAmount?: number | string | null;
+  DeductionAmount?: number | string | null;
+  RefundBreakdown?: RefundBreakdown | null;
+  ReturnShippingRequired?: boolean | null;
+  ReturnCourier?: string | null;
+  ReturnTrackingNumber?: string | null;
+  ReturnShippedAt?: string | null;
+  ItemReceivedAt?: string | null;
+  CanRefund?: boolean;
   StoreName?: string;
   Order?: { Id: string; OrderNumber: string | null; TotalAmount: number | string | null };
   Customer?: { Id: string; FullName: string | null; Email: string | null; Phone: string | null };
@@ -47,22 +65,34 @@ interface OrderReturn {
 
 const STATUS: Record<ReturnStatus, { label: string; tone: "warning" | "success" | "error" | "info" }> = {
   REQUESTED: { label: "Menunggu Persetujuan", tone: "warning" },
-  APPROVED: { label: "Disetujui · Menunggu Refund", tone: "info" },
+  APPROVED: { label: "Disetujui", tone: "info" },
+  ITEM_SHIPPED: { label: "Barang Dikirim Balik", tone: "warning" },
+  ITEM_RECEIVED: { label: "Barang Diterima · Menunggu Refund", tone: "info" },
   REJECTED: { label: "Ditolak", tone: "error" },
   REFUNDED: { label: "Dana Dikembalikan", tone: "success" },
 };
 
+/** Badge text — an approved return still waiting for the parcel back says so. */
+const statusLabel = (r: OrderReturn) =>
+  r.Status === "APPROVED"
+    ? r.ReturnShippingRequired
+      ? "Disetujui · Menunggu Barang Dikirim"
+      : "Disetujui · Menunggu Refund"
+    : (STATUS[r.Status]?.label ?? r.StatusLabel);
+
 const FILTERS: { key: "" | ReturnStatus; label: string }[] = [
   { key: "", label: "Semua" },
   { key: "REQUESTED", label: "Menunggu Persetujuan" },
-  { key: "APPROVED", label: "Menunggu Refund" },
+  { key: "APPROVED", label: "Disetujui" },
+  { key: "ITEM_SHIPPED", label: "Barang Dikirim Balik" },
+  { key: "ITEM_RECEIVED", label: "Menunggu Refund" },
   { key: "REFUNDED", label: "Dana Dikembalikan" },
   { key: "REJECTED", label: "Ditolak" },
 ];
 
 const imageUrl = (r: OrderReturn, imageId: string) => `/api/backend/order-returns/${r.Id}/images/${imageId}`;
 
-type Action = { kind: "approve" | "reject" | "refund"; row: OrderReturn };
+type Action = { kind: "approve" | "reject" | "refund" | "receive"; row: OrderReturn };
 
 export default function ReturnsPage() {
   const { isAdmin, isMerchant } = useAuth();
@@ -85,13 +115,22 @@ export default function ReturnsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-extrabold text-ink">Pengembalian</h1>
-        <p className="text-sm text-ink-soft">
-          {isAdmin
-            ? "Pengajuan pengembalian dari customer. Setelah disetujui, transfer dana ke customer lalu tandai \"Dana Dikembalikan\"."
-            : "Pengajuan pengembalian dari customer untuk pesanan tokomu. Setujui atau tolak dengan alasan yang jelas."}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-extrabold text-ink">Pengembalian</h1>
+          <p className="text-sm text-ink-soft">
+            {isAdmin
+              ? "Pengajuan pengembalian dari customer. Setelah toko menerima barang retur (atau tidak ada barang yang perlu dikirim balik), transfer dana ke customer lalu tandai \"Dana Dikembalikan\"."
+              : "Pengajuan pengembalian dari customer untuk pesanan tokomu. Setujui atau tolak dengan alasan yang jelas. Setelah disetujui, customer mengirim balik barang dengan ongkir sendiri — tekan \"Barang Diterima\" saat paketnya sampai."}
+          </p>
+        </div>
+        {isAdmin && (
+          <Link href="/dashboard/return-settings">
+            <Button size="sm" variant="outline" type="button">
+              <Settings2 className="size-4" /> Pengaturan Retur
+            </Button>
+          </Link>
+        )}
       </div>
 
       <Card>
@@ -134,7 +173,7 @@ export default function ReturnsPage() {
                         <Link href={`/dashboard/orders/${r.OrderId}`} className="font-bold text-brand-purple hover:underline">
                           {r.Order?.OrderNumber ?? r.OrderId}
                         </Link>
-                        <Badge tone={STATUS[r.Status]?.tone ?? "info"}>{STATUS[r.Status]?.label ?? r.StatusLabel}</Badge>
+                        <Badge tone={STATUS[r.Status]?.tone ?? "info"}>{statusLabel(r)}</Badge>
                       </div>
                       <p className="text-xs text-ink-soft">
                         Diajukan {formatDateTime(r.CreatedAt)}
@@ -153,6 +192,17 @@ export default function ReturnsPage() {
                     <p className="font-semibold text-ink">{r.Reason}</p>
                     <p className="mt-0.5 whitespace-pre-line text-ink-soft">{r.Description}</p>
                   </div>
+
+                  <RefundDetails r={r} />
+
+                  {r.ReturnTrackingNumber && (
+                    <p className="mt-3 flex flex-wrap items-center gap-1.5 text-sm text-ink">
+                      <Truck className="size-4 text-ink-soft" />
+                      Dikirim balik lewat <b>{r.ReturnCourier ?? "-"}</b> · resi <b className="font-mono">{r.ReturnTrackingNumber}</b>
+                      {r.ReturnShippedAt && <span className="text-xs text-ink-soft">({formatDateTime(r.ReturnShippedAt)})</span>}
+                      {r.ItemReceivedAt && <span className="text-xs text-success">· diterima {formatDateTime(r.ItemReceivedAt)}</span>}
+                    </p>
+                  )}
 
                   {!!r.Images?.length && (
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -184,15 +234,20 @@ export default function ReturnsPage() {
                         </Button>
                       </>
                     )}
-                    {r.Status === "APPROVED" && isAdmin && (
-                      <>
-                        <Button size="sm" type="button" onClick={() => setAction({ kind: "refund", row: r })}>
-                          <Banknote className="size-4" /> Dana Dikembalikan
-                        </Button>
-                        <Button size="sm" type="button" variant="outline" onClick={() => setAction({ kind: "reject", row: r })}>
-                          <XCircle className="size-4" /> Tolak
-                        </Button>
-                      </>
+                    {r.Status === "ITEM_SHIPPED" && (
+                      <Button size="sm" type="button" onClick={() => setAction({ kind: "receive", row: r })}>
+                        <PackageCheck className="size-4" /> Barang Diterima
+                      </Button>
+                    )}
+                    {isAdmin && r.CanRefund && (
+                      <Button size="sm" type="button" onClick={() => setAction({ kind: "refund", row: r })}>
+                        <Banknote className="size-4" /> Dana Dikembalikan
+                      </Button>
+                    )}
+                    {isAdmin && ["APPROVED", "ITEM_SHIPPED", "ITEM_RECEIVED"].includes(r.Status) && (
+                      <Button size="sm" type="button" variant="outline" onClick={() => setAction({ kind: "reject", row: r })}>
+                        <XCircle className="size-4" /> Tolak
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -207,13 +262,46 @@ export default function ReturnsPage() {
   );
 }
 
+/** Paid without shipping − cuts = money back (snapshotted when the customer asked). */
+function RefundDetails({ r }: { r: OrderReturn }) {
+  const b = r.RefundBreakdown;
+  if (!b || !b.Deductions?.length) return null;
+  return (
+    <div className="mt-3 max-w-md space-y-0.5 text-xs">
+      <div className="flex justify-between gap-3">
+        <span className="text-ink-soft">Dibayar customer (tanpa ongkir)</span>
+        <span className="font-semibold tabular-nums">{formatCurrency(b.PaidAmount)}</span>
+      </div>
+      {b.Deductions.map((d) => (
+        <div key={d.Code} className="flex justify-between gap-3">
+          <span className="text-ink-soft">{d.Label}</span>
+          <span className="tabular-nums text-error">− {formatCurrency(d.Amount)}</span>
+        </div>
+      ))}
+      <div className="flex justify-between gap-3 border-t border-border pt-0.5">
+        <span className="font-semibold">Dana dikembalikan</span>
+        <span className="font-bold tabular-nums">{formatCurrency(b.RefundAmount)}</span>
+      </div>
+      <p className="text-ink-faint">Ongkir pesanan tidak dikembalikan; ongkir kirim balik ditanggung customer.</p>
+    </div>
+  );
+}
+
 const ACTION_TEXT = {
   approve: {
     title: "Setujui Pengembalian",
     button: "Setujui",
     note: "Catatan untuk customer (opsional)",
     placeholder: "Contoh: mohon maaf atas ketidaknyamanannya",
-    done: "Pengembalian disetujui. Admin akan mengirim dananya ke customer.",
+    done: "Pengembalian disetujui.",
+    required: false,
+  },
+  receive: {
+    title: "Barang Retur Diterima",
+    button: "Barang Diterima",
+    note: "Catatan kondisi barang (opsional)",
+    placeholder: "Contoh: barang diterima lengkap, kondisi sesuai foto",
+    done: "Barang retur ditandai diterima. Admin akan mengirim dananya ke customer.",
     required: false,
   },
   reject: {
@@ -265,7 +353,15 @@ function ActionModal({ action, onClose, onDone }: { action: Action; onClose: () 
       <div className="space-y-3">
         {action.kind === "approve" && (
           <p className="rounded-xl bg-surface-muted/60 p-3 text-sm text-ink-soft">
-            Dengan menyetujui, pesanan ini tidak masuk saldo penjualan toko dan dana dikembalikan ke customer oleh admin Petope.
+            {r.ReturnShippingRequired
+              ? "Customer akan diminta mengirim balik barang ke alamat tokomu dengan ongkir sendiri. Tekan \"Barang Diterima\" setelah paketnya sampai — baru setelah itu admin Petope mengembalikan dananya. Pesanan ini tidak masuk saldo penjualan toko."
+              : "Barang tidak diterima customer, jadi tidak ada yang dikirim balik. Dana dikembalikan ke customer oleh admin Petope, dan pesanan ini tidak masuk saldo penjualan toko."}
+          </p>
+        )}
+        {action.kind === "receive" && (
+          <p className="rounded-xl bg-surface-muted/60 p-3 text-sm text-ink-soft">
+            Pastikan paket resi {r.ReturnTrackingNumber ?? "-"} sudah sampai dan barangnya sesuai. Jika barang tidak sesuai, jangan tekan ini —
+            hubungi admin Petope.
           </p>
         )}
         {action.kind === "refund" && (

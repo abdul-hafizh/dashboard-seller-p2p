@@ -89,7 +89,8 @@ const oneDecimal = (v: number) => String(Math.round(v * 10) / 10).replace(".", "
 const twoDecimals = (v: number) => (Math.round(v * 100) / 100).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const cm = (v: number | null | undefined) => (v != null && Number(v) > 0 ? String(Number(v)).replace(".", ",") : "?");
 const mmToCm = (v: number | null | undefined) => (v != null && Number(v) > 0 ? oneDecimal(Number(v) / 10) : "?");
-const grams = (g: number) => (g >= 1000 ? `± ${oneDecimal(g / 1000)} kg` : `± ${Math.round(g)} g`);
+/** AI design weight, two decimals: "± 23,45 g" / "± 1.234,50 g". */
+const grams = (g: number) => `± ${g.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} g`;
 const num = (v: number | null | undefined) => (v != null && Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null);
 /** Breakdown cells: "43,2 g" / "14,48 m" — "0 g" stays visible (e.g. support off). */
 const gCell = (v: number | null | undefined) => (v != null && Number.isFinite(Number(v)) ? `${twoDecimals(Number(v))} g` : "-");
