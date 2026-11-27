@@ -43,6 +43,9 @@ interface SalesItem {
   Category: ItemCategory;
   Type: "PRODUCT" | "CUSTOM";
   Material: string | null;
+  /** Master Item Code of the line (material × unit weight range in Master Harga), null when none. */
+  ItemCode?: string | null;
+  ItemCodeName?: string | null;
   Quantity: number;
   UnitPrice: number;
   LineTotal: number;
@@ -370,6 +373,7 @@ export default function SalesReportPage() {
                   {isAdmin && <th className="whitespace-nowrap px-4 py-3">Seller</th>}
                   <th className="whitespace-nowrap px-4 py-3">Customer</th>
                   <th className="whitespace-nowrap px-4 py-3">Kategori Produk</th>
+                  <th className="whitespace-nowrap px-4 py-3">Item Code</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Qty</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Berat Total</th>
                   <th className="whitespace-nowrap px-4 py-3 text-right">Harga</th>
@@ -415,6 +419,15 @@ export default function SalesReportPage() {
                             <li key={it.Id} className="flex h-6 items-center gap-1.5">
                               <ItemCategoryBadge category={it.Category} />
                               {it.Material && <span className="text-xs text-ink-faint">{it.Material}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <ul className="space-y-1">
+                          {r.Items.map((it) => (
+                            <li key={it.Id} className="flex h-6 items-center" title={it.ItemCodeName ?? undefined}>
+                              {it.ItemCode ? <span className="font-mono text-xs font-semibold text-ink">{it.ItemCode}</span> : <span className="text-ink-faint">-</span>}
                             </li>
                           ))}
                         </ul>
